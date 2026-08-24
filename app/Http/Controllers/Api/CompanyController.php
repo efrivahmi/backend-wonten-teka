@@ -97,4 +97,54 @@ class CompanyController extends Controller
 
         return response()->json(['message' => 'Announcement acknowledged.']);
     }
+
+    /**
+     * Get the current geofence settings for the company (Admin only).
+     */
+    public function getGeofence(Request $request)
+    {
+        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
+        $company = \App\Models\Company::find($request->user()->company_id);
+        
+        return response()->json([
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
+            'geofence_radius_meters' => $company->geofence_radius_meters,
+        ]);
+    }
+
+    /**
+     * Update the geofence settings for the company (Admin only).
+     */
+    public function updateGeofence(Request $request)
+    {
+        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'geofence_radius_meters' => 'required|numeric|min:10',
+        ]);
+
+        $company = \App\Models\Company::find($request->user()->company_id);
+        $company->update([
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'geofence_radius_meters' => $request->geofence_radius_meters,
+        ]);
+
+        return response()->json([
+            'message' => 'Geofence updated successfully', 
+            'data' => [
+                'latitude' => $company->latitude,
+                'longitude' => $company->longitude,
+                'geofence_radius_meters' => $company->geofence_radius_meters,
+            ]
+        ]);
+    }
 }

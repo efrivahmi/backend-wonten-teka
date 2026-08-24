@@ -78,4 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [CompanyController::class, 'announcements']);
         Route::post('/{announcement}/acknowledge', [CompanyController::class, 'acknowledgeAnnouncement']);
     });
+    
+    Route::prefix('company')->group(function () {
+        Route::get('/geofence', [CompanyController::class, 'getGeofence']);
+        Route::put('/geofence', [CompanyController::class, 'updateGeofence']);
+    });
 });

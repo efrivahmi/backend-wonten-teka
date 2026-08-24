@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             TaxRatesSeeder::class,
             AdminSeeder::class,
-            DummyDataSeeder::class,
+            // DummyDataSeeder::class,
         ]);
     }
 }
