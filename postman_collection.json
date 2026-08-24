@@ -1,0 +1,503 @@
+{
+	"info": {
+		"_postman_id": "wonten-teka-api",
+		"name": "Wonten Teka API",
+		"description": "Complete API collection for Wonten Teka HR & Attendance System.\n\nDefault credentials:\n- Admin: admin@example.com / password\n- Employee: employee1@example.com to employee20@example.com / password\n\nUsage:\n1. Run \"Login\" request first to get a token\n2. The token is automatically saved to {{token}} variable\n3. All other requests use this token automatically",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://www.great-symbols-begin-freely.st.a.dcdg.xyz/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "🟢 Health Check",
+			"item": [
+				{
+					"name": "API Status",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"url": "{{base_url}}",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    console.log('Token saved: ' + jsonData.token.substring(0, 20) + '...');",
+									"}",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"url": "{{base_url}}/login",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"employee1@example.com\",\n    \"password\": \"password\",\n    \"device_name\": \"postman\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/me",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/logout",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "📱 Device",
+			"item": [
+				{
+					"name": "Register Device",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/device/register",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"device_fingerprint\": \"abc123-unique-fingerprint\",\n    \"device_name\": \"Samsung Galaxy S24\",\n    \"device_model\": \"SM-S921B\",\n    \"os_version\": \"Android 15\",\n    \"app_version\": \"1.0.0\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Device Status",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/device/status?device_fingerprint=abc123-unique-fingerprint",
+							"host": ["{{base_url}}"],
+							"path": ["device", "status"],
+							"query": [
+								{ "key": "device_fingerprint", "value": "abc123-unique-fingerprint" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "📍 Attendance",
+			"item": [
+				{
+					"name": "Enroll Face",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/attendance/enroll-face",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"face_embedding\": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],\n    \"device_id\": \"abc123-unique-fingerprint\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Check In",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/attendance/check-in",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"latitude\": -6.225014,\n    \"longitude\": 106.804192,\n    \"face_match_score\": 0.95,\n    \"device_id\": \"abc123-unique-fingerprint\",\n    \"flags\": {\n        \"is_mock_location\": false\n    }\n}"
+						}
+					}
+				},
+				{
+					"name": "Check Out",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/attendance/check-out",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"latitude\": -6.225014,\n    \"longitude\": 106.804192\n}"
+						}
+					}
+				},
+				{
+					"name": "Attendance History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/attendance/history?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["attendance", "history"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "🏖️ Leave",
+			"item": [
+				{
+					"name": "Get Leave Types",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/leave/types",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Get Leave Balances",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/leave/balances",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Leave History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/leave/history?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["leave", "history"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Submit Leave Request",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/leave/request",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"leave_type_id\": 1,\n    \"start_date\": \"2026-09-01\",\n    \"end_date\": \"2026-09-03\",\n    \"reason\": \"Liburan keluarga ke Bali\"\n}"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "✅ Approvals",
+			"item": [
+				{
+					"name": "Pending Approvals",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/approvals/pending?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["approvals", "pending"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Approve/Reject Request",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/approvals/1/action",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"decision\": \"approve\",\n    \"comment\": \"Disetujui, selamat berlibur!\"\n}"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💰 Claims",
+			"item": [
+				{
+					"name": "Get Claim Categories",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/claims/categories",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Claim History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/claims/history?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["claims", "history"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Submit Claim",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/claims/submit",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"claim_category_id\": 1,\n    \"amount\": 150000,\n    \"expense_date\": \"2026-08-20\",\n    \"description\": \"Transportasi meeting dengan client di Sudirman\"\n}"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💵 Payslips",
+			"item": [
+				{
+					"name": "Payslip History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/payslips?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["payslips"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "View Payslip Detail",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/payslips/1",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Download Payslip PDF",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/payslips/1/download",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "📝 Tasks",
+			"item": [
+				{
+					"name": "List Tasks",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/tasks",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/tasks",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Standup Meeting\",\n    \"description\": \"Daily standup jam 9 pagi\",\n    \"recurrence_rule\": \"weekdays\",\n    \"reminder_time\": \"08:55\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Complete Task",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/tasks/1/complete",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "📅 Schedule & Company",
+			"item": [
+				{
+					"name": "Upcoming Shifts",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/shifts/upcoming?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["shifts", "upcoming"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Calendar Events",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/calendar?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["calendar"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Announcements",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/announcements?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["announcements"],
+							"query": [
+								{ "key": "page", "value": "1" }
+							]
+						},
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				},
+				{
+					"name": "Acknowledge Announcement",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/announcements/1/acknowledge",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						]
+					}
+				}
+			]
+		}
+	]
+}
