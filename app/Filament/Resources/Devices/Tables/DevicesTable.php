@@ -52,7 +52,7 @@ class DevicesTable
                 //
             ])
             ->actions([
-                \Filament\Tables\Actions\Action::make('approve')
+                \Filament\Actions\Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
