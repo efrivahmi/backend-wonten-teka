@@ -18,7 +18,14 @@ class CompanyController extends Controller
         $user = $request->user();
         $employee = $user->employee;
         
-        $query = CalendarEvent::where('company_id', $user->company_id);
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        
+        $startDate = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+        
+        $query = CalendarEvent::where('company_id', $user->company_id)
+            ->whereBetween('start_date', [$startDate, $endDate]);
         
         if ($employee) {
             $query->where(function ($q) use ($employee) {
@@ -27,12 +34,23 @@ class CompanyController extends Controller
             });
         }
         
-        // Return events from today onwards
-        $events = $query->whereDate('start_date', '>=', today())
-            ->orderBy('start_date', 'asc')
-            ->paginate(15);
+        $events = $query->orderBy('start_date', 'asc')->get();
+
+        $attendanceLogs = [];
+        if ($employee) {
+            $attendanceLogs = \App\Models\AttendanceLog::where('employee_id', $employee->id)
+                ->whereBetween('check_in_at', [$startDate, $endDate])
+                ->get();
+        }
+
+        // Standard working days (Monday=1, Sunday=7)
+        $workingDays = [1, 2, 3, 4, 5];
             
-        return response()->json($events);
+        return response()->json([
+            'events' => $events,
+            'attendance_logs' => $attendanceLogs,
+            'working_days' => $workingDays,
+        ]);
     }
 
     /**
@@ -146,5 +164,40 @@ class CompanyController extends Controller
                 'geofence_radius_meters' => $company->geofence_radius_meters,
             ]
         ]);
+    }
+
+    /**
+     * Create a new announcement (Admin only).
+     */
+    public function storeAnnouncement(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'target_type' => 'required|in:company,department,employee',
+            'target_id' => 'nullable|string',
+        ]);
+
+        $announcement = Announcement::create([
+            'company_id' => $user->company_id,
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'priority' => $validated['priority'],
+            'target_type' => $validated['target_type'],
+            'target_id' => $validated['target_id'] ?? null,
+            'created_by' => $user->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Announcement created successfully',
+            'data' => $announcement
+        ], 201);
     }
 }

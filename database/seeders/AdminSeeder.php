@@ -45,6 +45,7 @@ class AdminSeeder extends Seeder
             ]
         );
 
-        $user->assignRole('super_admin');
+        $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $user->assignRole($role);
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\PayslipController;
 use App\Http\Controllers\Api\PersonalTaskController;
+use App\Http\Controllers\Api\EmployeeController;
 
 // Simple root API route for sanity check
 Route::get('/', function () {
@@ -82,5 +83,38 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('company')->group(function () {
         Route::get('/geofence', [CompanyController::class, 'getGeofence']);
         Route::put('/geofence', [CompanyController::class, 'updateGeofence']);
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/employees', [EmployeeController::class, 'index']);
+        Route::post('/employees', [EmployeeController::class, 'store']);
+        Route::put('/employees/{id}', [EmployeeController::class, 'update']);
+        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+        Route::post('/announcements', [CompanyController::class, 'storeAnnouncement']);
+        
+        // Events
+        Route::get('/events', [\App\Http\Controllers\Api\EventController::class, 'index']);
+        Route::post('/events', [\App\Http\Controllers\Api\EventController::class, 'store']);
+        Route::put('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
+        Route::delete('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
+        
+        // Payroll
+        Route::get('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
+        Route::post('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'store']);
+        Route::get('/payroll/runs/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
+        
+        // Shifts
+        Route::get('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'index']);
+        Route::post('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'store']);
+        Route::put('/shifts/{id}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'update']);
+        Route::delete('/shifts/{id}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'destroy']);
+        
+        // Shift Assignments
+        Route::get('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'index']);
+        Route::post('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'store']);
+        
+        // Attendance Flags
+        Route::get('/attendance-flags', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'flags']);
+        Route::post('/attendance-flags/{id}/resolve', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'resolveFlag']);
     });
 });
