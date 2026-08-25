@@ -51,7 +51,7 @@ class DevicesTable
             ->filters([
                 //
             ])
-            ->recordActions([
+            ->actions([
                 \Filament\Tables\Actions\Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
