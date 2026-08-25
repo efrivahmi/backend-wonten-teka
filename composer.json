@@ -8,7 +8,7 @@
     "require": {
         "php": "^8.3",
         "barryvdh/laravel-dompdf": "^3.1",
-        "dotswan/filament-map-picker": "*",
+        "dotswan/filament-map-picker": "^2.3",
         "filament/filament": "^5.7",
         "laravel/framework": "^13.8",
         "laravel/reverb": "^1.11",
