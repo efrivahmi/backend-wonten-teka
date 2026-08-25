@@ -25,6 +25,18 @@ class DeviceController extends Controller
             return response()->json(['message' => 'User is not linked to an employee.'], 403);
         }
 
+        // Check if THIS physical device is already bound to ANOTHER active employee
+        $deviceBoundToOther = Device::where('device_fingerprint', $request->device_fingerprint)
+            ->where('employee_id', '!=', $employee->id)
+            ->where('status', 'active')
+            ->first();
+            
+        if ($deviceBoundToOther) {
+            return response()->json([
+                'message' => 'Perangkat ini sudah terdaftar pada akun lain. Hubungi admin untuk melepas perangkat (Unbind).'
+            ], 403);
+        }
+
         // Check if employee already has an active device
         $activeDevice = $employee->devices()->active()->first();
 

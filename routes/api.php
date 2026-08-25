@@ -36,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/status', [DeviceController::class, 'status']);
     });
 
+    Route::prefix('biometrics')->group(function () {
+        Route::post('/enroll', [\App\Http\Controllers\Api\BiometricController::class, 'enroll']);
+        Route::get('/sync', [\App\Http\Controllers\Api\BiometricController::class, 'sync']);
+    });
+
     Route::prefix('attendance')->group(function () {
         Route::post('/enroll-face', [AttendanceController::class, 'enrollFace']);
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
