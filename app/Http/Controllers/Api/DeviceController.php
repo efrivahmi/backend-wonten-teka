@@ -33,7 +33,11 @@ class DeviceController extends Controller
             return response()->json(['device' => $activeDevice, 'message' => 'Device already registered and active.']);
         }
 
-        // Create new device pending approval
+        // Auto-approve if this is the employee's first device ever
+        $hasAnyDevice = $employee->devices()->exists();
+        $status = $hasAnyDevice ? 'pending_approval' : 'active';
+
+        // Create new device
         $device = Device::create([
             'employee_id' => $employee->id,
             'company_id' => $employee->company_id,
@@ -42,7 +46,7 @@ class DeviceController extends Controller
             'device_model' => $request->device_model,
             'os_version' => $request->os_version,
             'app_version' => $request->app_version,
-            'status' => 'pending_approval',
+            'status' => $status,
         ]);
 
         return response()->json([

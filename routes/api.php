@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\PayslipController;
 use App\Http\Controllers\Api\PersonalTaskController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\DeviceAdminController;
 
 // Simple root API route for sanity check
 Route::get('/', function () {
@@ -116,5 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Attendance Flags
         Route::get('/attendance-flags', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'flags']);
         Route::post('/attendance-flags/{id}/resolve', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'resolveFlag']);
+        
+        // Device Approvals
+        Route::get('/devices/pending', [DeviceAdminController::class, 'getPendingDevices']);
+        Route::post('/devices/{deviceId}/review', [DeviceAdminController::class, 'reviewDevice']);
     });
 });
