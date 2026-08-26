@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->hasOne(Employee::class);
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->is_super_admin || $this->hasRole(['admin', 'super_admin']);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
