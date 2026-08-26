@@ -103,20 +103,43 @@ class AttendanceController extends Controller
         $status = 'present';
         $flags = $request->flags ?? [];
 
-        // Geofence Check
-        if ($company->latitude && $company->longitude) {
-            $distance = $this->calculateDistanceMeters(
-                $request->latitude,
-                $request->longitude,
-                $company->latitude,
-                $company->longitude
-            );
+        // Geofence Check - Reject if not set
+        if (empty($company->latitude) || empty($company->longitude)) {
+            return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
+        }
 
-            if ($distance > ($company->geofence_radius_meters ?? 50)) {
-                $status = 'flagged';
-                $flags['outside_geofence'] = true;
-                $flags['distance_meters'] = round($distance);
+        $distance = $this->calculateDistanceMeters(
+            $request->latitude,
+            $request->longitude,
+            $company->latitude,
+            $company->longitude
+        );
+
+        if ($distance > ($company->geofence_radius_meters ?? 50)) {
+            return response()->json(['message' => 'Di luar jangkauan area absensi. Silakan mendekat ke lokasi kantor.'], 422);
+        }
+
+        // Shift logic (Late)
+        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+            ->whereDate('date', Carbon::today())
+            ->first();
+
+        $shiftTemplate = $shiftAssignment 
+            ? $shiftAssignment->shiftTemplate 
+            : \App\Models\ShiftTemplate::where('company_id', $company->id)->where('is_default', true)->first();
+
+        if ($shiftTemplate) {
+            $flags['shift_name'] = $shiftTemplate->name;
+            $startTime = Carbon::parse($shiftTemplate->start_time);
+            $gracePeriod = $shiftTemplate->grace_period_minutes ?? 0;
+            
+            // If current time is after start_time + grace_period, it is late
+            $lateThreshold = $startTime->copy()->addMinutes($gracePeriod);
+            if (now()->greaterThan($lateThreshold)) {
+                $status = 'late';
             }
+        } else {
+            $flags['shift_name'] = 'Shift Regular';
         }
 
         // Spoofing Checks
@@ -162,7 +185,6 @@ class AttendanceController extends Controller
             'status' => $status,
         ]);
 
-        // Trigger notification if flagged (simulated)
         if ($status === 'flagged') {
             app(\App\Services\NotificationService::class)->sendToHr(
                 $company->id,
@@ -181,10 +203,21 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
+        $company = $user->company;
+
+        $flags = $request->flags;
+        if (is_string($flags)) {
+            $flags = json_decode($flags, true);
+            $request->merge(['flags' => $flags]);
+        }
         
         $validator = Validator::make($request->all(), [
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'face_match_score' => 'required|numeric',
+            'device_id' => 'required|string',
+            'flags' => 'nullable|array',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         if ($validator->fails()) {
@@ -203,20 +236,59 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Already checked out today.'], 422);
         }
 
+        // Geofence check for checkout
+        if (empty($company->latitude) || empty($company->longitude)) {
+            return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
+        }
+        $distance = $this->calculateDistanceMeters(
+            $request->latitude,
+            $request->longitude,
+            $company->latitude,
+            $company->longitude
+        );
+        if ($distance > ($company->geofence_radius_meters ?? 50)) {
+            return response()->json(['message' => 'Di luar jangkauan area absensi. Silakan mendekat ke lokasi kantor.'], 422);
+        }
+
+        // Shift check for early checkout
+        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+            ->whereDate('date', Carbon::today())
+            ->first();
+
+        $shiftTemplate = $shiftAssignment 
+            ? $shiftAssignment->shiftTemplate 
+            : \App\Models\ShiftTemplate::where('company_id', $company->id)->where('is_default', true)->first();
+
+        if ($shiftTemplate && $shiftTemplate->end_time) {
+            $endTime = Carbon::parse($shiftTemplate->end_time);
+            if (now()->lessThan($endTime)) {
+                return response()->json(['message' => 'Belum waktunya pulang. Jam pulang Anda adalah ' . $endTime->format('H:i')], 422);
+            }
+        }
+
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('attendance', 'public');
+        }
+
+        // Merge existing flags
+        $existingFlags = $attendance->flags ?? [];
+        $newFlags = $request->flags ?? [];
+        $mergedFlags = array_merge($existingFlags, ['checkout_flags' => $newFlags]);
+
         $attendance->update([
             'check_out_at' => now(),
             'check_out_gps' => [
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
             ],
+            'check_out_photo_url' => $photoPath,
+            'flags' => $mergedFlags,
         ]);
 
         return response()->json(['message' => 'Check-out successful', 'data' => $attendance]);
     }
 
-    /**
-     * Retrieve attendance history.
-     */
     public function history(Request $request)
     {
         $user = $request->user();
