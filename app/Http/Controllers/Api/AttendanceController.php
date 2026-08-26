@@ -81,6 +81,12 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Employee profile not found.'], 403);
         }
 
+        $flags = $request->flags;
+        if (is_string($flags)) {
+            $flags = json_decode($flags, true);
+            $request->merge(['flags' => $flags]);
+        }
+
         $validator = Validator::make($request->all(), [
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
@@ -132,6 +138,11 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Already checked in today.'], 422);
         }
 
+        // Lookup the actual device ID (integer) from the string fingerprint
+        $device = \App\Models\Device::where('device_fingerprint', $request->device_id)
+            ->where('employee_id', $employee->id)
+            ->first();
+
         $photoPath = null;
         if ($request->hasFile('photo')) {
             $photoPath = $request->file('photo')->store('attendance', 'public');
@@ -144,7 +155,7 @@ class AttendanceController extends Controller
             'check_in_latitude' => $request->latitude,
             'check_in_longitude' => $request->longitude,
             'check_in_face_score' => $request->face_match_score,
-            'device_id' => $request->device_id,
+            'device_id' => $device ? $device->id : null,
             'check_in_photo_url' => $photoPath,
             'photo_path' => $photoPath,
             'flags' => $flags,
