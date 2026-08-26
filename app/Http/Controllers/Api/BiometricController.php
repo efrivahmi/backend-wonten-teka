@@ -36,6 +36,12 @@ class BiometricController extends Controller
             ]
         );
 
+        // Mark employee as face enrolled
+        $employee->update([
+            'face_enrolled' => true,
+            'face_enrolled_at' => now(),
+        ]);
+
         return response()->json([
             'message' => 'Face data enrolled successfully.',
             'biometric' => $biometric
