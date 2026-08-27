@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Api;
 
@@ -11,6 +11,24 @@ class AttendanceAdminController extends Controller
     /**
      * Get all flagged attendance logs.
      */
+        /**
+     * Get all attendance logs for admin monitoring.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $logs = AttendanceLog::where('company_id', $user->company_id)
+            ->with(['employee', 'employee.user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(50);
+
+        return response()->json($logs);
+    }
+
     public function flags(Request $request)
     {
         $user = $request->user();
@@ -66,3 +84,4 @@ class AttendanceAdminController extends Controller
         ]);
     }
 }
+

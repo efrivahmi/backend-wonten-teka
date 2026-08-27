@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -123,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'store']);
         
         // Attendance Flags
+        Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);
         Route::get('/attendance-flags', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'flags']);
         Route::post('/attendance-flags/{id}/resolve', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'resolveFlag']);
         
