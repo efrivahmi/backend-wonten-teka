@@ -1,9 +1,21 @@
-<IfModule mod_rewrite.c>
+﻿<IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Security Headers
+    <IfModule mod_headers.c>
+        # Remove server signature
+        Header unset Server
+        Header always unset X-Powered-By
+
+        # Cache Control for static assets
+        <FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot)$">
+            Header set Cache-Control "public, max-age=31536000, immutable"
+        </FilesMatch>
+    </IfModule>
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -18,8 +30,13 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ index.php [L]
+    # MENGARAHKAN SEMUA REQUEST KE FOLDER PUBLIC
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/ [L]
 </IfModule>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+<IfModule mime_module>
+  AddHandler application/x-httpd-alt-php84 .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
