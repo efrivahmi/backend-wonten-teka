@@ -89,6 +89,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('company')->group(function () {
         Route::get('/geofence', [CompanyController::class, 'getGeofence']);
         Route::put('/geofence', [CompanyController::class, 'updateGeofence']);
+        
+        Route::get('/working-days', [CompanyController::class, 'getWorkingDays']);
+        Route::put('/working-days', [CompanyController::class, 'updateWorkingDays']);
     });
 
     Route::prefix('admin')->group(function () {

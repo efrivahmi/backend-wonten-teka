@@ -43,8 +43,10 @@ class CompanyController extends Controller
                 ->get();
         }
 
-        // Standard working days (Monday=1, Sunday=7)
-        $workingDays = [1, 2, 3, 4, 5];
+        // Read working days from company settings or fallback
+        $company = \App\Models\Company::find($user->company_id);
+        $settings = $company->settings ?? [];
+        $workingDays = $settings['working_days'] ?? [1, 2, 3, 4, 5, 6];
             
         return response()->json([
             'events' => $events,
@@ -199,5 +201,50 @@ class CompanyController extends Controller
             'message' => 'Announcement created successfully',
             'data' => $announcement
         ], 201);
+    }
+
+    /**
+     * Get the current working days settings for the company (Admin only).
+     */
+    public function getWorkingDays(Request $request)
+    {
+        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
+        $company = \App\Models\Company::find($request->user()->company_id);
+        $settings = $company->settings ?? [];
+        
+        return response()->json([
+            'working_days' => $settings['working_days'] ?? [1, 2, 3, 4, 5],
+        ]);
+    }
+
+    /**
+     * Update the working days settings for the company (Admin only).
+     */
+    public function updateWorkingDays(Request $request)
+    {
+        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'working_days' => 'required|array',
+            'working_days.*' => 'integer|min:1|max:7',
+        ]);
+
+        $company = \App\Models\Company::find($request->user()->company_id);
+        $settings = $company->settings ?? [];
+        $settings['working_days'] = $request->working_days;
+        
+        $company->update(['settings' => $settings]);
+
+        return response()->json([
+            'message' => 'Working days updated successfully', 
+            'data' => [
+                'working_days' => $settings['working_days'],
+            ]
+        ]);
     }
 }
