@@ -2,7 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/lemg1635/presensi-sekolah/
-    - export PUBLICPATH=/home/lemg1635/public_html/presensi/
+    - export PUBLICPATH=/home/lemg1635/public_html/presensi.lemdiklattarunanusantaraindonesia.id/
 
     # 1. Update Core Laravel (di luar public_html agar aman)
     - /bin/cp -R * $DEPLOYPATH
