@@ -24,10 +24,8 @@ class TodayAttendanceWidget extends BaseWidget
         
         $totalEmployees = Employee::active()->count();
         
-        $checkedInToday = AttendanceLog::where('type', 'check_in')
-            ->whereDate('timestamp', $today)
-            ->distinct('employee_id')
-            ->count('employee_id');
+        $checkedInToday = AttendanceLog::whereDate('check_in_at', $today)
+            ->count();
             
         $missing = max(0, $totalEmployees - $checkedInToday);
 

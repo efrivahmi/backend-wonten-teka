@@ -24,10 +24,8 @@ class AttendanceTrendChart extends ChartWidget
             $date = Carbon::today()->subDays($i);
             $labels[] = $date->format('M d');
             
-            $count = AttendanceLog::where('type', 'check_in')
-                ->whereDate('timestamp', $date)
-                ->distinct('employee_id')
-                ->count('employee_id');
+            $count = AttendanceLog::whereDate('check_in_at', $date)
+                ->count();
                 
             $data[] = $count;
         }
