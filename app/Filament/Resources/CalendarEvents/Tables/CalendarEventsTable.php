@@ -15,8 +15,6 @@ class CalendarEventsTable
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('type')

@@ -17,8 +17,6 @@ class AnnouncementsTable
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('target_type')

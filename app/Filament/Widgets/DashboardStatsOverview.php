@@ -15,7 +15,7 @@ class DashboardStatsOverview extends BaseWidget
         // Simple dashboard stats
         return [
             Stat::make('Total Employees', Employee::count())
-                ->description('Active employees in company')
+                ->description('Total active employees')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary'),
                 

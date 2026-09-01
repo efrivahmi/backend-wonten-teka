@@ -17,8 +17,6 @@ class LeaveRequestsTable
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('employee.id')
                     ->searchable(),
                 TextColumn::make('leaveType.name')

@@ -15,8 +15,6 @@ class AttendanceLogsTable
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('employee.id')
                     ->searchable(),
                 TextColumn::make('device.id')

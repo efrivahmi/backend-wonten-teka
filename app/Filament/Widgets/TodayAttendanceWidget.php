@@ -19,7 +19,7 @@ class TodayAttendanceWidget extends BaseWidget
     {
         $today = Carbon::today();
         
-        // In a multi-tenant setup, this should ideally be scoped by the currently authenticated user's company.
+        
         
         
         $totalEmployees = Employee::active()->count();

@@ -16,8 +16,6 @@ class DevicesTable
             ->columns([
                 TextColumn::make('employee.id')
                     ->searchable(),
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('device_fingerprint')
                     ->searchable(),
                 TextColumn::make('device_name')

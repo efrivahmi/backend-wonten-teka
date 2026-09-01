@@ -18,8 +18,6 @@ class EmployeesTable
     {
         return $table
             ->columns([
-                TextColumn::make('company.name')
-                    ->searchable(),
                 TextColumn::make('user.name')
                     ->searchable(),
                 TextColumn::make('full_name')
