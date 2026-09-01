@@ -24,7 +24,7 @@ class CompanyController extends Controller
         $startDate = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
         
-        $query = CalendarEvent::where('company_id', $user->company_id)
+        $query = CalendarEvent::query()
             ->whereBetween('start_date', [$startDate, $endDate]);
         
         if ($employee) {
@@ -44,7 +44,7 @@ class CompanyController extends Controller
         }
 
         // Read working days from company settings or fallback
-        $company = \App\Models\Company::find($user->company_id);
+        $company = \App\Models\Company::first();
         $settings = $company->settings ?? [];
         $workingDays = $settings['working_days'] ?? [1, 2, 3, 4, 5, 6];
             
@@ -67,7 +67,7 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Employee profile not found.'], 403);
         }
 
-        $announcements = Announcement::where('company_id', $user->company_id)
+        $announcements = Announcement::query()
             ->where(function ($query) use ($employee) {
                 $query->where('target_type', 'company')
                       ->orWhere(function ($q) use ($employee) {
@@ -98,9 +98,7 @@ class CompanyController extends Controller
         $user = $request->user();
         $employee = $user->employee;
 
-        if ($announcement->company_id !== $user->company_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        
 
         // Use DB directly or create the Acknowledgement model explicitly
         DB::table('announcement_acknowledgments')->updateOrInsert(
@@ -123,11 +121,11 @@ class CompanyController extends Controller
      */
     public function getGeofence(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         
-        $company = \App\Models\Company::find($request->user()->company_id);
+        $company = \App\Models\Company::first();
         
         return response()->json([
             'latitude' => $company->latitude,
@@ -141,7 +139,7 @@ class CompanyController extends Controller
      */
     public function updateGeofence(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -151,7 +149,7 @@ class CompanyController extends Controller
             'geofence_radius_meters' => 'required|numeric|min:10',
         ]);
 
-        $company = \App\Models\Company::find($request->user()->company_id);
+        $company = \App\Models\Company::first();
         $company->update([
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
@@ -175,7 +173,7 @@ class CompanyController extends Controller
     {
         $user = $request->user();
         
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -188,7 +186,7 @@ class CompanyController extends Controller
         ]);
 
         $announcement = Announcement::create([
-            'company_id' => $user->company_id,
+            
             'title' => $validated['title'],
             'content' => $validated['content'],
             'priority' => $validated['priority'],
@@ -208,11 +206,11 @@ class CompanyController extends Controller
      */
     public function getWorkingDays(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         
-        $company = \App\Models\Company::find($request->user()->company_id);
+        $company = \App\Models\Company::first();
         $settings = $company->settings ?? [];
         
         return response()->json([
@@ -225,7 +223,7 @@ class CompanyController extends Controller
      */
     public function updateWorkingDays(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -234,7 +232,7 @@ class CompanyController extends Controller
             'working_days.*' => 'integer|min:1|max:7',
         ]);
 
-        $company = \App\Models\Company::find($request->user()->company_id);
+        $company = \App\Models\Company::first();
         $settings = $company->settings ?? [];
         $settings['working_days'] = $request->working_days;
         

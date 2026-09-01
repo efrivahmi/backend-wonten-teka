@@ -14,11 +14,11 @@ class AttendanceAdminController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $logs = AttendanceLog::where('company_id', $user->company_id)
+        $logs = AttendanceLog::query()
             ->with(['employee', 'employee.user'])
             ->orderBy('created_at', 'desc')
             ->paginate(50);
@@ -29,11 +29,11 @@ class AttendanceAdminController extends Controller
     public function flags(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $logs = AttendanceLog::where('company_id', $user->company_id)
+        $logs = AttendanceLog::query()
             ->flagged()
             ->with(['employee'])
             ->orderBy('created_at', 'desc')
@@ -48,12 +48,12 @@ class AttendanceAdminController extends Controller
     public function resolveFlag(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $log = AttendanceLog::where('id', $id)
-            ->where('company_id', $user->company_id)
+            
             ->firstOrFail();
 
         $validated = $request->validate([

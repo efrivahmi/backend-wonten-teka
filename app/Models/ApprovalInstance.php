@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ApprovalInstance extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'approval_flow_id', 'approvable_type', 'approvable_id',
+ 'approval_flow_id', 'approvable_type', 'approvable_id',
         'current_step', 'overall_status',
     ];
 

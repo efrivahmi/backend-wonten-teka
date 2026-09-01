@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Claim extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'claim_category_id', 'amount', 'receipt_url',
+ 'employee_id', 'claim_category_id', 'amount', 'receipt_url',
         'description', 'expense_date', 'status', 'rejection_reason', 'payroll_run_id',
     ];
 

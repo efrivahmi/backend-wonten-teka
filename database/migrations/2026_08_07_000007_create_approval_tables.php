@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('company_id');
-            $table->index(['company_id', 'request_type']);
+            $table->index(['request_type']);
         });
 
         // Approval instances — one per actual request

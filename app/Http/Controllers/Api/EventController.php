@@ -14,11 +14,11 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $events = CalendarEvent::where('company_id', $user->company_id)
+        $events = CalendarEvent::query()
             ->orderBy('start_date', 'desc')
             ->paginate(15);
             
@@ -31,7 +31,7 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -46,7 +46,7 @@ class EventController extends Controller
         ]);
 
         $event = CalendarEvent::create([
-            'company_id' => $user->company_id,
+            
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'type' => $validated['type'],
@@ -71,11 +71,11 @@ class EventController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $event = CalendarEvent::where('id', $id)->where('company_id', $user->company_id)->firstOrFail();
+        $event = CalendarEvent::where('id', $id)->firstOrFail();
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -109,11 +109,11 @@ class EventController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin', 'supervisor'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $event = CalendarEvent::where('id', $id)->where('company_id', $user->company_id)->firstOrFail();
+        $event = CalendarEvent::where('id', $id)->firstOrFail();
         $event->delete();
 
         return response()->json([

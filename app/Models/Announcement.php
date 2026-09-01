@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'title', 'body', 'target_type', 'target_value',
+ 'title', 'body', 'target_type', 'target_value',
         'priority', 'created_by', 'published_at', 'expires_at',
     ];
 

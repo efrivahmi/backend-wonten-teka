@@ -52,7 +52,7 @@ class OvertimeController extends Controller
         }
 
         $overtimeRequest = OvertimeRequest::create([
-            'company_id' => $user->company_id,
+            
             'employee_id' => $employee->id,
             'date' => Carbon::parse($request->date),
             'start_time' => $request->start_time,

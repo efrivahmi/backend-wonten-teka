@@ -13,7 +13,7 @@ class EmployeeBiometric extends Model
 
     protected $fillable = [
         'employee_id',
-        'company_id',
+
         'face_embedding',
         'enrolled_at',
         'device_id',

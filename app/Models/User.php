@@ -15,13 +15,13 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, BelongsToCompany, HasApiTokens, HasRoles;
+    use HasFactory, Notifiable, SoftDeletes, HasApiTokens, HasRoles;
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'company_id',
+
         'is_super_admin',
         'is_active',
     ];

@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Device extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
         'employee_id',
-        'company_id',
+
         'device_fingerprint',
         'device_name',
         'device_model',

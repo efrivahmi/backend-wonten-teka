@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PayrollComponent extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'name', 'code', 'type', 'is_taxable',
+ 'name', 'code', 'type', 'is_taxable',
         'default_amount', 'applies_to', 'is_active', 'sort_order',
     ];
 

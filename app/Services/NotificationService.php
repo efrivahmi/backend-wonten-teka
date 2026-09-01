@@ -22,13 +22,13 @@ class NotificationService
     /**
      * Stub for sending push notifications to HR or Company Admins.
      */
-    public function sendToHr($companyId, $title, $body, $data = [])
+    public function sendToAdmin($companyId, $title, $body, $data = [])
     {
         // In a real implementation, you would:
-        // 1. Fetch all users in company_id with role 'hr_admin' or 'company_admin'
+        // 1. Fetch all users in company_id with role 'admin'
         // 2. Fetch their active devices & tokens
         // 3. Send payload to FCM API
 
-        Log::info("Push Notification sent to HR of Company {$companyId}: {$title} - {$body}");
+        Log::info("Push Notification sent to Admin of Company {$companyId}: {$title} - {$body}");
     }
 }

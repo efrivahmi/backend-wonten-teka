@@ -29,7 +29,7 @@ class BiometricController extends Controller
         $biometric = EmployeeBiometric::updateOrCreate(
             ['employee_id' => $employee->id],
             [
-                'company_id' => $employee->company_id,
+                
                 'face_embedding' => $embeddingsJson,
                 'device_id' => $request->device_id,
                 'enrolled_at' => now(),

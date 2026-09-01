@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OvertimeRequest extends Model
 {
-    use HasFactory, BelongsToCompany, Approvable;
+    use HasFactory, Approvable;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'attachment_url', 'status',
+ 'employee_id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'attachment_url', 'status',
     ];
 
     protected function casts(): array

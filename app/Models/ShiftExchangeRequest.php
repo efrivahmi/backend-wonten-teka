@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Models;
 
@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShiftExchangeRequest extends Model
 {
-    use HasFactory, BelongsToCompany, Approvable;
+    use HasFactory, Approvable;
 
     protected $fillable = [
-        'company_id', 'requesting_employee_id', 'target_employee_id', 
+ 'requesting_employee_id', 'target_employee_id', 
         'original_date', 'proposed_date', 'reason', 'status',
     ];
 

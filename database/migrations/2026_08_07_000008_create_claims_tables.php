@@ -39,7 +39,7 @@ return new class extends Migration
 
             $table->index('company_id');
             $table->index(['employee_id', 'status']);
-            $table->index(['company_id', 'status']);
+            $table->index(['status']);
         });
     }
 

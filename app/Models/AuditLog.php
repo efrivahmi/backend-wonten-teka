@@ -11,7 +11,7 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'company_id', 'actor_id', 'action', 'auditable_type', 'auditable_id',
+ 'actor_id', 'action', 'auditable_type', 'auditable_id',
         'old_values', 'new_values', 'ip_address', 'user_agent',
     ];
 

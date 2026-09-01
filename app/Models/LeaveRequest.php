@@ -12,10 +12,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeaveRequest extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany, Approvable;
+    use HasFactory, SoftDeletes, Approvable;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'leave_type_id', 'start_date', 'end_date',
+ 'employee_id', 'leave_type_id', 'start_date', 'end_date',
         'total_days', 'reason', 'attachment_url', 'status', 'rejection_reason',
     ];
 

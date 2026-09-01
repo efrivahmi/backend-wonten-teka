@@ -21,7 +21,7 @@ class PayrollService
     public function generatePayrollRun(Company $company, int $month, int $year, int $runByUserId): PayrollRun
     {
         // Check if run already exists
-        $existingRun = PayrollRun::where('company_id', $company->id)
+        $existingRun = PayrollRun::query()
             ->where('period_month', $month)
             ->where('period_year', $year)
             ->first();
@@ -33,7 +33,7 @@ class PayrollService
         return DB::transaction(function () use ($company, $month, $year, $runByUserId, $existingRun) {
             
             $run = $existingRun ?? PayrollRun::create([
-                'company_id' => $company->id,
+                
                 'period_month' => $month,
                 'period_year' => $year,
                 'status' => 'draft',
@@ -46,13 +46,13 @@ class PayrollService
             }
 
             // Get universal components
-            $components = PayrollComponent::where('company_id', $company->id)
+            $components = PayrollComponent::query()
                 ->active()
                 ->where('applies_to', 'all')
                 ->get();
 
             // Load all active employees
-            $employees = Employee::where('company_id', $company->id)
+            $employees = Employee::query()
                 ->active()
                 ->get();
                 
@@ -180,7 +180,7 @@ class PayrollService
         Payslip::create([
             'payroll_run_id' => $run->id,
             'employee_id' => $employee->id,
-            'company_id' => $run->company_id,
+            
             'basic_salary' => $basicSalary,
             'total_earnings' => $totalEarnings,
             'total_deductions' => $totalDeductions,

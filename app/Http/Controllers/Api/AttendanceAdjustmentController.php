@@ -50,7 +50,7 @@ class AttendanceAdjustmentController extends Controller
         }
 
         $adjustmentRequest = AttendanceAdjustmentRequest::create([
-            'company_id' => $user->company_id,
+            
             'employee_id' => $employee->id,
             'date' => Carbon::parse($request->date),
             'check_in' => $request->check_in,

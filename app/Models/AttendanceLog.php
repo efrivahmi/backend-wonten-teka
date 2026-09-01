@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AttendanceLog extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id',
+
         'employee_id',
         'device_id',
         'shift_assignment_id',

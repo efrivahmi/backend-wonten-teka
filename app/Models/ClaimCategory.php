@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ClaimCategory extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'name', 'monthly_limit', 'requires_receipt', 'is_active',
+ 'name', 'monthly_limit', 'requires_receipt', 'is_active',
     ];
 
     protected function casts(): array

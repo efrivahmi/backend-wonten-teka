@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Crypt;
 
 class Employee extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'company_id',
+
         'user_id',
         'full_name',
         'employee_number',

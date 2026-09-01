@@ -50,7 +50,7 @@ class BusinessTripController extends Controller
         }
 
         $businessTripRequest = BusinessTripRequest::create([
-            'company_id' => $user->company_id,
+            
             'employee_id' => $employee->id,
             'start_date' => Carbon::parse($request->start_date),
             'end_date' => Carbon::parse($request->end_date),

@@ -27,8 +27,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('company_id');
-            $table->index(['company_id', 'start_date', 'end_date']);
-            $table->index(['company_id', 'type']);
+            $table->index(['start_date', 'end_date']);
+            $table->index(['type']);
         });
 
         // Personal tasks / habit tracker

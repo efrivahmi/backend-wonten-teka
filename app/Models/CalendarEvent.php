@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CalendarEvent extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'title', 'description', 'type', 'scope', 'department',
+ 'title', 'description', 'type', 'scope', 'department',
         'start_date', 'end_date', 'start_time', 'end_time',
         'is_recurring', 'recurrence_rule', 'created_by',
     ];

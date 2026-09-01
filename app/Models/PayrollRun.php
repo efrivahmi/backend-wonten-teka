@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PayrollRun extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'period_month', 'period_year', 'status',
+ 'period_month', 'period_year', 'status',
         'run_by', 'finalized_at', 'paid_at', 'notes',
     ];
 

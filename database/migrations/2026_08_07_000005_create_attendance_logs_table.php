@@ -44,8 +44,8 @@ return new class extends Migration
             // Immutable — no soft deletes on attendance logs
             $table->index('company_id');
             $table->index(['employee_id', 'check_in_at']);
-            $table->index(['company_id', 'check_in_at']);
-            $table->index(['company_id', 'status']);
+            $table->index(['check_in_at']);
+            $table->index(['status']);
             $table->index('is_flagged');
         });
     }

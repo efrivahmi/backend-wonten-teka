@@ -16,7 +16,7 @@ class ApprovalService
      */
     public function submitRequest(Model $approvable, User $submitter, string $requestType): ?ApprovalInstance
     {
-        $flow = ApprovalFlow::where('company_id', $submitter->company_id)
+        $flow = ApprovalFlow::query()
             ->where('request_type', $requestType)
             ->where('is_active', true)
             ->first();
@@ -31,7 +31,7 @@ class ApprovalService
         // Initialize the approval instance
         return DB::transaction(function () use ($approvable, $flow, $submitter) {
             return ApprovalInstance::create([
-                'company_id' => $submitter->company_id,
+                
                 'approval_flow_id' => $flow->id,
                 'approvable_type' => get_class($approvable),
                 'approvable_id' => $approvable->id,

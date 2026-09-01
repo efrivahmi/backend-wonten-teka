@@ -17,7 +17,7 @@ class ShiftAssignmentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -28,16 +28,16 @@ class ShiftAssignmentController extends Controller
         $endDate = Carbon::parse($endDateStr);
 
         // Fetch active employees
-        $employees = Employee::where('company_id', $user->company_id)->where('status', 'active')->get();
+        $employees = Employee::where('status', 'active')->get();
 
         // Fetch assignments for the period
-        $assignments = ShiftAssignment::where('company_id', $user->company_id)
+        $assignments = ShiftAssignment::query()
             ->whereBetween('date', [$startDateStr, $endDateStr])
             ->with('shiftTemplate')
             ->get();
 
         // Fetch available templates
-        $templates = ShiftTemplate::where('company_id', $user->company_id)->active()->get();
+        $templates = ShiftTemplate::active()->get();
 
         return response()->json([
             'start_date' => $startDateStr,
@@ -54,7 +54,7 @@ class ShiftAssignmentController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -67,7 +67,7 @@ class ShiftAssignmentController extends Controller
 
         $assignment = ShiftAssignment::updateOrCreate(
             [
-                'company_id' => $user->company_id,
+                
                 'employee_id' => $validated['employee_id'],
                 'date' => $validated['date'],
             ],

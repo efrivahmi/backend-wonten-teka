@@ -21,7 +21,7 @@ class ApprovalController extends Controller
         $user = $request->user();
         
         $pending = ApprovalInstance::with('approvable')
-            ->where('company_id', $user->company_id)
+            
             ->pending()
             ->paginate(15);
             
@@ -36,9 +36,7 @@ class ApprovalController extends Controller
         $user = $request->user();
 
         // Security check
-        if ($instance->company_id !== $user->company_id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
+        
 
         $validator = Validator::make($request->all(), [
             'decision' => 'required|in:approve,reject',

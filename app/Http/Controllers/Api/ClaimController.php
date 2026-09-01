@@ -18,7 +18,7 @@ class ClaimController extends Controller
     {
         $user = $request->user();
         
-        $categories = ClaimCategory::where('company_id', $user->company_id)
+        $categories = ClaimCategory::query()
             ->active()
             ->get();
             
@@ -70,7 +70,7 @@ class ClaimController extends Controller
 
         // Verify category belongs to the same company
         $category = ClaimCategory::where('id', $request->claim_category_id)
-            ->where('company_id', $user->company_id)
+            
             ->first();
             
         if (!$category) {
@@ -88,7 +88,7 @@ class ClaimController extends Controller
         }
 
         $claim = Claim::create([
-            'company_id' => $user->company_id,
+            
             'employee_id' => $employee->id,
             'claim_category_id' => $category->id,
             'amount' => $request->amount,

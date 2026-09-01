@@ -12,10 +12,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AttendanceAdjustmentRequest extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany, Approvable;
+    use HasFactory, SoftDeletes, Approvable;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'date', 'check_in', 'check_out', 'reason', 'status',
+ 'employee_id', 'date', 'check_in', 'check_out', 'reason', 'status',
     ];
 
     protected function casts(): array

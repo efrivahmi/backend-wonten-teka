@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LeaveBalance extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'leave_type_id', 'year',
+ 'employee_id', 'leave_type_id', 'year',
         'entitled_days', 'used_days', 'carried_over_days', 'remaining_days',
     ];
 

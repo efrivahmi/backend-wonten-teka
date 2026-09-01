@@ -52,7 +52,7 @@ class DeviceController extends Controller
         // Create new device
         $device = Device::create([
             'employee_id' => $employee->id,
-            'company_id' => $employee->company_id,
+            
             'device_fingerprint' => $request->device_fingerprint,
             'device_name' => $request->device_name,
             'device_model' => $request->device_model,

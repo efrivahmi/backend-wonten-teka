@@ -24,7 +24,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index('company_id');
-            $table->index(['company_id', 'priority']);
+            $table->index(['priority']);
         });
 
         // Announcement acknowledgments

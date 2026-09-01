@@ -12,10 +12,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class BusinessTripRequest extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany, Approvable;
+    use HasFactory, SoftDeletes, Approvable;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'start_date', 'end_date', 'location', 'description', 'status',
+ 'employee_id', 'start_date', 'end_date', 'location', 'description', 'status',
     ];
 
     protected function casts(): array

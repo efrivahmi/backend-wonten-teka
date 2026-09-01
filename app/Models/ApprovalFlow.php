@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ApprovalFlow extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'company_id', 'request_type', 'name', 'steps', 'is_active',
+ 'request_type', 'name', 'steps', 'is_active',
     ];
 
     protected function casts(): array

@@ -16,7 +16,7 @@ class EmployeeController extends Controller
     {
         $user = $request->user();
         
-        $employees = Employee::where('company_id', $user->company_id)
+        $employees = Employee::query()
             ->with('user:id,email')
             ->orderBy('full_name', 'asc')
             ->get();
@@ -54,7 +54,7 @@ class EmployeeController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'company_id' => $user->company_id,
+                
                 'is_active' => true,
             ]);
 
@@ -67,7 +67,7 @@ class EmployeeController extends Controller
             }
 
             $employee = Employee::create([
-                'company_id' => $user->company_id,
+                
                 'user_id' => $newUser->id,
                 'full_name' => $validated['name'],
                 'employee_number' => $validated['employee_number'],
@@ -96,7 +96,7 @@ class EmployeeController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        $employee = Employee::where('company_id', $user->company_id)->findOrFail($id);
+        $employee = Employee::findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -167,7 +167,7 @@ class EmployeeController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
-        $employee = Employee::where('company_id', $user->company_id)->findOrFail($id);
+        $employee = Employee::findOrFail($id);
 
         try {
             DB::beginTransaction();

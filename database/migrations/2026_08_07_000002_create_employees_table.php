@@ -52,8 +52,8 @@ return new class extends Migration
 
             $table->index('company_id');
             $table->index('user_id');
-            $table->index(['company_id', 'employee_number']);
-            $table->index(['company_id', 'department']);
+            $table->index(['employee_number']);
+            $table->index(['department']);
         });
     }
 

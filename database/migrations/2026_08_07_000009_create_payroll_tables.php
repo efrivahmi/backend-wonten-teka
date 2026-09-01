@@ -39,7 +39,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('company_id');
-            $table->unique(['company_id', 'period_month', 'period_year']);
+            $table->unique(['period_month', 'period_year']);
         });
 
         // Payslips — one per employee per payroll run

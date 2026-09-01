@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payslip extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory;
 
     protected $fillable = [
-        'payroll_run_id', 'employee_id', 'company_id',
+        'payroll_run_id', 'employee_id',
         'basic_salary', 'total_earnings', 'total_deductions', 'gross_salary', 'net_salary',
         'pph21_amount',
         'bpjs_kesehatan_employee', 'bpjs_kesehatan_employer',

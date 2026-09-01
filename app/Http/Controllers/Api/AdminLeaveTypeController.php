@@ -40,7 +40,7 @@ class AdminLeaveTypeController extends Controller
         }
 
         $type = LeaveType::create(array_merge($request->all(), [
-            'company_id' => $request->user()->company_id
+            
         ]));
 
         return response()->json([

@@ -22,7 +22,7 @@ class DeviceAdminController extends Controller
 
         // Fetch pending devices for the admin's company
         $pendingDevices = Device::with(['employee:id,first_name,last_name,email'])
-            ->where('company_id', $user->company_id)
+            
             ->where('status', 'pending_approval')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -45,7 +45,7 @@ class DeviceAdminController extends Controller
             'action' => 'required|in:approve,reject'
         ]);
 
-        $device = Device::where('company_id', $user->company_id)->find($deviceId);
+        $device = Device::find($deviceId);
 
         if (!$device) {
             return response()->json(['message' => 'Device not found.'], 404);

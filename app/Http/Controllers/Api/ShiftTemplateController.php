@@ -14,11 +14,11 @@ class ShiftTemplateController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $templates = ShiftTemplate::where('company_id', $user->company_id)
+        $templates = ShiftTemplate::query()
             ->orderBy('start_time', 'asc')
             ->get();
             
@@ -31,7 +31,7 @@ class ShiftTemplateController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -44,11 +44,11 @@ class ShiftTemplateController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        $validated['company_id'] = $user->company_id;
+        
 
         // If this is set to default, unset other defaults
         if (isset($validated['is_default']) && $validated['is_default']) {
-            ShiftTemplate::where('company_id', $user->company_id)->update(['is_default' => false]);
+            ShiftTemplate::update(['is_default' => false]);
         }
 
         $template = ShiftTemplate::create($validated);
@@ -65,11 +65,11 @@ class ShiftTemplateController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $template = ShiftTemplate::where('id', $id)->where('company_id', $user->company_id)->firstOrFail();
+        $template = ShiftTemplate::where('id', $id)->firstOrFail();
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -82,7 +82,7 @@ class ShiftTemplateController extends Controller
 
         // If this is set to default, unset other defaults
         if (isset($validated['is_default']) && $validated['is_default'] && !$template->is_default) {
-            ShiftTemplate::where('company_id', $user->company_id)->update(['is_default' => false]);
+            ShiftTemplate::update(['is_default' => false]);
         }
 
         $template->update($validated);
@@ -99,11 +99,11 @@ class ShiftTemplateController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $template = ShiftTemplate::where('id', $id)->where('company_id', $user->company_id)->firstOrFail();
+        $template = ShiftTemplate::where('id', $id)->firstOrFail();
         
         // Cannot delete default shift if it's the only active one, but for simplicity let's just allow it
         $template->delete();

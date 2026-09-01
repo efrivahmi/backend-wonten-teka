@@ -32,7 +32,7 @@ class AttendanceController extends Controller
         }
 
         $biometric = EmployeeBiometric::updateOrCreate(
-            ['employee_id' => $user->employee->id, 'company_id' => $user->company_id],
+            ['employee_id' => $user->employee->id, ],
             [
                 'face_embedding' => $request->face_embedding,
                 'enrolled_at' => now(),
@@ -126,7 +126,7 @@ class AttendanceController extends Controller
 
         $shiftTemplate = $shiftAssignment 
             ? $shiftAssignment->shiftTemplate 
-            : \App\Models\ShiftTemplate::where('company_id', $company->id)->where('is_default', true)->first();
+            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
 
         if ($shiftTemplate) {
             $flags['shift_name'] = $shiftTemplate->name;
@@ -173,7 +173,7 @@ class AttendanceController extends Controller
 
         $attendance = AttendanceLog::create([
             'employee_id' => $employee->id,
-            'company_id' => $company->id,
+            
             'check_in_at' => now(),
             'check_in_latitude' => $request->latitude,
             'check_in_longitude' => $request->longitude,
@@ -186,7 +186,7 @@ class AttendanceController extends Controller
         ]);
 
         if ($status === 'flagged') {
-            app(\App\Services\NotificationService::class)->sendToHr(
+            app(\App\Services\NotificationService::class)->sendToAdmin(
                 $company->id,
                 'Suspicious Check-in Flagged',
                 "{$employee->full_name} had a suspicious check-in."
@@ -257,7 +257,7 @@ class AttendanceController extends Controller
 
         $shiftTemplate = $shiftAssignment 
             ? $shiftAssignment->shiftTemplate 
-            : \App\Models\ShiftTemplate::where('company_id', $company->id)->where('is_default', true)->first();
+            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
 
         if ($shiftTemplate && $shiftTemplate->end_time) {
             $endTime = Carbon::parse($shiftTemplate->end_time);

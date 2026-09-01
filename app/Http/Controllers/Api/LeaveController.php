@@ -82,7 +82,7 @@ class LeaveController extends Controller
         // TODO: Validate against leave balance if required by leave type
 
         $leaveRequest = LeaveRequest::create([
-            'company_id' => $user->company_id,
+            
             'employee_id' => $employee->id,
             'leave_type_id' => $request->leave_type_id,
             'start_date' => $startDate,

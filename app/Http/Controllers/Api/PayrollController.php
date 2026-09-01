@@ -17,11 +17,11 @@ class PayrollController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $runs = PayrollRun::where('company_id', $user->company_id)
+        $runs = PayrollRun::query()
             ->withCount('payslips')
             ->orderBy('period_year', 'desc')
             ->orderBy('period_month', 'desc')
@@ -36,7 +36,7 @@ class PayrollController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -49,7 +49,7 @@ class PayrollController extends Controller
         $year = $validated['period_year'];
 
         // Check if payroll already run for this period
-        $existingRun = PayrollRun::where('company_id', $user->company_id)
+        $existingRun = PayrollRun::query()
             ->where('period_month', $month)
             ->where('period_year', $year)
             ->first();
@@ -62,7 +62,7 @@ class PayrollController extends Controller
             DB::beginTransaction();
 
             $run = PayrollRun::create([
-                'company_id' => $user->company_id,
+                
                 'period_month' => $month,
                 'period_year' => $year,
                 'status' => 'draft',
@@ -70,7 +70,7 @@ class PayrollController extends Controller
             ]);
 
             // Fetch active employees
-            $employees = Employee::where('company_id', $user->company_id)->where('status', 'active')->get();
+            $employees = Employee::where('status', 'active')->get();
 
             foreach ($employees as $emp) {
                 // Simplified MVP Payroll Calculation
@@ -90,7 +90,7 @@ class PayrollController extends Controller
                 Payslip::create([
                     'payroll_run_id' => $run->id,
                     'employee_id' => $emp->id,
-                    'company_id' => $user->company_id,
+                    
                     'basic_salary' => $basicSalary,
                     'total_earnings' => $allowance,
                     'total_deductions' => $totalDeductions,
@@ -131,12 +131,12 @@ class PayrollController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'company_admin', 'hr_admin'])) {
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $run = PayrollRun::where('id', $id)
-            ->where('company_id', $user->company_id)
+            
             ->with(['payslips.employee', 'runByUser'])
             ->firstOrFail();
 
