@@ -11,6 +11,11 @@ deployment:
     # 2. Update Public Files (Tanpa mengganggu folder storage symlink)
     - /usr/bin/rsync -av --exclude='storage' public/ $PUBLICPATH
 
+        # Hapus file usang yang tersangkut (ghost files)
+    - /bin/rm -f $DEPLOYPATH/database/migrations/0000_00_00_000000_create_companies_table.php
+    - /bin/rm -f $DEPLOYPATH/database/migrations/2026_08_07_031147_add_geofence_to_companies_table.php
+    - /bin/rm -rf $DEPLOYPATH/app/Filament/Resources/Companies
+    
     # 3. Jalankan Artisan Command
     - cd $DEPLOYPATH
     - /usr/local/bin/php artisan down
