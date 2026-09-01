@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToCompany;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -11,8 +10,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes, HasApiTokens, HasRoles;
@@ -50,6 +51,11 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->is_super_admin || $this->hasRole(['admin', 'super_admin']);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->is_active; // You can add more strict role checks if needed, e.g., $this->isAdmin()
     }
 
     // Scopes
