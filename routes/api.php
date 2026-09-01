@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\PayslipController;
 use App\Http\Controllers\Api\PersonalTaskController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\DeviceAdminController;
+use App\Http\Controllers\Api\OvertimeController;
+use App\Http\Controllers\Api\AttendanceAdjustmentController;
+use App\Http\Controllers\Api\BusinessTripController;
 
 // Simple root API route for sanity check
 Route::get('/', function () {
@@ -46,6 +49,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
         Route::get('/history', [AttendanceController::class, 'history']);
+
+        // New attendance form routes
+        Route::post('/adjustment', [AttendanceAdjustmentController::class, 'store']);
+        Route::get('/adjustment', [AttendanceAdjustmentController::class, 'index']);
+        
+        Route::post('/business-trip', [BusinessTripController::class, 'store']);
+        Route::get('/business-trip', [BusinessTripController::class, 'index']);
+    });
+
+    Route::prefix('overtime')->group(function () {
+        Route::post('/request', [OvertimeController::class, 'store']);
+        Route::get('/history', [OvertimeController::class, 'index']);
     });
 
     Route::prefix('leave')->group(function () {
@@ -121,6 +136,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Shift Assignments
         Route::get('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'index']);
         Route::post('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'store']);
+        
+        // Leave Types (Admin)
+        Route::get('/leave-types', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'index']);
+        Route::post('/leave-types', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'store']);
+        Route::put('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'update']);
+        Route::delete('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'destroy']);
         
         // Attendance Flags
         Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);

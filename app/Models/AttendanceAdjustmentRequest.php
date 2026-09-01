@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use App\Models\Traits\BelongsToCompany;
 use App\Models\Traits\Approvable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class OvertimeRequest extends Model
+class AttendanceAdjustmentRequest extends Model
 {
-    use HasFactory, BelongsToCompany, Approvable;
+    use HasFactory, SoftDeletes, BelongsToCompany, Approvable;
 
     protected $fillable = [
-        'company_id', 'employee_id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'attachment_url', 'status',
+        'company_id', 'employee_id', 'date', 'check_in', 'check_out', 'reason', 'status',
     ];
 
     protected function casts(): array

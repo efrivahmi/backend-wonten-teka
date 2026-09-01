@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Api;
 
@@ -9,9 +9,6 @@ use Illuminate\Http\Request;
 class AttendanceAdminController extends Controller
 {
     /**
-     * Get all flagged attendance logs.
-     */
-        /**
      * Get all attendance logs for admin monitoring.
      */
     public function index(Request $request)
@@ -84,4 +81,5 @@ class AttendanceAdminController extends Controller
         ]);
     }
 }
+
 
