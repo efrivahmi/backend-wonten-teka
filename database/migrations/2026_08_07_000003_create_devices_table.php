@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('devices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('device_fingerprint');
             $table->string('device_name')->nullable();
             $table->string('device_model')->nullable();
@@ -23,8 +22,6 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
-
-            $table->index('company_id');
             $table->index('employee_id');
             $table->index(['employee_id', 'status']);
             $table->unique(['employee_id', 'device_fingerprint']);

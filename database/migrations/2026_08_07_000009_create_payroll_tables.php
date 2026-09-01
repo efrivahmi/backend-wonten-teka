@@ -11,7 +11,6 @@ return new class extends Migration
         // Payroll components — salary structure definitions
         Schema::create('payroll_components', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('name'); // Basic Salary, Transport Allowance, etc.
             $table->string('code')->nullable();
             $table->string('type'); // earning, deduction
@@ -21,14 +20,11 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
-
-            $table->index('company_id');
         });
 
         // Payroll runs — monthly batch processing
         Schema::create('payroll_runs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->integer('period_month'); // 1-12
             $table->integer('period_year');
             $table->string('status')->default('draft'); // draft, processing, finalized, paid
@@ -37,8 +33,6 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-
-            $table->index('company_id');
             $table->unique(['period_month', 'period_year']);
         });
 
@@ -47,7 +41,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('payroll_run_id')->constrained()->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
 
             // Summary figures
             $table->decimal('basic_salary', 15, 2)->default(0);
@@ -73,8 +66,6 @@ return new class extends Migration
             $table->json('components_detail')->nullable(); // [{name, type, amount, is_taxable}]
             $table->string('pdf_url')->nullable();
             $table->timestamps();
-
-            $table->index('company_id');
             $table->unique(['payroll_run_id', 'employee_id']);
         });
     }

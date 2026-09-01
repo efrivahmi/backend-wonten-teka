@@ -11,7 +11,6 @@ return new class extends Migration
         // Company calendar events
         Schema::create('calendar_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('type')->default('holiday'); // holiday, meeting, event
@@ -25,8 +24,6 @@ return new class extends Migration
             $table->string('recurrence_rule')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-
-            $table->index('company_id');
             $table->index(['start_date', 'end_date']);
             $table->index(['type']);
         });

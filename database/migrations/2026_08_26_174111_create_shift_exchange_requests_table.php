@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('shift_exchange_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('requesting_employee_id')->constrained('employees')->cascadeOnDelete();
             $table->foreignId('target_employee_id')->constrained('employees')->cascadeOnDelete();
             $table->date('original_date');

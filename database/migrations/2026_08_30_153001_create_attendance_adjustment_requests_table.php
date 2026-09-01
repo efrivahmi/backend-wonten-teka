@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('attendance_adjustment_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->time('check_in');

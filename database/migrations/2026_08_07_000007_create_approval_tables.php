@@ -11,28 +11,22 @@ return new class extends Migration
         // Generic approval flow definitions
         Schema::create('approval_flows', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('request_type'); // leave_request, claim, overtime
             $table->string('name');
             $table->json('steps'); // [{step: 1, approver_type: "role"|"specific", approver_value: "supervisor"|user_id, conditions: {...}}]
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->index('company_id');
             $table->index(['request_type']);
         });
 
         // Approval instances — one per actual request
         Schema::create('approval_instances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('approval_flow_id')->constrained()->cascadeOnDelete();
             $table->morphs('approvable'); // approvable_type + approvable_id (polymorphic)
             $table->integer('current_step')->default(1);
             $table->string('overall_status')->default('pending'); // pending, approved, rejected, cancelled
             $table->timestamps();
-
-            $table->index('company_id');
             $table->index('overall_status');
         });
 

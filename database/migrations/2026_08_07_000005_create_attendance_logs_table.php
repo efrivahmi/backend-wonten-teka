@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('attendance_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('device_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('shift_assignment_id')->nullable()->constrained()->nullOnDelete();
@@ -42,7 +41,6 @@ return new class extends Migration
             $table->timestamps();
 
             // Immutable — no soft deletes on attendance logs
-            $table->index('company_id');
             $table->index(['employee_id', 'check_in_at']);
             $table->index(['check_in_at']);
             $table->index(['status']);

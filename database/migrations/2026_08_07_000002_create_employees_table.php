@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             // Personal info
@@ -49,8 +48,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index('company_id');
             $table->index('user_id');
             $table->index(['employee_number']);
             $table->index(['department']);

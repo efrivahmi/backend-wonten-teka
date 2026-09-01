@@ -11,7 +11,6 @@ return new class extends Migration
         // Announcements / urgent broadcasts
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->text('body');
             $table->string('target_type')->default('company'); // company, department, individual
@@ -22,8 +21,6 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index('company_id');
             $table->index(['priority']);
         });
 
@@ -57,7 +54,6 @@ return new class extends Migration
         // Audit logs — immutable record of sensitive actions
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action'); // created, updated, deleted, approved, rejected, login, etc.
             $table->string('auditable_type'); // Model class name
@@ -69,7 +65,6 @@ return new class extends Migration
             $table->timestamps();
 
             // Immutable — no updates or soft deletes
-            $table->index('company_id');
             $table->index(['auditable_type', 'auditable_id']);
             $table->index('actor_id');
             $table->index('created_at');

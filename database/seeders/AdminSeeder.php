@@ -9,31 +9,19 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $company = \App\Models\Company::firstOrCreate(
-            ['name' => 'Wonten Teka Indonesia'],
-            [
-                'slug' => 'wonten-teka-indonesia',
-                'address' => 'Jl. Jenderal Sudirman No. 1, Jakarta',
-                'phone' => '021-12345678',
-                'email' => 'contact@wontenteka.com',
-            ]
-        );
-
         $user = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'admin@wontenteka.com'],
             [
                 'name' => 'Super Admin',
                 'password' => bcrypt('password'),
                 'is_super_admin' => true,
                 'is_active' => true,
-                'company_id' => $company->id,
             ]
         );
 
         \App\Models\Employee::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'company_id' => $company->id,
                 'employee_number' => 'EMP-001',
                 'full_name' => 'Super Admin',
                 'department' => 'Management',
