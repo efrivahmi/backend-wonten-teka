@@ -10,7 +10,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -40,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Inter')
             ->sidebarCollapsibleOnDesktop()
-            ->maxContentWidth(MaxWidth::Full)
+            ->maxContentWidth('full')
             ->renderHook(
                 'panels::head.end',
                 fn (): string => new HtmlString('
