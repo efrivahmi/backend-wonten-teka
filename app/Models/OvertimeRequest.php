@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToCompany;
 use App\Models\Traits\Approvable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

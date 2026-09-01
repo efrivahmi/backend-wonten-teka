@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
 
 class EmployeeBiometric extends Model
 {
-    use BelongsToCompany;
 
     protected $fillable = [
         'employee_id',
