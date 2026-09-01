@@ -14,8 +14,6 @@ class AnnouncementForm
     {
         return $schema
             ->components([
-                 'name')
-                    ->required(),
                 TextInput::make('title')
                     ->required(),
                 Textarea::make('body')

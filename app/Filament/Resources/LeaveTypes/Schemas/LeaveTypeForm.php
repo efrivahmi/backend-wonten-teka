@@ -13,8 +13,6 @@ class LeaveTypeForm
     {
         return $schema
             ->components([
-                 'name')
-                    ->required(),
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('code'),

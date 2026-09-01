@@ -16,8 +16,6 @@ class CalendarEventForm
     {
         return $schema
             ->components([
-                 'name')
-                    ->required(),
                 TextInput::make('title')
                     ->required(),
                 Textarea::make('description')

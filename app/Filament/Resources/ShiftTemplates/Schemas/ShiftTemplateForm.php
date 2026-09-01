@@ -14,8 +14,6 @@ class ShiftTemplateForm
     {
         return $schema
             ->components([
-                 'name')
-                    ->required(),
                 TextInput::make('name')
                     ->required(),
                 TimePicker::make('start_time')

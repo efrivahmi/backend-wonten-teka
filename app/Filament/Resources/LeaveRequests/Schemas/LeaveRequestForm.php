@@ -14,8 +14,6 @@ class LeaveRequestForm
     {
         return $schema
             ->components([
-                 'name')
-                    ->required(),
                 Select::make('employee_id')
                     ->relationship('employee', 'id')
                     ->required(),
