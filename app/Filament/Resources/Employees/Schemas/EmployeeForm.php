@@ -16,8 +16,7 @@ class EmployeeForm
     {
         return $schema
             ->components([
-                Select::make('company_id')
-                    ->relationship('company', 'name')
+                 'name')
                     ->required(),
                 Select::make('user_id')
                     ->relationship('user', 'name'),

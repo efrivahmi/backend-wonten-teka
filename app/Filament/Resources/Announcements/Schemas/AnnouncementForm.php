@@ -14,8 +14,7 @@ class AnnouncementForm
     {
         return $schema
             ->components([
-                Select::make('company_id')
-                    ->relationship('company', 'name')
+                 'name')
                     ->required(),
                 TextInput::make('title')
                     ->required(),
