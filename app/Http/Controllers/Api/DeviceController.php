@@ -73,7 +73,14 @@ class DeviceController extends Controller
             'device_fingerprint' => 'required|string',
         ]);
 
-        $device = $request->user()->employee->devices()
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            return response()->json(['message' => 'User is not linked to an employee.'], 403);
+        }
+
+        $device = $employee->devices()
             ->where('device_fingerprint', $request->device_fingerprint)
             ->first();
 
