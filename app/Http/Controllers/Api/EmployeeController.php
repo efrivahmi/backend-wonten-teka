@@ -40,14 +40,11 @@ class EmployeeController extends Controller
     public function completeProfile(Request $request)
     {
         $user = $request->user();
-
-        if ($user->employee) {
-            return response()->json(['message' => 'Profile already completed'], 400);
-        }
+        $employeeId = $user->employee ? $user->employee->id : 'NULL';
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-            'employee_number' => 'nullable|string|max:50|unique:employees,employee_number',
+            'employee_number' => 'nullable|string|max:50|unique:employees,employee_number,' . $employeeId,
             'nik' => 'nullable|string|max:50',
             'npwp' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:20',
@@ -70,7 +67,7 @@ class EmployeeController extends Controller
         try {
             DB::beginTransaction();
 
-            $employee = new Employee();
+            $employee = $user->employee ?? new Employee();
             $employee->user_id = $user->id;
             $employee->full_name = $validated['full_name'];
             $employee->employee_number = $validated['employee_number'] ?? 'EMP-' . date('Ymd') . '-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
