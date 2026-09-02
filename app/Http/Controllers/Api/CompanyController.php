@@ -43,10 +43,9 @@ class CompanyController extends Controller
                 ->get();
         }
 
-        // Read working days from company settings or fallback
-        $company = \App\Models\Company::first();
-        $settings = $company->settings ?? [];
-        $workingDays = $settings['working_days'] ?? [1, 2, 3, 4, 5, 6];
+        // Read working days from global settings
+        $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
+        $workingDays = $workingDaysSetting ? $workingDaysSetting->value : [1, 2, 3, 4, 5, 6];
             
         return response()->json([
             'events' => $events,
@@ -98,8 +97,6 @@ class CompanyController extends Controller
         $user = $request->user();
         $employee = $user->employee;
 
-        
-
         // Use DB directly or create the Acknowledgement model explicitly
         DB::table('announcement_acknowledgments')->updateOrInsert(
             [
@@ -125,13 +122,14 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         
-        $company = \App\Models\Company::first();
+        $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
+        $geofence = $geofenceSetting ? $geofenceSetting->value : [
+            'latitude' => null,
+            'longitude' => null,
+            'geofence_radius_meters' => 50,
+        ];
         
-        return response()->json([
-            'latitude' => $company->latitude,
-            'longitude' => $company->longitude,
-            'geofence_radius_meters' => $company->geofence_radius_meters,
-        ]);
+        return response()->json($geofence);
     }
 
     /**
@@ -149,20 +147,20 @@ class CompanyController extends Controller
             'geofence_radius_meters' => 'required|numeric|min:10',
         ]);
 
-        $company = \App\Models\Company::first();
-        $company->update([
+        $data = [
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'geofence_radius_meters' => $request->geofence_radius_meters,
-        ]);
+        ];
+
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'geofence'],
+            ['value' => $data]
+        );
 
         return response()->json([
             'message' => 'Geofence updated successfully', 
-            'data' => [
-                'latitude' => $company->latitude,
-                'longitude' => $company->longitude,
-                'geofence_radius_meters' => $company->geofence_radius_meters,
-            ]
+            'data' => $data
         ]);
     }
 
@@ -186,7 +184,6 @@ class CompanyController extends Controller
         ]);
 
         $announcement = Announcement::create([
-            
             'title' => $validated['title'],
             'content' => $validated['content'],
             'priority' => $validated['priority'],
@@ -210,11 +207,11 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         
-        $company = \App\Models\Company::first();
-        $settings = $company->settings ?? [];
+        $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
+        $workingDays = $workingDaysSetting ? $workingDaysSetting->value : [1, 2, 3, 4, 5];
         
         return response()->json([
-            'working_days' => $settings['working_days'] ?? [1, 2, 3, 4, 5],
+            'working_days' => $workingDays,
         ]);
     }
 
@@ -232,16 +229,15 @@ class CompanyController extends Controller
             'working_days.*' => 'integer|min:1|max:7',
         ]);
 
-        $company = \App\Models\Company::first();
-        $settings = $company->settings ?? [];
-        $settings['working_days'] = $request->working_days;
-        
-        $company->update(['settings' => $settings]);
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'working_days'],
+            ['value' => $request->working_days]
+        );
 
         return response()->json([
             'message' => 'Working days updated successfully', 
             'data' => [
-                'working_days' => $settings['working_days'],
+                'working_days' => $request->working_days,
             ]
         ]);
     }

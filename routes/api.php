@@ -34,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
+    Route::post('/employee/complete-profile', [EmployeeController::class, 'completeProfile']);
+    Route::get('/employee/options', [EmployeeController::class, 'getOptions']);
+
     Route::prefix('device')->group(function () {
         Route::post('/register', [DeviceController::class, 'register']);
         Route::get('/status', [DeviceController::class, 'status']);

@@ -26,6 +26,106 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function getOptions(Request $request)
+    {
+        $departments = Employee::whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department');
+        $positions = Employee::whereNotNull('position')->where('position', '!=', '')->distinct()->pluck('position');
+        
+        return response()->json([
+            'departments' => $departments,
+            'positions' => $positions
+        ]);
+    }
+
+    public function completeProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->employee) {
+            return response()->json(['message' => 'Profile already completed'], 400);
+        }
+
+        $validated = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'employee_number' => 'nullable|string|max:50|unique:employees,employee_number',
+            'nik' => 'nullable|string|max:50',
+            'npwp' => 'nullable|string|max:50',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'required|string|email|max:255',
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|string|in:male,female',
+            'address' => 'nullable|string',
+            'department' => 'nullable|string|max:100',
+            'position' => 'nullable|string|max:100',
+            'join_date' => 'nullable|date',
+            'employment_status' => 'required|string',
+            'ptkp_status' => 'required|string',
+            'bpjs_kesehatan_number' => 'nullable|string',
+            'bpjs_ketenagakerjaan_number' => 'nullable|string',
+            'bank_name' => 'nullable|string',
+            'bank_account_number' => 'nullable|string',
+            'bank_account_holder' => 'nullable|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $employee = new Employee();
+            $employee->user_id = $user->id;
+            $employee->full_name = $validated['full_name'];
+            $employee->employee_number = $validated['employee_number'] ?? 'EMP-' . date('Ymd') . '-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
+            $employee->phone = $validated['phone'] ?? null;
+            $employee->email = $validated['email'];
+            $employee->date_of_birth = $validated['date_of_birth'] ?? null;
+            $employee->gender = $validated['gender'] ?? null;
+            $employee->address = $validated['address'] ?? null;
+            $employee->department = $validated['department'] ?? null;
+            $employee->position = $validated['position'] ?? null;
+            $employee->join_date = $validated['join_date'] ?? null;
+            $employee->employment_status = $validated['employment_status'];
+            $employee->ptkp_status = $validated['ptkp_status'];
+            $employee->is_active = true;
+            $employee->face_enrolled = false;
+
+            if (!empty($validated['nik'])) {
+                $employee->nik_encrypted = \Illuminate\Support\Facades\Crypt::encryptString($validated['nik']);
+            }
+            if (!empty($validated['npwp'])) {
+                $employee->npwp_encrypted = \Illuminate\Support\Facades\Crypt::encryptString($validated['npwp']);
+            }
+            if (!empty($validated['bpjs_kesehatan_number'])) {
+                $employee->bpjs_kesehatan_number_encrypted = \Illuminate\Support\Facades\Crypt::encryptString($validated['bpjs_kesehatan_number']);
+            }
+            if (!empty($validated['bpjs_ketenagakerjaan_number'])) {
+                $employee->bpjs_ketenagakerjaan_number_encrypted = \Illuminate\Support\Facades\Crypt::encryptString($validated['bpjs_ketenagakerjaan_number']);
+            }
+            if (!empty($validated['bank_name'])) {
+                $employee->bank_name = $validated['bank_name'];
+            }
+            if (!empty($validated['bank_account_number'])) {
+                $employee->bank_account_number_encrypted = \Illuminate\Support\Facades\Crypt::encryptString($validated['bank_account_number']);
+            }
+            if (!empty($validated['bank_account_holder'])) {
+                $employee->bank_account_holder = $validated['bank_account_holder'];
+            }
+
+            $employee->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Profile completed successfully',
+                'data' => $employee
+            ], 201);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to complete profile: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();
