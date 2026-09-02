@@ -29,14 +29,10 @@ class UserForm
                     ->dehydrated(fn ($state) => filled($state))
                     ->required(fn (string $context): bool => $context === 'create'),
                 Select::make('roles')
-                    ->relationship('roles', 'name')
+                    ->relationship('roles', 'name', fn ($query) => $query->where('name', '!=', 'super_admin'))
                     ->multiple()
                     ->preload()
                     ->label('Hak Akses (Role)')
-                    ->options([
-                        'admin' => 'Administrator',
-                        'employee' => 'Karyawan',
-                    ])
                     ->required(),
                 Toggle::make('is_active')
                     ->label('Akun Aktif')
