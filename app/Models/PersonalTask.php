@@ -12,7 +12,7 @@ class PersonalTask extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'title', 'description', 'recurrence_rule',
+        'employee_id', 'title', 'description', 'task_date', 'recurrence_rule',
         'reminder_time', 'streak_count', 'longest_streak', 'last_completed_at', 'is_active',
     ];
 

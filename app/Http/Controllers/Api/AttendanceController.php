@@ -305,4 +305,45 @@ class AttendanceController extends Controller
             
         return response()->json($history);
     }
+
+    /**
+     * Get attendance info for today (Shift, Role, Tasks)
+     */
+    public function todayInfo(Request $request)
+    {
+        $employee = $request->user()->employee;
+        if (!$employee) {
+            return response()->json(['message' => 'Employee profile not found.'], 403);
+        }
+
+        // 1. Determine Shift
+        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+            ->whereDate('date', Carbon::today())
+            ->first();
+
+        $shiftTemplate = $shiftAssignment 
+            ? $shiftAssignment->shiftTemplate 
+            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
+
+        $shift = $shiftTemplate ? [
+            'name' => $shiftTemplate->name,
+            'start_time' => Carbon::parse($shiftTemplate->start_time)->format('H:i'),
+            'end_time' => Carbon::parse($shiftTemplate->end_time)->format('H:i'),
+        ] : [
+            'name' => 'Shift Regular (Default)',
+            'start_time' => '08:00',
+            'end_time' => '17:00'
+        ];
+
+        // 2. Determine Role
+        $role = [
+            'employment_status' => $employee->employment_status,
+            'position' => $employee->position ?? $employee->department ?? 'Karyawan',
+        ];
+
+        return response()->json([
+            'shift' => $shift,
+            'role' => $role,
+        ]);
+    }
 }

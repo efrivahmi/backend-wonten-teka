@@ -47,7 +47,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sync', [\App\Http\Controllers\Api\BiometricController::class, 'sync']);
     });
 
+    // Personal Tasks
+    Route::prefix('tasks')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'store']);
+        Route::put('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'update']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'destroy']);
+    });
+
     Route::prefix('attendance')->group(function () {
+        Route::get('/today-info', [AttendanceController::class, 'todayInfo']);
         Route::post('/enroll-face', [AttendanceController::class, 'enrollFace']);
         Route::post('/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/check-out', [AttendanceController::class, 'checkOut']);
