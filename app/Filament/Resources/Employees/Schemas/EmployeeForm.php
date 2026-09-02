@@ -24,11 +24,13 @@ class EmployeeForm
                     ->required(),
                 TextInput::make('employee_number')
                     ->label('Nomor Induk Karyawan (Internal)'),
-                Textarea::make('nik_encrypted')
+                TextInput::make('nik')
                     ->label('NIK KTP')
+                    ->numeric()
                     ->columnSpanFull(),
-                Textarea::make('npwp_encrypted')
+                TextInput::make('npwp')
                     ->label('Nomor NPWP')
+                    ->numeric()
                     ->columnSpanFull(),
                 TextInput::make('phone')
                     ->label('Nomor Telepon')
@@ -86,21 +88,25 @@ class EmployeeForm
                     ])
                     ->required()
                     ->default('TK/0'),
-                Textarea::make('bpjs_kesehatan_number_encrypted')
+                TextInput::make('bpjs_kesehatan_number')
                     ->label('Nomor BPJS Kesehatan')
+                    ->numeric()
                     ->columnSpanFull(),
-                Textarea::make('bpjs_ketenagakerjaan_number_encrypted')
+                TextInput::make('bpjs_ketenagakerjaan_number')
                     ->label('Nomor BPJS Ketenagakerjaan')
+                    ->numeric()
                     ->columnSpanFull(),
                 TextInput::make('bank_name')
                     ->label('Nama Bank'),
-                Textarea::make('bank_account_number_encrypted')
+                TextInput::make('bank_account_number')
                     ->label('Nomor Rekening Bank')
+                    ->numeric()
                     ->columnSpanFull(),
                 TextInput::make('bank_account_holder')
                     ->label('Nama Pemilik Rekening'),
                 Textarea::make('face_embedding_encrypted')
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->hidden(),
                 Toggle::make('face_enrolled')
                     ->required(),
                 DateTimePicker::make('face_enrolled_at'),
