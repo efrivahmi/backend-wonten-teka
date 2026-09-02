@@ -17,8 +17,7 @@ class LeaveController extends Controller
      */
     public function types(Request $request)
     {
-        $types = LeaveType::where('company_id', $request->user()->company_id)
-            ->where('is_active', true)
+        $types = LeaveType::where('is_active', true)
             ->get();
             
         return response()->json($types);

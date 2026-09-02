@@ -14,7 +14,7 @@ class AdminLeaveTypeController extends Controller
      */
     public function index(Request $request)
     {
-        $types = LeaveType::where('company_id', $request->user()->company_id)->get();
+        $types = LeaveType::all();
         return response()->json([
             'status' => 'success',
             'data' => $types

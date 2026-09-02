@@ -20,7 +20,7 @@ class NotificationService
     }
 
     /**
-     * Stub for sending push notifications to HR or Company Admins.
+     * Stub for sending push notifications to Admins.
      */
     public function sendToAdmin($companyId, $title, $body, $data = [])
     {
