@@ -28,7 +28,13 @@ const DeviceRegister = () => {
                 if (response.data.device) {
                     const status = response.data.device.status;
                     if (status === 'active') {
-                        navigate('/employee/dashboard');
+                        const userStr = localStorage.getItem('user');
+                        const userObj = userStr ? JSON.parse(userStr) : null;
+                        if (userObj && userObj.is_super_admin) {
+                            navigate('/admin/dashboard');
+                        } else {
+                            navigate('/employee/dashboard');
+                        }
                     } else if (status === 'pending_approval') {
                         navigate('/onboarding/device-pending');
                     }

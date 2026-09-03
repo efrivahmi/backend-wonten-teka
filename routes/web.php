@@ -14,4 +14,4 @@ Route::get('/setup-database', function () {
 // Fallback to React SPA for all other web routes
 Route::get('/{any?}', function () {
     return view('app');
-})->where('any', '^(?!api|admin).*$'); // Prevent overriding /api and /admin (if filament is kept as fallback)
+})->where('any', '^(?!api|filament).*$'); // Prevent overriding /api and /filament (if filament is kept as fallback)
