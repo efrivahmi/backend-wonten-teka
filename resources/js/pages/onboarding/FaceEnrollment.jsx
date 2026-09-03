@@ -26,10 +26,8 @@ const FaceEnrollment = () => {
     useEffect(() => {
         const loadModels = async () => {
             try {
-                // Ensure models exist in public/models
-                // In a real app, you must copy the weights to public/models/
-                // For this demo, we assume they are served from there.
-                const MODEL_URL = '/models'; 
+                // We use jsdelivr CDN to load the pre-trained weights so we don't need to manually host them
+                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'; 
                 
                 // Only load tiny face detector to be faster in browser
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
