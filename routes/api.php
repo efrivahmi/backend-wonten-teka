@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\PayslipController;
 use App\Http\Controllers\Api\PersonalTaskController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\DeviceAdminController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\AttendanceAdjustmentController;
@@ -122,6 +123,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'getStats']);
+        
         Route::get('/employees', [EmployeeController::class, 'index']);
         Route::post('/employees', [EmployeeController::class, 'store']);
         Route::put('/employees/{id}', [EmployeeController::class, 'update']);

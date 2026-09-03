@@ -8,21 +8,17 @@ import Login from './pages/Login';
 import EmployeeLayout from './layouts/EmployeeLayout';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminApprovals from './pages/admin/Approvals';
+import AdminEmployees from './pages/admin/Employees';
+import AdminSchedule from './pages/admin/Schedule';
+import AdminReports from './pages/admin/Reports';
 import EmployeeDashboard from './pages/employee/Dashboard';
 
-// Employee Pages Placeholder
-const EmployeeAttendance = () => <div className="p-8"><h1 className="text-3xl font-bold text-green-800">Absensi (Belum Diimplementasi)</h1></div>;
-const EmployeeLeave = () => <div className="p-8"><h1 className="text-3xl font-bold text-green-800">Cuti (Belum Diimplementasi)</h1></div>;
-const EmployeeOvertime = () => <div className="p-8"><h1 className="text-3xl font-bold text-green-800">Lembur (Belum Diimplementasi)</h1></div>;
-const EmployeeClaims = () => <div className="p-8"><h1 className="text-3xl font-bold text-green-800">Klaim (Belum Diimplementasi)</h1></div>;
-const EmployeePayslip = () => <div className="p-8"><h1 className="text-3xl font-bold text-green-800">Slip Gaji (Belum Diimplementasi)</h1></div>;
-
-
-// Admin Pages Placeholder
-const AdminApprovals = () => <div className="p-8"><h1 className="text-3xl font-bold text-slate-800">Persetujuan (Belum Diimplementasi)</h1></div>;
-const AdminEmployees = () => <div className="p-8"><h1 className="text-3xl font-bold text-slate-800">Karyawan (Belum Diimplementasi)</h1></div>;
-const AdminSchedule = () => <div className="p-8"><h1 className="text-3xl font-bold text-slate-800">Jadwal (Belum Diimplementasi)</h1></div>;
-const AdminReports = () => <div className="p-8"><h1 className="text-3xl font-bold text-slate-800">Laporan (Belum Diimplementasi)</h1></div>;
+import EmployeeAttendance from './pages/employee/Attendance';
+import EmployeeLeave from './pages/employee/Leave';
+import EmployeeOvertime from './pages/employee/Overtime';
+import EmployeeClaims from './pages/employee/Claims';
+import EmployeePayslip from './pages/employee/Payslip';
 
 const App = () => {
     return (
