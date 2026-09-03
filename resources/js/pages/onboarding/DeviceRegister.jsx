@@ -21,8 +21,8 @@ const DeviceRegister = () => {
                 setFingerprint(fpId);
 
                 // Check status
-                const response = await api.post('/device/status', {
-                    device_fingerprint: fpId
+                const response = await api.get('/device/status', {
+                    params: { device_fingerprint: fpId }
                 });
 
                 if (response.data.device) {
@@ -89,7 +89,7 @@ const DeviceRegister = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 mb-2">Daftarkan Perangkat Ini</h2>
                 <p className="text-slate-600 mb-8 text-sm leading-relaxed">
-                    Untuk keamanan ekstra, sistem kami menerapkan kebijakan akses perangkat. Anda perlu mendaftarkan *browser* ini agar dapat digunakan untuk absensi dan aktivitas lainnya.
+                    Untuk keamanan ekstra, sistem kami menerapkan kebijakan akses perangkat. Anda perlu mendaftarkan perangkat anda agar dapat digunakan untuk absensi dan aktivitas lainnya.
                 </p>
 
                 {error && (
@@ -104,7 +104,7 @@ const DeviceRegister = () => {
                     disabled={registering}
                     className="w-full bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-emerald-700 transition flex justify-center items-center"
                 >
-                    {registering ? <Loader2 className="animate-spin h-5 w-5" /> : 'Daftarkan Browser Ini'}
+                    {registering ? <Loader2 className="animate-spin h-5 w-5" /> : 'Daftarkan Device Ini'}
                 </button>
             </div>
         </div>
