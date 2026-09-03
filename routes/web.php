@@ -13,3 +13,7 @@ Route::get('/setup-database', function () {
         return 'Error: ' . $e->getMessage();
     }
 });
+// Web Frontend Route (React SPA)
+Route::get('/web/{any?}', function () {
+    return view('app');
+})->where('any', '.*');
