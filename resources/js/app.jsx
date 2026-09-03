@@ -17,22 +17,22 @@ const App = () => {
         <BrowserRouter>
             <Routes>
                 {/* Public Route */}
-                <Route path="/web/login" element={<Login />} />
+                <Route path="/login" element={<Login />} />
                 
                 {/* Employee Routes */}
-                <Route path="/web/employee" element={<EmployeeLayout />}>
+                <Route path="/employee" element={<EmployeeLayout />}>
                     <Route path="dashboard" element={<EmployeeDashboard />} />
                     {/* Add more employee routes here */}
                 </Route>
 
                 {/* Admin Routes */}
-                <Route path="/web/admin" element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminLayout />}>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     {/* Add more admin routes here */}
                 </Route>
 
                 {/* Fallback Route */}
-                <Route path="/web/*" element={<Navigate to="/web/login" />} />
+                <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </BrowserRouter>
     );

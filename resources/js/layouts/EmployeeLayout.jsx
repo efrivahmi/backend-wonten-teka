@@ -22,12 +22,12 @@ const EmployeeLayout = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const navigation = [
-        { name: 'Dashboard', href: '/web/employee/dashboard', icon: LayoutDashboard },
-        { name: 'Absensi', href: '/web/employee/attendance', icon: CalendarCheck },
-        { name: 'Cuti', href: '/web/employee/leave', icon: Briefcase },
-        { name: 'Lembur', href: '/web/employee/overtime', icon: Clock },
-        { name: 'Klaim/Reimburse', href: '/web/employee/claims', icon: FileText },
-        { name: 'Slip Gaji', href: '/web/employee/payslip', icon: FileText },
+        { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
+        { name: 'Absensi', href: '/employee/attendance', icon: CalendarCheck },
+        { name: 'Cuti', href: '/employee/leave', icon: Briefcase },
+        { name: 'Lembur', href: '/employee/overtime', icon: Clock },
+        { name: 'Klaim/Reimburse', href: '/employee/claims', icon: FileText },
+        { name: 'Slip Gaji', href: '/employee/payslip', icon: FileText },
     ];
 
     const handleLogout = async () => {
@@ -38,7 +38,7 @@ const EmployeeLayout = () => {
         } finally {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user');
-            navigate('/web/login');
+            navigate('/login');
         }
     };
 

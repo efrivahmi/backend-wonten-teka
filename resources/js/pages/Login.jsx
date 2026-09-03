@@ -31,9 +31,9 @@ const Login = () => {
             // Navigate based on role
             const isAdmin = user.is_super_admin || (user.roles && user.roles.some(r => r.name === 'admin' || r.name === 'super_admin'));
             if (isAdmin) {
-                navigate('/web/admin/dashboard');
+                navigate('/admin/dashboard');
             } else {
-                navigate('/web/employee/dashboard');
+                navigate('/employee/dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal login. Periksa kembali email dan password Anda.');

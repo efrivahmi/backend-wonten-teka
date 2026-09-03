@@ -21,11 +21,11 @@ const AdminLayout = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const navigation = [
-        { name: 'Dashboard', href: '/web/admin/dashboard', icon: LayoutDashboard },
-        { name: 'Persetujuan', href: '/web/admin/approvals', icon: CheckSquare },
-        { name: 'Karyawan', href: '/web/admin/employees', icon: Users },
-        { name: 'Jadwal & Shift', href: '/web/admin/schedule', icon: CalendarRange },
-        { name: 'Laporan', href: '/web/admin/reports', icon: FileBarChart },
+        { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+        { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
+        { name: 'Karyawan', href: '/admin/employees', icon: Users },
+        { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
+        { name: 'Laporan', href: '/admin/reports', icon: FileBarChart },
     ];
 
     const handleLogout = async () => {
@@ -36,7 +36,7 @@ const AdminLayout = () => {
         } finally {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user');
-            navigate('/web/login');
+            navigate('/login');
         }
     };
 

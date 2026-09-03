@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
 Route::get('/setup-database', function () {
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
@@ -13,7 +10,8 @@ Route::get('/setup-database', function () {
         return 'Error: ' . $e->getMessage();
     }
 });
-// Web Frontend Route (React SPA)
-Route::get('/web/{any?}', function () {
+
+// Fallback to React SPA for all other web routes
+Route::get('/{any?}', function () {
     return view('app');
-})->where('any', '.*');
+})->where('any', '^(?!api|admin).*$'); // Prevent overriding /api and /admin (if filament is kept as fallback)
