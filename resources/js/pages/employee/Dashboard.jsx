@@ -24,7 +24,7 @@ const EmployeeDashboard = () => {
             ]);
 
             setTodayInfo(infoRes.data.data || infoRes.data || null);
-            setUpcomingShift(shiftRes.data.data || shiftRes.data || null);
+            setUpcomingShift((shiftRes.data.data && shiftRes.data.data[0]) || (shiftRes.data && shiftRes.data[0]) || null);
             setAnnouncements(annRes.data.data || annRes.data || []);
         } catch (error) {
             console.error("Error fetching dashboard data:", error);

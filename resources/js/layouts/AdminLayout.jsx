@@ -10,7 +10,8 @@ import {
     Menu,
     X,
     Shield,
-    Bell
+    Bell,
+    Settings
 } from 'lucide-react';
 import api from '../api';
 
@@ -27,6 +28,7 @@ const AdminLayout = () => {
         { name: 'Karyawan', href: '/admin/employees', icon: Users },
         { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
         { name: 'Laporan', href: '/admin/reports', icon: FileBarChart },
+        { name: 'Pengaturan', href: '/admin/settings', icon: Settings },
     ];
 
     const handleLogout = async () => {

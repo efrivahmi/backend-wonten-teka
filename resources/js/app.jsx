@@ -11,6 +11,7 @@ import AdminApprovals from './pages/admin/Approvals';
 import AdminEmployees from './pages/admin/Employees';
 import AdminSchedule from './pages/admin/Schedule';
 import AdminReports from './pages/admin/Reports';
+import AdminSettings from './pages/admin/Settings';
 import EmployeeDashboard from './pages/employee/Dashboard';
 
 import EmployeeAttendance from './pages/employee/Attendance';
@@ -57,6 +58,7 @@ const App = () => {
                     <Route path="employees" element={<AdminEmployees />} />
                     <Route path="schedule" element={<AdminSchedule />} />
                     <Route path="reports" element={<AdminReports />} />
+                    <Route path="settings" element={<AdminSettings />} />
                 </Route>
 
                 {/* Fallback Route */}
