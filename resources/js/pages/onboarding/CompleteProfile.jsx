@@ -74,7 +74,15 @@ const CompleteProfile = () => {
             // Profile complete, proceed to next orchestrator step
             navigate('/onboarding');
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal menyimpan profil.');
+            console.error('Submit error:', err.response?.data);
+            
+            let errorMsg = err.response?.data?.message || 'Gagal menyimpan profil.';
+            if (err.response?.status === 422 && err.response?.data?.errors) {
+                const firstError = Object.values(err.response.data.errors)[0];
+                errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            }
+            
+            setError(errorMsg);
             setLoading(false);
         }
     };
