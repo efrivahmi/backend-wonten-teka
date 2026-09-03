@@ -48,17 +48,20 @@ class DeviceController extends Controller
             $status = 'pending_approval';
         }
 
-        // Create new device
-        $device = Device::create([
-            'employee_id' => $employee->id,
-            
-            'device_fingerprint' => $request->device_fingerprint,
-            'device_name' => $request->device_name,
-            'device_model' => $request->device_model,
-            'os_version' => $request->os_version,
-            'app_version' => $request->app_version,
-            'status' => $status,
-        ]);
+        // Create new device or update existing if it somehow exists (e.g. revoked or previously pending)
+        $device = Device::updateOrCreate(
+            [
+                'employee_id' => $employee->id,
+                'device_fingerprint' => $request->device_fingerprint,
+            ],
+            [
+                'device_name' => $request->device_name,
+                'device_model' => $request->device_model,
+                'os_version' => $request->os_version,
+                'app_version' => $request->app_version,
+                'status' => $status,
+            ]
+        );
 
         return response()->json([
             'device' => $device,
