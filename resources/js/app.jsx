@@ -1,4 +1,3 @@
-
 import '../css/app.css';
 
 import React from 'react';
@@ -20,12 +19,26 @@ import EmployeeOvertime from './pages/employee/Overtime';
 import EmployeeClaims from './pages/employee/Claims';
 import EmployeePayslip from './pages/employee/Payslip';
 
+// Onboarding Pages
+import OnboardingFlow from './pages/onboarding/OnboardingFlow';
+import DeviceRegister from './pages/onboarding/DeviceRegister';
+import DevicePending from './pages/onboarding/DevicePending';
+import FaceEnrollment from './pages/onboarding/FaceEnrollment';
+import CompleteProfile from './pages/onboarding/CompleteProfile';
+
 const App = () => {
     return (
         <BrowserRouter>
             <Routes>
                 {/* Public Route */}
                 <Route path="/login" element={<Login />} />
+                
+                {/* Onboarding Routes */}
+                <Route path="/onboarding" element={<OnboardingFlow />} />
+                <Route path="/onboarding/device" element={<DeviceRegister />} />
+                <Route path="/onboarding/device-pending" element={<DevicePending />} />
+                <Route path="/onboarding/face-enrollment" element={<FaceEnrollment />} />
+                <Route path="/onboarding/complete-profile" element={<CompleteProfile />} />
                 
                 {/* Employee Routes */}
                 <Route path="/employee" element={<EmployeeLayout />}>

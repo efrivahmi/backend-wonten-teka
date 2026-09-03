@@ -1,21 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2 } from 'lucide-react';
+import { Lock, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import api from '../api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('remembered_email');
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRememberMe(true);
+        }
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         try {
-            // Use Sanctum token approach like mobile
             const response = await api.post('/login', {
                 email,
                 password,
@@ -24,17 +33,18 @@ const Login = () => {
             
             const { token, user } = response.data;
             
-            // Store token and user
             localStorage.setItem('auth_token', token);
             localStorage.setItem('user', JSON.stringify(user));
             
-            // Navigate based on role
-            const isAdmin = user.is_super_admin || (user.roles && user.roles.some(r => r.name === 'admin' || r.name === 'super_admin'));
-            if (isAdmin) {
-                navigate('/admin/dashboard');
+            if (rememberMe) {
+                localStorage.setItem('remembered_email', email);
             } else {
-                navigate('/employee/dashboard');
+                localStorage.removeItem('remembered_email');
             }
+            
+            // Redirect to the onboarding orchestrator instead of directly to dashboard
+            navigate('/onboarding');
+            
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal login. Periksa kembali email dan password Anda.');
         } finally {
@@ -82,14 +92,39 @@ const Login = () => {
                                     <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input 
-                                    type="password" 
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 focus:ring-opacity-50 py-2.5 border px-4 text-slate-800"
+                                    className="pl-10 pr-10 w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 focus:ring-opacity-50 py-2.5 border px-4 text-slate-800"
                                     placeholder="Masukkan password anda"
                                     required
                                 />
+                                <button 
+                                    type="button"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600" />
+                                    ) : (
+                                        <Eye className="h-5 w-5 text-slate-400 hover:text-slate-600" />
+                                    )}
+                                </button>
                             </div>
+                        </div>
+
+                        <div className="flex items-center">
+                            <input
+                                id="remember-me"
+                                name="remember-me"
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded"
+                            />
+                            <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700">
+                                Ingat Saya
+                            </label>
                         </div>
                         
                         <button 

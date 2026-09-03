@@ -52,11 +52,8 @@ class DeviceAdminController extends Controller
         }
 
         if ($request->action === 'approve') {
-            // Deactivate all other devices for this employee
-            Device::where('employee_id', $device->employee_id)
-                ->where('id', '!=', $device->id)
-                ->update(['status' => 'inactive']);
-
+            // Changed business logic: Allow multiple devices per employee
+            // Admin approval simply activates this specific device without deactivating others.
             $device->update(['status' => 'active']);
             $message = 'Device approved successfully.';
         } else {

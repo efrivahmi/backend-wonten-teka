@@ -76,34 +76,99 @@ const EmployeeDashboard = () => {
                     </div>
                 </div>
 
-                {/* Jadwal Shift */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-slate-800">Jadwal Mendatang</h2>
-                        <div className="bg-blue-50 p-2 rounded-lg">
-                            <Clock className="h-5 w-5 text-blue-600" />
+                {/* Jadwal Shift & Tombol Absen */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-bold text-slate-800">Jadwal Mendatang</h2>
+                            <div className="bg-blue-50 p-2 rounded-lg">
+                                <Clock className="h-5 w-5 text-blue-600" />
+                            </div>
+                        </div>
+
+                        {upcomingShift ? (
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="h-16 w-16 bg-blue-100 text-blue-700 rounded-xl flex flex-col items-center justify-center font-bold">
+                                    <span className="text-sm uppercase">{new Date(upcomingShift.date).toLocaleString('id-ID', { weekday: 'short' })}</span>
+                                    <span className="text-xl">{new Date(upcomingShift.date).getDate()}</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800">{upcomingShift.shift_template?.name || 'Shift Reguler'}</h3>
+                                    <p className="text-sm text-slate-500">
+                                        {upcomingShift.shift_template?.start_time} - {upcomingShift.shift_template?.end_time}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-6 text-center mb-6">
+                                <Clock className="h-10 w-10 text-slate-300 mb-2" />
+                                <p className="text-sm text-slate-500">Belum ada jadwal shift dalam waktu dekat.</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="mt-auto border-t border-slate-100 pt-6">
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 text-center uppercase tracking-wider">Aksi Absensi (Simulasi Web)</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button 
+                                onClick={async () => {
+                                    try {
+                                        setLoading(true);
+                                        await api.post('/attendance/check-in', {
+                                            latitude: -6.1754, // Simulasi Jakarta (sesuai geofence DB)
+                                            longitude: 106.8272,
+                                            face_match_score: 0.95,
+                                            device_id: 'web-browser-simulator'
+                                        });
+                                        await fetchData();
+                                        alert('Berhasil Check-In!');
+                                    } catch (e) {
+                                        alert('Gagal Check-In: ' + (e.response?.data?.message || 'Error Server'));
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={todayInfo?.check_in_time}
+                                className={`flex items-center justify-center px-4 py-3 rounded-xl font-bold transition-all ${
+                                    !todayInfo?.check_in_time 
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20' 
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                            >
+                                <LogIn className="h-5 w-5 mr-2" />
+                                Check In
+                            </button>
+                            
+                            <button 
+                                onClick={async () => {
+                                    try {
+                                        setLoading(true);
+                                        await api.post('/attendance/check-out', {
+                                            latitude: -6.1754,
+                                            longitude: 106.8272,
+                                            face_match_score: 0.95,
+                                            device_id: 'web-browser-simulator'
+                                        });
+                                        await fetchData();
+                                        alert('Berhasil Check-Out!');
+                                    } catch (e) {
+                                        alert('Gagal Check-Out: ' + (e.response?.data?.message || 'Error Server'));
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={!todayInfo?.check_in_time || todayInfo?.check_out_time}
+                                className={`flex items-center justify-center px-4 py-3 rounded-xl font-bold transition-all ${
+                                    todayInfo?.check_in_time && !todayInfo?.check_out_time 
+                                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/20' 
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                            >
+                                <LogOut className="h-5 w-5 mr-2" />
+                                Check Out
+                            </button>
                         </div>
                     </div>
-
-                    {upcomingShift ? (
-                        <div className="flex items-center space-x-4">
-                            <div className="h-16 w-16 bg-blue-100 text-blue-700 rounded-xl flex flex-col items-center justify-center font-bold">
-                                <span className="text-sm uppercase">{new Date(upcomingShift.date).toLocaleString('id-ID', { weekday: 'short' })}</span>
-                                <span className="text-xl">{new Date(upcomingShift.date).getDate()}</span>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-slate-800">{upcomingShift.shift_template?.name || 'Shift Reguler'}</h3>
-                                <p className="text-sm text-slate-500">
-                                    {upcomingShift.shift_template?.start_time} - {upcomingShift.shift_template?.end_time}
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-6 text-center">
-                            <Clock className="h-10 w-10 text-slate-300 mb-2" />
-                            <p className="text-sm text-slate-500">Belum ada jadwal shift dalam waktu dekat.</p>
-                        </div>
-                    )}
                 </div>
             </div>
 

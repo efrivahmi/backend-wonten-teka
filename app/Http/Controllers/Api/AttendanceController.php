@@ -183,7 +183,6 @@ class AttendanceController extends Controller
             'check_in_face_score' => $request->face_match_score,
             'device_id' => $device ? $device->id : null,
             'check_in_photo_url' => $photoPath,
-            'photo_path' => $photoPath,
             'flags' => $flags,
             'status' => $status,
         ]);
@@ -284,10 +283,9 @@ class AttendanceController extends Controller
 
         $attendance->update([
             'check_out_at' => now(),
-            'check_out_gps' => [
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-            ],
+            'check_out_latitude' => $request->latitude,
+            'check_out_longitude' => $request->longitude,
+            'check_out_face_score' => $request->face_match_score,
             'check_out_photo_url' => $photoPath,
             'flags' => $mergedFlags,
         ]);
