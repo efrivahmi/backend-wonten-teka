@@ -27,13 +27,11 @@ class AdminDashboardController extends Controller
         $totalEmployees = Employee::count();
 
         // 2. Attendance Stats for Today
-        $presentCount = AttendanceLog::whereDate('created_at', $today)
-            ->where('type', 'check_in')
+        $presentCount = AttendanceLog::whereDate('check_in_at', $today)
             ->distinct('employee_id')
             ->count('employee_id');
             
-        $lateCount = AttendanceLog::whereDate('created_at', $today)
-            ->where('type', 'check_in')
+        $lateCount = AttendanceLog::whereDate('check_in_at', $today)
             ->where('status', 'late')
             ->distinct('employee_id')
             ->count('employee_id');

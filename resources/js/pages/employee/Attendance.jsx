@@ -65,8 +65,9 @@ const Attendance = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white text-slate-500 text-sm font-semibold uppercase tracking-wider border-b border-slate-200">
-                                <th className="px-6 py-4">Tanggal & Waktu</th>
-                                <th className="px-6 py-4">Tipe Absen</th>
+                                <th className="px-6 py-4">Tanggal</th>
+                                <th className="px-6 py-4">Check In</th>
+                                <th className="px-6 py-4">Check Out</th>
                                 <th className="px-6 py-4">Lokasi & Metode</th>
                                 <th className="px-6 py-4">Status</th>
                             </tr>
@@ -77,27 +78,28 @@ const Attendance = () => {
                                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center text-slate-800 font-medium">
-                                                <Clock className="h-4 w-4 mr-2 text-slate-400" />
-                                                <span>{new Date(log.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                <CalendarCheck className="h-4 w-4 mr-2 text-slate-400" />
+                                                <span>{log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
                                             </div>
-                                            <p className="text-xs text-slate-500 ml-6 mt-1 font-bold">
-                                                Jam: {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className={`flex items-center px-3 py-1.5 w-fit rounded-lg font-bold text-xs ${
-                                                log.type === 'check_in' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-                                            }`}>
-                                                {log.type === 'check_in' ? <LogIn className="h-3.5 w-3.5 mr-1.5" /> : <LogOut className="h-3.5 w-3.5 mr-1.5" />}
-                                                {log.type === 'check_in' ? 'Check In' : 'Check Out'}
+                                            <div className={`flex items-center px-3 py-1.5 w-fit rounded-lg font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200`}>
+                                                <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                                                {log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`flex items-center px-3 py-1.5 w-fit rounded-lg font-bold text-xs ${log.check_out_at ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-50 text-slate-500 border border-slate-200'}`}>
+                                                <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                                                {log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Belum'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-start text-sm text-slate-600">
                                                 <MapPin className="h-4 w-4 mr-1.5 text-slate-400 flex-shrink-0 mt-0.5" />
                                                 <div>
-                                                    <span className="capitalize font-medium block">{log.method}</span>
-                                                    {log.location && <span className="text-xs text-slate-500">{log.location}</span>}
+                                                    <span className="capitalize font-medium block">{log.check_in_photo_url ? 'Face Recognition' : 'App'}</span>
+                                                    {log.notes && <span className="text-xs text-slate-500">{log.notes}</span>}
                                                 </div>
                                             </div>
                                         </td>

@@ -171,9 +171,9 @@ const AdminDashboard = () => {
                                             <p className="text-sm font-bold text-slate-800 truncate">
                                                 {flag.employee?.user?.name}
                                             </p>
-                                            <p className="text-xs text-amber-600 mt-1 font-medium">{flag.flag_reason}</p>
+                                            <p className="text-xs text-amber-600 mt-1 font-medium">{flag.notes || 'Terdeteksi anomali pada absensi ini'}</p>
                                             <p className="text-xs text-slate-400 mt-1">
-                                                {new Date(flag.timestamp).toLocaleString('id-ID')}
+                                                {new Date(flag.created_at).toLocaleString('id-ID')}
                                             </p>
                                         </div>
                                         <button className="text-xs font-medium bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm">

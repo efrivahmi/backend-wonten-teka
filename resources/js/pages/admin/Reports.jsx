@@ -69,9 +69,9 @@ const Reports = () => {
                         <thead>
                             <tr className="bg-white text-slate-500 text-sm font-semibold uppercase tracking-wider border-b border-slate-200">
                                 <th className="px-6 py-4">Karyawan</th>
-                                <th className="px-6 py-4">Tanggal & Waktu</th>
-                                <th className="px-6 py-4">Tipe Absen</th>
-                                <th className="px-6 py-4">Metode</th>
+                                <th className="px-6 py-4">Tanggal</th>
+                                <th className="px-6 py-4">Check In</th>
+                                <th className="px-6 py-4">Check Out</th>
                                 <th className="px-6 py-4">Status</th>
                             </tr>
                         </thead>
@@ -84,21 +84,16 @@ const Reports = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm text-slate-800 font-medium">
-                                                {new Date(log.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </p>
-                                            <p className="text-xs text-slate-500">
-                                                {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                {log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                                             </p>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                log.type === 'check_in' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                                            }`}>
-                                                {log.type === 'check_in' ? 'Check In' : 'Check Out'}
-                                            </span>
+                                            <p className="text-sm text-slate-800 font-medium">
+                                                {log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            </p>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-600 capitalize">
-                                            {log.method}
+                                        <td className="px-6 py-4 text-sm text-slate-800 font-medium">
+                                            {log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
