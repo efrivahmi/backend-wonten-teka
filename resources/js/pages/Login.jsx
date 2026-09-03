@@ -43,32 +43,32 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-500 to-green-900 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="p-8 text-center bg-green-50 border-b border-green-100">
-                    <h1 className="text-3xl font-extrabold text-green-800 tracking-tight">Wonten Teka</h1>
-                    <p className="text-green-600 mt-2 text-sm">Sistem Presensi Lemdiklat Taruna Nusantara</p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-lg border border-slate-200 w-full max-w-md overflow-hidden">
+                <div className="p-8 text-center border-b border-slate-100">
+                    <h1 className="text-3xl font-bold text-emerald-800 tracking-tight">Wonten Teka</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Sistem Presensi Lemdiklat Taruna Nusantara</p>
                 </div>
                 
                 <div className="p-8">
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
+                        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
                             {error}
                         </div>
                     )}
                     
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-gray-400" />
+                                    <Mail className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input 
                                     type="email" 
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10 w-full rounded-xl border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50 py-3 border px-4"
+                                    className="pl-10 w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 focus:ring-opacity-50 py-2.5 border px-4 text-slate-800"
                                     placeholder="Masukkan email anda"
                                     required
                                 />
@@ -76,16 +76,16 @@ const Login = () => {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
+                                    <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input 
                                     type="password" 
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 w-full rounded-xl border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50 py-3 border px-4"
+                                    className="pl-10 w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 focus:ring-opacity-50 py-2.5 border px-4 text-slate-800"
                                     placeholder="Masukkan password anda"
                                     required
                                 />
@@ -95,15 +95,15 @@ const Login = () => {
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-green-600 to-green-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:from-green-700 hover:to-green-900 transition-all transform hover:scale-[1.02] active:scale-95 flex justify-center items-center"
+                            className="w-full bg-emerald-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow hover:bg-emerald-700 transition-colors flex justify-center items-center mt-4"
                         >
                             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Masuk (Login)'}
                         </button>
                     </form>
                 </div>
                 
-                <div className="bg-gray-50 p-4 text-center text-xs text-gray-500">
-                    &copy; 2026 Lemdiklat Taruna Nusantara Indonesia
+                <div className="bg-slate-50 p-4 text-center text-xs text-slate-500 border-t border-slate-100">
+                    &copy; {new Date().getFullYear()} Lemdiklat Taruna Nusantara Indonesia
                 </div>
             </div>
         </div>
