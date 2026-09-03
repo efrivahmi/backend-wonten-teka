@@ -11,24 +11,37 @@ import {
     X,
     Shield,
     Bell,
-    Settings
+    MapPin,
+    CalendarCheck,
+    ChevronDown
 } from 'lucide-react';
 import api from '../api';
 
 const AdminLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [openMenus, setOpenMenus] = useState({'Pengaturan Absensi': true});
     const location = useLocation();
     const navigate = useNavigate();
     
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+    const toggleMenu = (name) => {
+        setOpenMenus(prev => ({...prev, [name]: !prev[name]}));
+    };
+
     const navigation = [
         { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
         { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
         { name: 'Karyawan', href: '/admin/employees', icon: Users },
-        { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
+        { 
+            name: 'Pengaturan Absensi', 
+            icon: CalendarCheck, 
+            children: [
+                { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
+                { name: 'Lokasi Absensi', href: '/admin/settings', icon: MapPin },
+            ]
+        },
         { name: 'Laporan', href: '/admin/reports', icon: FileBarChart },
-        { name: 'Pengaturan', href: '/admin/settings', icon: Settings },
     ];
 
     const handleLogout = async () => {
@@ -68,6 +81,52 @@ const AdminLayout = () => {
 
                 <nav className="px-4 py-4 space-y-1 overflow-y-auto" style={{ height: 'calc(100vh - 180px)' }}>
                     {navigation.map((item) => {
+                        if (item.children) {
+                            const isChildActive = item.children.some(child => location.pathname.startsWith(child.href));
+                            const isOpen = openMenus[item.name];
+                            return (
+                                <div key={item.name} className="space-y-1">
+                                    <button
+                                        onClick={() => toggleMenu(item.name)}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                                            isChildActive && !isOpen
+                                            ? 'bg-slate-800 text-white'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                        }`}
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isChildActive ? 'text-emerald-400' : ''}`} />
+                                            <span className={`font-medium text-sm truncate ${isChildActive ? 'text-white' : ''}`}>{item.name}</span>
+                                        </div>
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    
+                                    {isOpen && (
+                                        <div className="pl-11 pr-2 py-1 space-y-1">
+                                            {item.children.map(child => {
+                                                const isActive = location.pathname.startsWith(child.href);
+                                                return (
+                                                    <Link
+                                                        key={child.name}
+                                                        to={child.href}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                                                            isActive 
+                                                            ? 'bg-emerald-600/10 text-emerald-400' 
+                                                            : 'text-slate-400 hover:text-slate-200'
+                                                        }`}
+                                                    >
+                                                        <child.icon className="h-4 w-4 flex-shrink-0" />
+                                                        <span className="font-medium text-sm truncate">{child.name}</span>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+
                         const isActive = location.pathname.startsWith(item.href);
                         return (
                             <Link
