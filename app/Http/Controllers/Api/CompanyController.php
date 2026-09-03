@@ -71,11 +71,11 @@ class CompanyController extends Controller
                 $query->where('target_type', 'company')
                       ->orWhere(function ($q) use ($employee) {
                           $q->where('target_type', 'department')
-                            ->where('target_id', $employee->department);
+                            ->where('target_value', $employee->department);
                       })
                       ->orWhere(function ($q) use ($employee) {
                           $q->where('target_type', 'employee')
-                            ->where('target_id', $employee->id);
+                            ->where('target_value', $employee->id);
                       });
             })
             // Left join to see if the current employee has acknowledged it
@@ -180,15 +180,15 @@ class CompanyController extends Controller
             'content' => 'required|string',
             'priority' => 'required|in:low,normal,high,urgent',
             'target_type' => 'required|in:company,department,employee',
-            'target_id' => 'nullable|string',
+            'target_value' => 'nullable|string',
         ]);
 
         $announcement = Announcement::create([
             'title' => $validated['title'],
-            'content' => $validated['content'],
+            'body' => $validated['content'],
             'priority' => $validated['priority'],
             'target_type' => $validated['target_type'],
-            'target_id' => $validated['target_id'] ?? null,
+            'target_value' => $validated['target_value'] ?? null,
             'created_by' => $user->id,
         ]);
 
