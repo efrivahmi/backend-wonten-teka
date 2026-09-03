@@ -22,11 +22,16 @@ class DeviceForm
                 TextInput::make('device_model'),
                 TextInput::make('os_version'),
                 TextInput::make('app_version'),
-                TextInput::make('status')
+                Select::make('status')
+                    ->options([
+                        'active' => 'Active',
+                        'pending_approval' => 'Pending Approval',
+                        'revoked' => 'Revoked',
+                    ])
                     ->required()
                     ->default('pending_approval'),
-                TextInput::make('approved_by')
-                    ->numeric(),
+                Select::make('approved_by')
+                    ->relationship('approvedByUser', 'name'),
                 DateTimePicker::make('approved_at'),
                 DateTimePicker::make('last_used_at'),
             ]);
