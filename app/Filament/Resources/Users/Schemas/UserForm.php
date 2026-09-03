@@ -22,7 +22,7 @@ class UserForm
                     ->label('Alamat Email')
                     ->email()
                     ->required()
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true, modifyRuleUsing: fn ($rule) => $rule->whereNull('deleted_at')),
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
