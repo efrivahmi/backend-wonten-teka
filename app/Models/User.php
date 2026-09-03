@@ -55,7 +55,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_active; // You can add more strict role checks if needed, e.g., $this->isAdmin()
+        return $this->is_active && $this->isAdmin();
     }
 
     // Scopes
