@@ -5,6 +5,12 @@ import * as faceapi from 'face-api.js';
 import { Camera, Loader2, CheckCircle2 } from 'lucide-react';
 import api from '../../api';
 
+const steps = [
+    { title: 'Menghadap Depan', instruction: 'Posisikan wajah Anda tepat di tengah.' },
+    { title: 'Menoleh Kiri', instruction: 'Tolehkan wajah Anda sedikit ke kiri.' },
+    { title: 'Menoleh Kanan', instruction: 'Tolehkan wajah Anda sedikit ke kanan.' },
+];
+
 const FaceEnrollment = () => {
     const webcamRef = useRef(null);
     const navigate = useNavigate();
@@ -16,12 +22,6 @@ const FaceEnrollment = () => {
     const [message, setMessage] = useState('Memuat AI pendeteksi wajah...');
     const [saving, setSaving] = useState(false);
     const [deviceId, setDeviceId] = useState('web_browser');
-
-    const steps = [
-        { title: 'Menghadap Depan', instruction: 'Posisikan wajah Anda tepat di tengah.' },
-        { title: 'Menoleh Kiri', instruction: 'Tolehkan wajah Anda sedikit ke kiri.' },
-        { title: 'Menoleh Kanan', instruction: 'Tolehkan wajah Anda sedikit ke kanan.' },
-    ];
 
     useEffect(() => {
         const loadModels = async () => {
@@ -52,58 +52,80 @@ const FaceEnrollment = () => {
 
     const [referenceImage, setReferenceImage] = useState(null);
 
-    const captureAndDetect = async () => {
-        if (!webcamRef.current || !modelsLoaded || detecting) return;
+    useEffect(() => {
+        let isMounted = true;
+        let timeoutId = null;
 
-        setDetecting(true);
-        setMessage('Menganalisis wajah...');
-
-        try {
-            const video = webcamRef.current.video;
-            if (video.readyState !== 4) {
-                setDetecting(false);
+        const processDetection = async () => {
+            if (!webcamRef.current || !modelsLoaded || saving || step > 2) {
+                if (isMounted && step <= 2 && !saving) timeoutId = setTimeout(processDetection, 1000);
                 return;
             }
 
-            // Detect face
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
+            try {
+                const video = webcamRef.current.video;
+                if (video.readyState !== 4) {
+                    if (isMounted) timeoutId = setTimeout(processDetection, 1000);
+                    return;
+                }
 
-            if (detection) {
-                // We found a face!
-                const score = detection.detection.score;
-                if (score > 0.8) {
-                    // Good quality face
-                    const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
-                    setEmbeddings(newEmbeddings);
-                    
-                    if (step === 0) {
-                        // Capture image on first step (front)
-                        const imageSrc = webcamRef.current.getScreenshot();
-                        setReferenceImage(imageSrc);
-                    }
-                    
-                    if (step < 2) {
-                        setStep(step + 1);
-                        setMessage(`Bagus! Tingkat kecocokan/kejelasan: ${(score * 100).toFixed(0)}%. Selanjutnya: ${steps[step + 1].instruction}`);
+                setDetecting(true);
+                
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (detection) {
+                    const score = detection.detection.score;
+                    if (score > 0.8) {
+                        const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
+                        
+                        let currentRefImage = referenceImage;
+                        if (step === 0) {
+                            currentRefImage = webcamRef.current.getScreenshot();
+                            setReferenceImage(currentRefImage);
+                        }
+                        
+                        if (step < 2) {
+                            setEmbeddings(newEmbeddings);
+                            setStep(step + 1);
+                            setMessage(`Bagus! Tingkat kecocokan/kejelasan: ${(score * 100).toFixed(0)}%. Selanjutnya: ${steps[step + 1].instruction}`);
+                            setDetecting(false);
+                            return; // Re-run effect with new step
+                        } else {
+                            // Finished
+                            setEmbeddings(newEmbeddings);
+                            setStep(step + 1);
+                            setDetecting(false);
+                            saveBiometrics(newEmbeddings, currentRefImage || webcamRef.current.getScreenshot());
+                            return;
+                        }
                     } else {
-                        // Finished
-                        saveBiometrics(newEmbeddings, referenceImage || webcamRef.current.getScreenshot());
+                        setMessage(`Wajah terdeteksi (Skor: ${(score * 100).toFixed(0)}%), tetapi kurang jelas. Posisikan lebih baik.`);
                     }
                 } else {
-                    setMessage(`Wajah terdeteksi (Skor: ${(score * 100).toFixed(0)}%), tetapi kurang jelas. Cari pencahayaan lebih baik.`);
+                    setMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
                 }
-            } else {
-                setMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
+            } catch (error) {
+                console.error(error);
+                setMessage('Terjadi kesalahan saat pemindaian.');
             }
-        } catch (error) {
-            console.error(error);
-            setMessage('Terjadi kesalahan saat pemindaian.');
-        } finally {
-            setTimeout(() => setDetecting(false), 1000); // 1 sec cooldown
+
+            setDetecting(false);
+            if (isMounted) {
+                timeoutId = setTimeout(processDetection, 1500);
+            }
+        };
+
+        if (modelsLoaded && !saving && step <= 2) {
+             processDetection();
         }
-    };
+
+        return () => {
+            isMounted = false;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [modelsLoaded, saving, step, embeddings, referenceImage, deviceId, steps]);
 
     const saveBiometrics = async (finalEmbeddings, imageBase64) => {
         setSaving(true);
@@ -167,14 +189,10 @@ const FaceEnrollment = () => {
                         ))}
                     </div>
 
-                    <button
-                        onClick={captureAndDetect}
-                        disabled={!modelsLoaded || detecting || saving || step > 2}
-                        className="w-full bg-emerald-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-emerald-700 transition flex justify-center items-center disabled:opacity-50"
-                    >
-                        {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Camera className="h-5 w-5 mr-2" />}
-                        {saving ? 'Menyimpan...' : 'Ambil Gambar'}
-                    </button>
+                    <div className="w-full bg-slate-100 text-slate-700 font-medium py-3 px-4 rounded-lg flex justify-center items-center">
+                        {(saving || detecting) ? <Loader2 className="animate-spin h-5 w-5 mr-2 text-emerald-600" /> : <Camera className="h-5 w-5 mr-2 text-slate-500" />}
+                        {saving ? 'Menyimpan Data...' : (modelsLoaded && step <= 2) ? 'Memindai Otomatis...' : 'Selesai'}
+                    </div>
                 </div>
             </div>
         </div>
