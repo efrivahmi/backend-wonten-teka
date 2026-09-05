@@ -52,15 +52,54 @@ const DeviceRegister = () => {
         checkDevice();
     }, [navigate]);
 
+    const getDeviceInfo = () => {
+        const ua = navigator.userAgent;
+        let browser = "Web Browser";
+        let os = "Unknown OS";
+        let deviceModel = "";
+
+        if (ua.includes("Firefox")) browser = "Firefox";
+        else if (ua.includes("SamsungBrowser")) browser = "Samsung Internet";
+        else if (ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
+        else if (ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
+        else if (ua.includes("Chrome")) browser = "Chrome";
+        else if (ua.includes("Safari")) browser = "Safari";
+
+        if (ua.includes("Windows NT 10.0")) os = "Windows 10/11";
+        else if (ua.includes("Windows NT 6.3")) os = "Windows 8.1";
+        else if (ua.includes("Windows NT 6.2")) os = "Windows 8";
+        else if (ua.includes("Windows NT 6.1")) os = "Windows 7";
+        else if (ua.includes("Mac OS X")) os = "Mac OS";
+        else if (ua.includes("Android")) {
+            const match = ua.match(/Android\s([0-9\.]+)/);
+            os = match ? `Android ${match[1]}` : "Android";
+            // Simple extraction for Android device model
+            const deviceMatch = ua.match(/\bAndroid[^;]*;(.*?)(?:Build|\))/i);
+            if (deviceMatch && deviceMatch[1]) {
+                deviceModel = deviceMatch[1].replace(/wv/g, '').trim();
+            }
+        }
+        else if (ua.includes("iPhone")) { os = "iOS"; deviceModel = "iPhone"; }
+        else if (ua.includes("iPad")) { os = "iOS"; deviceModel = "iPad"; }
+        else if (ua.includes("Linux")) os = "Linux";
+
+        let finalDeviceName = deviceModel ? `${deviceModel} (${browser})` : `${os} (${browser})`;
+        
+        return {
+            deviceName: finalDeviceName.substring(0, 50),
+            osVersion: os.substring(0, 50)
+        };
+    };
+
     const handleRegister = async () => {
         setRegistering(true);
         setError(null);
         try {
-            const browserInfo = navigator.userAgent;
+            const deviceInfo = getDeviceInfo();
             await api.post('/device/register', {
                 device_fingerprint: fingerprint,
-                device_name: 'Web Browser (' + navigator.platform + ')',
-                os_version: browserInfo.substring(0, 50), // simple truncation for now
+                device_name: deviceInfo.deviceName,
+                os_version: deviceInfo.osVersion,
                 app_version: 'web-1.0'
             });
 

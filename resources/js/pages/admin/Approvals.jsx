@@ -46,9 +46,11 @@ const Approvals = () => {
     };
 
     const getRequestTypeInfo = (typeString) => {
+        if (!typeString) return { label: 'Lainnya', color: 'bg-slate-100 text-slate-800' };
         if (typeString.includes('Leave')) return { label: 'Cuti', color: 'bg-emerald-100 text-emerald-800' };
         if (typeString.includes('Overtime')) return { label: 'Lembur', color: 'bg-blue-100 text-blue-800' };
         if (typeString.includes('Claim')) return { label: 'Klaim', color: 'bg-amber-100 text-amber-800' };
+        if (typeString.includes('Device')) return { label: 'Perangkat', color: 'bg-indigo-100 text-indigo-800' };
         return { label: 'Lainnya', color: 'bg-slate-100 text-slate-800' };
     };
 
@@ -93,6 +95,15 @@ const Approvals = () => {
                                     const typeInfo = getRequestTypeInfo(approval.approvable_type);
                                     const approvableData = approval.approvable || {};
                                     
+                                    // Detail text mapping
+                                    let detailText = approvableData.reason || approvableData.notes || 'Pengajuan standar';
+                                    let subDetailText = approvableData.start_date ? `${approvableData.start_date} s/d ${approvableData.end_date}` : '';
+                                    
+                                    if (approval.approvable_type && approval.approvable_type.includes('Device')) {
+                                        detailText = approvableData.device_name || 'Perangkat Baru';
+                                        subDetailText = `OS: ${approvableData.os_version || '-'}`;
+                                    }
+
                                     return (
                                         <tr key={approval.id} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="px-6 py-4">
@@ -115,11 +126,11 @@ const Approvals = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 max-w-xs">
-                                                <p className="text-sm font-medium text-slate-800 truncate">
-                                                    {approvableData.reason || approvableData.notes || 'Pengajuan standar'}
+                                                <p className="text-sm font-medium text-slate-800 truncate" title={detailText}>
+                                                    {detailText}
                                                 </p>
-                                                <p className="text-xs text-slate-500 truncate">
-                                                    {approvableData.start_date ? `${approvableData.start_date} s/d ${approvableData.end_date}` : ''}
+                                                <p className="text-xs text-slate-500 truncate" title={subDetailText}>
+                                                    {subDetailText}
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4">
