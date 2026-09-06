@@ -87,6 +87,7 @@ const DeviceRegister = () => {
         
         return {
             deviceName: finalDeviceName.substring(0, 50),
+            deviceModel: (deviceModel || (os.includes("Windows") || os.includes("Mac") || os.includes("Linux") ? "Desktop/Laptop PC" : "Unknown Mobile")).substring(0, 50),
             osVersion: os.substring(0, 50)
         };
     };
@@ -99,6 +100,7 @@ const DeviceRegister = () => {
             await api.post('/device/register', {
                 device_fingerprint: fingerprint,
                 device_name: deviceInfo.deviceName,
+                device_model: deviceInfo.deviceModel,
                 os_version: deviceInfo.osVersion,
                 app_version: 'web-1.0'
             });

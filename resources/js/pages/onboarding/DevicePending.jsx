@@ -1,10 +1,51 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft } from 'lucide-react';
+import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../../api';
 
 const DevicePending = () => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        let intervalId;
+        const checkStatus = async () => {
+            try {
+                const fp = await fpPromise.load();
+                const result = await fp.get();
+                
+                const response = await api.get('/device/status', {
+                    params: { device_fingerprint: result.visitorId }
+                });
+
+                if (response.data.device && response.data.device.status === 'active') {
+                    // Disetujui
+                    clearInterval(intervalId);
+                    const userStr = localStorage.getItem('user');
+                    const userObj = userStr ? JSON.parse(userStr) : null;
+                    if (userObj && userObj.is_super_admin) {
+                        navigate('/admin/dashboard');
+                    } else {
+                        navigate('/employee/dashboard');
+                    }
+                } else if (!response.data.device || response.data.device.status !== 'pending_approval') {
+                    // Ditolak / Dihapus
+                    clearInterval(intervalId);
+                    navigate('/onboarding/device');
+                }
+            } catch (err) {
+                if (err.response?.status === 404) {
+                    clearInterval(intervalId);
+                    navigate('/onboarding/device');
+                }
+            }
+        };
+
+        checkStatus(); // Cek langsung saat komponen dimuat
+        intervalId = setInterval(checkStatus, 5000); // Polling setiap 5 detik
+
+        return () => clearInterval(intervalId);
+    }, [navigate]);
 
     const handleLogout = async () => {
         try {

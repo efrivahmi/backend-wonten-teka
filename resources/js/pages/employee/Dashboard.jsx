@@ -108,25 +108,34 @@ const EmployeeDashboard = () => {
                     </div>
                     
                     <div className="mt-auto border-t border-slate-100 pt-6">
-                        <h3 className="text-sm font-bold text-slate-800 mb-3 text-center uppercase tracking-wider">Aksi Absensi (Simulasi Web)</h3>
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 text-center uppercase tracking-wider">Aksi Absensi (Berdasarkan Lokasi GPS Web)</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <button 
                                 onClick={async () => {
-                                    try {
-                                        setLoading(true);
-                                        await api.post('/attendance/check-in', {
-                                            latitude: -6.1754, // Simulasi Jakarta (sesuai geofence DB)
-                                            longitude: 106.8272,
-                                            face_match_score: 0.95,
-                                            device_id: 'web-browser-simulator'
-                                        });
-                                        await fetchData();
-                                        alert('Berhasil Check-In!');
-                                    } catch (e) {
-                                        alert('Gagal Check-In: ' + (e.response?.data?.message || 'Error Server'));
-                                    } finally {
-                                        setLoading(false);
+                                    if (!navigator.geolocation) {
+                                        alert("Browser Anda tidak mendukung deteksi lokasi (GPS).");
+                                        return;
                                     }
+                                    setLoading(true);
+                                    navigator.geolocation.getCurrentPosition(async (position) => {
+                                        try {
+                                            await api.post('/attendance/check-in', {
+                                                latitude: position.coords.latitude,
+                                                longitude: position.coords.longitude,
+                                                face_match_score: 0.95, // Simulasi face match sukses untuk versi Web
+                                                device_id: 'web-browser'
+                                            });
+                                            await fetchData();
+                                            alert('Berhasil Check-In!');
+                                        } catch (e) {
+                                            alert('Gagal Check-In: ' + (e.response?.data?.message || 'Error Server'));
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }, (error) => {
+                                        setLoading(false);
+                                        alert("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi (Location) diizinkan di browser Anda.");
+                                    }, { enableHighAccuracy: true });
                                 }}
                                 disabled={todayInfo?.check_in_time}
                                 className={`flex items-center justify-center px-4 py-3 rounded-xl font-bold transition-all ${
@@ -141,21 +150,30 @@ const EmployeeDashboard = () => {
                             
                             <button 
                                 onClick={async () => {
-                                    try {
-                                        setLoading(true);
-                                        await api.post('/attendance/check-out', {
-                                            latitude: -6.1754,
-                                            longitude: 106.8272,
-                                            face_match_score: 0.95,
-                                            device_id: 'web-browser-simulator'
-                                        });
-                                        await fetchData();
-                                        alert('Berhasil Check-Out!');
-                                    } catch (e) {
-                                        alert('Gagal Check-Out: ' + (e.response?.data?.message || 'Error Server'));
-                                    } finally {
-                                        setLoading(false);
+                                    if (!navigator.geolocation) {
+                                        alert("Browser Anda tidak mendukung deteksi lokasi (GPS).");
+                                        return;
                                     }
+                                    setLoading(true);
+                                    navigator.geolocation.getCurrentPosition(async (position) => {
+                                        try {
+                                            await api.post('/attendance/check-out', {
+                                                latitude: position.coords.latitude,
+                                                longitude: position.coords.longitude,
+                                                face_match_score: 0.95,
+                                                device_id: 'web-browser'
+                                            });
+                                            await fetchData();
+                                            alert('Berhasil Check-Out!');
+                                        } catch (e) {
+                                            alert('Gagal Check-Out: ' + (e.response?.data?.message || 'Error Server'));
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }, (error) => {
+                                        setLoading(false);
+                                        alert("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi (Location) diizinkan di browser Anda.");
+                                    }, { enableHighAccuracy: true });
                                 }}
                                 disabled={!todayInfo?.check_in_time || todayInfo?.check_out_time}
                                 className={`flex items-center justify-center px-4 py-3 rounded-xl font-bold transition-all ${

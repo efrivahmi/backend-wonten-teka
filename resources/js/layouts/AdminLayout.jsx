@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, 
@@ -15,6 +15,7 @@ import {
     CalendarCheck,
     ChevronDown
 } from 'lucide-react';
+import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../api';
 
 const AdminLayout = () => {
@@ -24,6 +25,41 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Bounce-out mechanism if device is revoked/rejected while logged in
+    useEffect(() => {
+        // Skip for super admin
+        if (user && user.is_super_admin) return;
+
+        let intervalId;
+        const checkDeviceValidity = async () => {
+            try {
+                const fp = await fpPromise.load();
+                const result = await fp.get();
+                
+                const response = await api.get('/device/status', {
+                    params: { device_fingerprint: result.visitorId }
+                });
+
+                if (!response.data.device || response.data.device.status !== 'active') {
+                    // Device revoked or not active anymore
+                    clearInterval(intervalId);
+                    navigate('/onboarding/device');
+                }
+            } catch (err) {
+                if (err.response?.status === 404) {
+                    // Device completely deleted from DB
+                    clearInterval(intervalId);
+                    navigate('/onboarding/device');
+                }
+            }
+        };
+
+        checkDeviceValidity(); // Initial check
+        intervalId = setInterval(checkDeviceValidity, 15000); // Check every 15s
+
+        return () => clearInterval(intervalId);
+    }, [navigate, user]);
 
     const toggleMenu = (name) => {
         setOpenMenus(prev => ({...prev, [name]: !prev[name]}));

@@ -107,7 +107,7 @@ class AttendanceController extends Controller
         $geofence = $geofenceSetting ? $geofenceSetting->value : null;
 
         // Geofence Check - Reject if not set
-        if (!$geofence || empty($geofence['latitude']) || empty($geofence['longitude'])) {
+        if (!$geofence || !isset($geofence['latitude']) || !isset($geofence['longitude']) || $geofence['latitude'] === '' || $geofence['longitude'] === '') {
             return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
         }
 
@@ -242,7 +242,7 @@ class AttendanceController extends Controller
         $geofence = $geofenceSetting ? $geofenceSetting->value : null;
 
         // Geofence check for checkout
-        if (!$geofence || empty($geofence['latitude']) || empty($geofence['longitude'])) {
+        if (!$geofence || !isset($geofence['latitude']) || !isset($geofence['longitude']) || $geofence['latitude'] === '' || $geofence['longitude'] === '') {
             return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
         }
         $distance = $this->calculateDistanceMeters(
