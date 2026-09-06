@@ -65,4 +65,28 @@ class ApprovalController extends Controller
             return response()->json(['message' => $e->getMessage()], 400);
         }
     }
+
+    /**
+     * Delete an approval request permanently (Admin override).
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $instance = ApprovalInstance::findOrFail($id);
+        
+        // Also delete the underlying request if it exists
+        if ($instance->approvable) {
+            $instance->approvable->delete();
+        }
+
+        $instance->delete();
+
+        return response()->json([
+            'message' => 'Approval instance deleted successfully.'
+        ]);
+    }
 }

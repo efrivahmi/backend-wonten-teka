@@ -80,6 +80,58 @@ class AttendanceAdminController extends Controller
             'data' => $log
         ]);
     }
+
+    /**
+     * Update an attendance log manually (Admin override).
+     */
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $log = AttendanceLog::findOrFail($id);
+
+        $validated = $request->validate([
+            'check_in_at' => 'nullable|date',
+            'check_out_at' => 'nullable|date',
+            'status' => 'nullable|string'
+        ]);
+
+        if (array_key_exists('check_in_at', $validated)) {
+            $log->check_in_at = $validated['check_in_at'];
+        }
+        if (array_key_exists('check_out_at', $validated)) {
+            $log->check_out_at = $validated['check_out_at'];
+        }
+        if (isset($validated['status'])) {
+            $log->status = $validated['status'];
+        }
+
+        $log->save();
+
+        return response()->json([
+            'message' => 'Attendance log updated successfully.',
+            'data' => $log
+        ]);
+    }
+
+    /**
+     * Delete an attendance log (Admin override).
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $log = AttendanceLog::findOrFail($id);
+        $log->delete();
+
+        return response()->json([
+            'message' => 'Attendance log deleted successfully.'
+        ]);
+    }
 }
-
-

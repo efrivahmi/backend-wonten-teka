@@ -88,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('approvals')->group(function () {
         Route::get('/pending', [ApprovalController::class, 'pending']);
         Route::post('/{instance}/action', [ApprovalController::class, 'action']);
+        Route::delete('/{id}', [ApprovalController::class, 'destroy']);
     });
 
     Route::prefix('claims')->group(function () {
@@ -160,8 +161,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'update']);
         Route::delete('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'destroy']);
         
-        // Attendance Flags
+        // Attendance Flags & Admin CRUD
         Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);
+        Route::put('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'update']);
+        Route::delete('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'destroy']);
         Route::get('/attendance-flags', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'flags']);
         Route::post('/attendance-flags/{id}/resolve', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'resolveFlag']);
         

@@ -5,7 +5,8 @@ import {
     Loader2, 
     FileText, 
     Clock, 
-    Filter
+    Filter,
+    Trash2
 } from 'lucide-react';
 import api from '../../api';
 
@@ -40,6 +41,20 @@ const Approvals = () => {
         } catch (error) {
             console.error("Error processing approval action:", error);
             alert("Gagal memproses persetujuan. Silakan coba lagi.");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Apakah Anda yakin ingin menghapus pengajuan ini secara permanen?")) return;
+        try {
+            setActionLoading(id);
+            await api.delete(`/approvals/${id}`);
+            setApprovals((prev) => prev.filter((app) => app.id !== id));
+        } catch (error) {
+            console.error("Error deleting approval:", error);
+            alert("Gagal menghapus persetujuan.");
         } finally {
             setActionLoading(null);
         }
@@ -144,6 +159,13 @@ const Approvals = () => {
                                                     <Loader2 className="h-6 w-6 animate-spin text-slate-400 inline-block" />
                                                 ) : (
                                                     <div className="flex justify-end space-x-2">
+                                                        <button 
+                                                            onClick={() => handleDelete(approval.id)}
+                                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                            title="Hapus Permanen"
+                                                        >
+                                                            <Trash2 className="h-5 w-5" />
+                                                        </button>
                                                         <button 
                                                             onClick={() => handleAction(approval.id, 'reject')}
                                                             className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
