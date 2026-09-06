@@ -5,7 +5,10 @@ import {
     Clock, 
     MoreVertical, 
     Loader2,
-    Save
+    Save,
+    X,
+    Trash2,
+    Edit2
 } from 'lucide-react';
 import api from '../../api';
 
@@ -16,6 +19,19 @@ const Schedule = () => {
     // Working Days
     const [workingDays, setWorkingDays] = useState([]);
     const [savingWorkingDays, setSavingWorkingDays] = useState(false);
+
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingShift, setEditingShift] = useState(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        start_time: '08:00',
+        end_time: '17:00',
+        grace_period_minutes: 15,
+        is_default: false
+    });
+    const [savingShift, setSavingShift] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState(null);
 
     const DAYS = [
         { id: 1, name: 'Senin' },
@@ -68,6 +84,72 @@ const Schedule = () => {
         }
     };
 
+    // --- SHIFT CRUD LOGIC ---
+    const openAddModal = () => {
+        setEditingShift(null);
+        setFormData({
+            name: '',
+            start_time: '08:00',
+            end_time: '17:00',
+            grace_period_minutes: 15,
+            is_default: false
+        });
+        setIsModalOpen(true);
+        setActiveDropdown(null);
+    };
+
+    const openEditModal = (shift) => {
+        setEditingShift(shift);
+        setFormData({
+            name: shift.name,
+            start_time: shift.start_time.substring(0, 5),
+            end_time: shift.end_time.substring(0, 5),
+            grace_period_minutes: shift.grace_period_minutes,
+            is_default: shift.is_default === 1 || shift.is_default === true
+        });
+        setIsModalOpen(true);
+        setActiveDropdown(null);
+    };
+
+    const handleFormChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
+    };
+
+    const saveShift = async (e) => {
+        e.preventDefault();
+        try {
+            setSavingShift(true);
+            if (editingShift) {
+                await api.put(`/admin/shifts/${editingShift.id}`, formData);
+            } else {
+                await api.post('/admin/shifts', formData);
+            }
+            setIsModalOpen(false);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to save shift", error);
+            alert(error.response?.data?.message || "Gagal menyimpan template shift.");
+        } finally {
+            setSavingShift(false);
+        }
+    };
+
+    const deleteShift = async (id) => {
+        if (!window.confirm("Apakah Anda yakin ingin menghapus template shift ini?")) return;
+        try {
+            await api.delete(`/admin/shifts/${id}`);
+            fetchData();
+            setActiveDropdown(null);
+        } catch (error) {
+            console.error("Failed to delete shift", error);
+            alert("Gagal menghapus shift.");
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -86,7 +168,10 @@ const Schedule = () => {
                     <p className="text-slate-500 mt-1">Kelola jam kerja dan rotasi shift karyawan.</p>
                 </div>
                 <div className="flex space-x-2">
-                    <button className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm">
+                    <button 
+                        onClick={openAddModal}
+                        className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+                    >
                         <Plus className="h-4 w-4" />
                         <span>Tambah Shift</span>
                     </button>
@@ -143,7 +228,7 @@ const Schedule = () => {
                 <h2 className="text-xl font-bold text-slate-800 mb-4">Template Shift (Jam Kerja)</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {shifts.map((shift) => (
-                        <div key={shift.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:border-emerald-300 transition-colors">
+                        <div key={shift.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:border-emerald-300 transition-colors relative">
                             <div className="p-5 border-b border-slate-100 flex justify-between items-start">
                                 <div>
                                     <h3 className="font-bold text-lg text-slate-800">{shift.name}</h3>
@@ -157,9 +242,30 @@ const Schedule = () => {
                                         </span>
                                     )}
                                 </div>
-                                <button className="text-slate-400 hover:text-emerald-600 transition-colors">
-                                    <MoreVertical className="h-5 w-5" />
-                                </button>
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => setActiveDropdown(activeDropdown === shift.id ? null : shift.id)}
+                                        className="text-slate-400 hover:text-emerald-600 transition-colors p-1"
+                                    >
+                                        <MoreVertical className="h-5 w-5" />
+                                    </button>
+                                    {activeDropdown === shift.id && (
+                                        <div className="absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10">
+                                            <button 
+                                                onClick={() => openEditModal(shift)}
+                                                className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
+                                            >
+                                                <Edit2 className="h-4 w-4 mr-2 text-blue-500" /> Edit
+                                            </button>
+                                            <button 
+                                                onClick={() => deleteShift(shift.id)}
+                                                className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center text-rose-600"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" /> Hapus
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="p-5 bg-slate-50 space-y-4">
                                 <div className="flex items-center justify-between">
@@ -203,8 +309,110 @@ const Schedule = () => {
                 )}
             </div>
             
+            {/* MODAL FORM */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden">
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
+                            <h3 className="font-bold text-slate-800 text-lg">
+                                {editingShift ? 'Edit Template Shift' : 'Tambah Template Shift'}
+                            </h3>
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={saveShift} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Shift</label>
+                                <input 
+                                    type="text" 
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleFormChange}
+                                    placeholder="Contoh: Shift Pagi"
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Jam Masuk</label>
+                                    <input 
+                                        type="time" 
+                                        name="start_time"
+                                        value={formData.start_time}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Jam Keluar</label>
+                                    <input 
+                                        type="time" 
+                                        name="end_time"
+                                        value={formData.end_time}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Toleransi Telat (Menit)</label>
+                                <input 
+                                    type="number" 
+                                    name="grace_period_minutes"
+                                    value={formData.grace_period_minutes}
+                                    onChange={handleFormChange}
+                                    min="0"
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Batas waktu sebelum absensi masuk dianggap terlambat.</p>
+                            </div>
+                            
+                            <div className="flex items-center mt-2">
+                                <input 
+                                    type="checkbox" 
+                                    id="is_default"
+                                    name="is_default"
+                                    checked={formData.is_default}
+                                    onChange={handleFormChange}
+                                    className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500"
+                                />
+                                <label htmlFor="is_default" className="ml-2 text-sm font-medium text-slate-700">
+                                    Jadikan sebagai Shift Default
+                                </label>
+                            </div>
+                            
+                            <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={savingShift}
+                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center"
+                                >
+                                    {savingShift && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                    Simpan Shift
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            
         </div>
     );
 };
 
 export default Schedule;
+

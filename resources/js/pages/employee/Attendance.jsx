@@ -187,9 +187,15 @@ const Attendance = () => {
                 const fp = await import('@fingerprintjs/fingerprintjs').then(fpPromise => fpPromise.load());
                 const fpResult = await fp.get();
 
-                // Convert base64 to Blob
-                const res = await fetch(imageBase64);
-                const blob = await res.blob();
+                // Convert base64 to Blob reliably
+                const byteString = atob(imageBase64.split(',')[1]);
+                const mimeString = imageBase64.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const blob = new Blob([ab], {type: mimeString});
 
                 // Use FormData for file upload
                 const formData = new FormData();
