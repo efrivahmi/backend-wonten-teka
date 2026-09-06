@@ -4,13 +4,15 @@ import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
 import { 
     CalendarCheck, 
-    Filter, 
     Loader2, 
     MapPin,
     LogIn,
     LogOut,
     Camera,
-    AlertCircle
+    AlertCircle,
+    ChevronLeft,
+    ChevronRight,
+    X
 } from 'lucide-react';
 import api from '../../api';
 
@@ -21,6 +23,16 @@ const Attendance = () => {
 
     const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState([]);
+    
+    // Calendar state
+    const today = new Date();
+    const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1);
+    const [currentYear, setCurrentYear] = useState(today.getFullYear());
+    const [workingDays, setWorkingDays] = useState([1, 2, 3, 4, 5]); // default Mon-Fri (1-5)
+
+    // Modal state
+    const [selectedLog, setSelectedLog] = useState(null);
+    const [modalDate, setModalDate] = useState(null);
 
     // Scanner states
     const webcamRef = useRef(null);
@@ -33,11 +45,35 @@ const Attendance = () => {
 
     useEffect(() => {
         if (!action) {
+            fetchWorkingDays();
             fetchHistory();
         } else {
             setupScanner();
         }
-    }, [action]);
+    }, [action, currentMonth, currentYear]);
+
+    const fetchWorkingDays = async () => {
+        try {
+            const res = await api.get('/company/working-days');
+            if (res.data.working_days) {
+                setWorkingDays(res.data.working_days);
+            }
+        } catch (e) {
+            console.error('Failed to fetch working days');
+        }
+    };
+
+    const fetchHistory = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get(`/attendance/history?month=${currentMonth}&year=${currentYear}`);
+            setHistory(response.data.data || []);
+        } catch (error) {
+            console.error("Error fetching attendance history:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const setupScanner = async () => {
         try {
@@ -56,18 +92,6 @@ const Attendance = () => {
         } catch (err) {
             console.error(err);
             setScanError('Gagal memuat AI atau data wajah. Pastikan Anda sudah mendaftarkan wajah (Enrollment).');
-        }
-    };
-
-    const fetchHistory = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get('/attendance/history');
-            setHistory(response.data.data || []);
-        } catch (error) {
-            console.error("Error fetching attendance history:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -101,9 +125,13 @@ const Attendance = () => {
                     }
 
                     if (bestMatch < 0.45) { // Threshold for matching
-                        setScanMessage('Wajah Cocok! Memeriksa lokasi GPS...');
+                        setScanMessage('Wajah Cocok! Mengambil foto dan lokasi GPS...');
                         setScanning(false);
-                        handleAttendanceSubmit(1 - bestMatch);
+                        
+                        // Take snapshot
+                        const imageSrc = webcamRef.current.getScreenshot();
+                        
+                        handleAttendanceSubmit(1 - bestMatch, imageSrc);
                         return; // Stop the scanning loop
                     } else {
                         setScanMessage(`Wajah tidak dikenali (Jarak: ${bestMatch.toFixed(2)}). Pastikan pencahayaan baik.`);
@@ -129,7 +157,7 @@ const Attendance = () => {
         };
     }, [action, modelsLoaded, enrolledEmbeddings, submitting]);
 
-    const handleAttendanceSubmit = async (matchScore) => {
+    const handleAttendanceSubmit = async (matchScore, imageBase64) => {
         setSubmitting(true);
         
         if (!navigator.geolocation) {
@@ -159,12 +187,21 @@ const Attendance = () => {
                 const fp = await import('@fingerprintjs/fingerprintjs').then(fpPromise => fpPromise.load());
                 const fpResult = await fp.get();
 
-                await api.post(endpoint, {
-                    latitude: lat,
-                    longitude: lon,
-                    address: address,
-                    face_match_score: matchScore,
-                    device_id: fpResult.visitorId
+                // Convert base64 to Blob
+                const res = await fetch(imageBase64);
+                const blob = await res.blob();
+
+                // Use FormData for file upload
+                const formData = new FormData();
+                formData.append('latitude', lat);
+                formData.append('longitude', lon);
+                formData.append('address', address);
+                formData.append('face_match_score', matchScore);
+                formData.append('device_id', fpResult.visitorId);
+                formData.append('photo', blob, 'attendance.jpg');
+
+                await api.post(endpoint, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 
                 alert(`Berhasil ${action === 'check-in' ? 'Check-In' : 'Check-Out'}!`);
@@ -179,6 +216,72 @@ const Attendance = () => {
             setScanError("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi (Location) diizinkan di browser Anda.");
         }, { enableHighAccuracy: true });
     };
+
+    // --- CALENDAR RENDER HELPERS ---
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1).getDay(); // 0 is Sun, 1 is Mon
+    const startingDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Make Monday = 0
+    
+    const prevMonth = () => {
+        if (currentMonth === 1) {
+            setCurrentMonth(12);
+            setCurrentYear(currentYear - 1);
+        } else {
+            setCurrentMonth(currentMonth - 1);
+        }
+    };
+
+    const nextMonth = () => {
+        if (currentMonth === 12) {
+            setCurrentMonth(1);
+            setCurrentYear(currentYear + 1);
+        } else {
+            setCurrentMonth(currentMonth + 1);
+        }
+    };
+
+    const getLogForDay = (day) => {
+        return history.find(log => {
+            const date = new Date(log.check_in_at);
+            return date.getDate() === day && date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
+        });
+    };
+
+    const getDayStatusColor = (day) => {
+        const log = getLogForDay(day);
+        const loopDate = new Date(currentYear, currentMonth - 1, day);
+        const dayOfWeek = loopDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        const isWorkingDay = workingDays.includes(dayOfWeek === 0 ? 7 : dayOfWeek); // if workingDays uses 1=Mon, 7=Sun
+
+        if (log) {
+            if (log.status === 'present' || log.status === 'on_time') return 'bg-emerald-100 text-emerald-700 border-emerald-300';
+            if (log.status === 'late') return 'bg-amber-100 text-amber-700 border-amber-300';
+            if (log.status === 'flagged') return 'bg-orange-100 text-orange-700 border-orange-300';
+            return 'bg-blue-100 text-blue-700 border-blue-300';
+        }
+
+        // No log
+        // Check if date is in the past
+        today.setHours(0,0,0,0);
+        if (loopDate < today) {
+            if (isWorkingDay) {
+                return 'bg-rose-100 text-rose-700 border-rose-300'; // Missed working day (Alpha)
+            }
+            return 'bg-slate-100 text-slate-400 border-slate-200'; // Past weekend/holiday
+        }
+        
+        return 'bg-white text-slate-600 border-slate-100'; // Future or today (not yet checked in)
+    };
+
+    const openModal = (day) => {
+        const log = getLogForDay(day);
+        const loopDate = new Date(currentYear, currentMonth - 1, day);
+        setModalDate(loopDate);
+        setSelectedLog(log || 'none');
+    };
+
+    const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
     if (action) {
         return (
@@ -246,106 +349,151 @@ const Attendance = () => {
         );
     }
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-            </div>
-        );
-    }
-
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+        <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Riwayat Absensi</h1>
-                    <p className="text-slate-500 mt-1">Pantau kehadiran harian dan riwayat lokasi absen Anda.</p>
+                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Riwayat Absensi (Kalender)</h1>
+                    <p className="text-slate-500 mt-1">Pantau kehadiran harian dan detail lokasi/foto absen Anda.</p>
+                </div>
+                
+                {/* Legend */}
+                <div className="flex space-x-3 text-xs font-medium text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-emerald-400 mr-1.5"></span> Hadir</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-amber-400 mr-1.5"></span> Telat</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-rose-400 mr-1.5"></span> Alpha</div>
                 </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-slate-200 transition text-slate-600">
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
                     <div className="flex items-center space-x-2">
                         <CalendarCheck className="h-5 w-5 text-slate-400" />
-                        <span className="font-medium text-slate-700">Catatan Absensi (30 Hari Terakhir)</span>
+                        <span className="font-bold text-lg text-slate-700">{monthNames[currentMonth - 1]} {currentYear}</span>
                     </div>
+                    <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-slate-200 transition text-slate-600">
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-white text-slate-500 text-sm font-semibold uppercase tracking-wider border-b border-slate-200">
-                                <th className="px-6 py-4">Tanggal</th>
-                                <th className="px-6 py-4">Check In</th>
-                                <th className="px-6 py-4">Check Out</th>
-                                <th className="px-6 py-4 max-w-[200px]">Alamat & Lokasi</th>
-                                <th className="px-6 py-4">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {history.length > 0 ? (
-                                history.map((log) => (
-                                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center text-slate-800 font-medium">
-                                                <CalendarCheck className="h-4 w-4 mr-2 text-slate-400" />
-                                                <span>{log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
+                {loading ? (
+                    <div className="flex items-center justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                    </div>
+                ) : (
+                    <div className="p-6">
+                        <div className="grid grid-cols-7 gap-2 mb-2">
+                            {dayNames.map(day => (
+                                <div key={day} className="text-center text-sm font-bold text-slate-400 uppercase">{day}</div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {/* Empty cells before start of month */}
+                            {Array.from({ length: startingDay }).map((_, i) => (
+                                <div key={`empty-${i}`} className="h-20 rounded-xl bg-slate-50 border border-slate-100 opacity-50"></div>
+                            ))}
+                            
+                            {/* Calendar Days */}
+                            {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const day = i + 1;
+                                const statusClass = getDayStatusColor(day);
+                                return (
+                                    <button 
+                                        key={day}
+                                        onClick={() => openModal(day)}
+                                        className={`h-20 rounded-xl border flex flex-col p-2 hover:opacity-80 transition-opacity relative ${statusClass}`}
+                                    >
+                                        <span className="text-sm font-bold opacity-75">{day}</span>
+                                        {getLogForDay(day) && (
+                                            <div className="mt-auto text-xs font-semibold">
+                                                {new Date(getLogForDay(day).check_in_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`flex items-center px-3 py-1.5 w-fit rounded-lg font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200`}>
-                                                <LogIn className="h-3.5 w-3.5 mr-1.5" />
-                                                {log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`flex items-center px-3 py-1.5 w-fit rounded-lg font-bold text-xs ${log.check_out_at ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-50 text-slate-500 border border-slate-200'}`}>
-                                                <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                                                {log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Belum'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 max-w-[200px]">
-                                            <div className="flex items-start text-sm text-slate-600">
-                                                <MapPin className="h-4 w-4 mr-1.5 text-slate-400 flex-shrink-0 mt-0.5" />
-                                                <div>
-                                                    <span className="capitalize font-medium block truncate" title={log.check_in_address || 'Tdk ada alamat'}>
-                                                        {log.check_in_address ? log.check_in_address.split(',')[0] + ', ...' : (log.check_in_photo_url ? 'Face Recognition' : 'App')}
-                                                    </span>
-                                                    {log.notes && <span className="text-xs text-slate-500">{log.notes}</span>}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                log.status === 'present' || log.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' : 
-                                                log.status === 'late' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-slate-100 text-slate-700'
-                                            }`}>
-                                                {log.status === 'present' ? 'Hadir' : log.status === 'late' ? 'Terlambat' : log.status}
-                                            </span>
-                                            {log.is_flagged && (
-                                                <span className="ml-2 inline-flex px-2 py-1 text-xs font-bold rounded-full bg-rose-100 text-rose-700">
-                                                    Flagged
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <CalendarCheck className="h-12 w-12 text-slate-300 mb-3" />
-                                            <p className="text-lg font-medium text-slate-800">Tidak ada riwayat absensi</p>
-                                            <p className="text-sm mt-1">Anda belum pernah melakukan absensi bulan ini.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* MODAL */}
+            {selectedLog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50">
+                            <h3 className="font-bold text-slate-800 text-lg">
+                                Detail Absensi - {modalDate?.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </h3>
+                            <button onClick={() => setSelectedLog(null)} className="text-slate-400 hover:text-slate-600">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                            {selectedLog === 'none' ? (
+                                <div className="text-center py-8 text-slate-500">
+                                    <AlertCircle className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                                    <p>Tidak ada rekaman absen pada tanggal ini.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Check IN */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center text-emerald-600 font-bold">
+                                            <LogIn className="h-5 w-5 mr-2" /> Check In
+                                        </div>
+                                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
+                                            <div className="flex">
+                                                <span className="w-24 text-slate-500">Waktu:</span>
+                                                <span className="font-bold text-slate-800">{new Date(selectedLog.check_in_at).toLocaleTimeString('id-ID')}</span>
+                                            </div>
+                                            <div className="flex">
+                                                <span className="w-24 text-slate-500">Alamat:</span>
+                                                <span className="font-medium text-slate-700">{selectedLog.check_in_address || 'Tidak ditemukan'}</span>
+                                            </div>
+                                            {selectedLog.check_in_photo_url && (
+                                                <div className="mt-3">
+                                                    <span className="block text-slate-500 mb-2">Foto Bukti:</span>
+                                                    <img src={selectedLog.check_in_photo_url} alt="Check in" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Check OUT */}
+                                    {selectedLog.check_out_at && (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center text-rose-600 font-bold">
+                                                <LogOut className="h-5 w-5 mr-2" /> Check Out
+                                            </div>
+                                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
+                                                <div className="flex">
+                                                    <span className="w-24 text-slate-500">Waktu:</span>
+                                                    <span className="font-bold text-slate-800">{new Date(selectedLog.check_out_at).toLocaleTimeString('id-ID')}</span>
+                                                </div>
+                                                <div className="flex">
+                                                    <span className="w-24 text-slate-500">Alamat:</span>
+                                                    <span className="font-medium text-slate-700">{selectedLog.check_out_address || 'Tidak ditemukan'}</span>
+                                                </div>
+                                                {selectedLog.check_out_photo_url && (
+                                                    <div className="mt-3">
+                                                        <span className="block text-slate-500 mb-2">Foto Bukti:</span>
+                                                        <img src={selectedLog.check_out_photo_url} alt="Check out" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

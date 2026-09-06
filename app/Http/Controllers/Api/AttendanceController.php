@@ -301,11 +301,29 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         
-        $history = AttendanceLog::where('employee_id', $user->employee->id)
-            ->orderBy('check_in_at', 'desc')
-            ->paginate(15);
+        $month = $request->query('month');
+        $year = $request->query('year');
+        
+        $query = AttendanceLog::where('employee_id', $user->employee->id);
+        
+        if ($month && $year) {
+            $query->whereMonth('check_in_at', $month)
+                  ->whereYear('check_in_at', $year);
+        }
+        
+        $history = $query->orderBy('check_in_at', 'desc')->get();
+        
+        $history->transform(function ($log) {
+            if ($log->check_in_photo_url) {
+                $log->check_in_photo_url = asset('storage/' . $log->check_in_photo_url);
+            }
+            if ($log->check_out_photo_url) {
+                $log->check_out_photo_url = asset('storage/' . $log->check_out_photo_url);
+            }
+            return $log;
+        });
             
-        return response()->json($history);
+        return response()->json(['data' => $history]);
     }
 
     /**
