@@ -62,12 +62,16 @@ const EmployeeDashboard = () => {
                         <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100">
                             <LogIn className="h-6 w-6 text-emerald-500 mb-2" />
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jam Masuk</span>
-                            <span className="text-xl font-bold text-slate-800">{todayInfo?.check_in_time || '--:--'}</span>
+                            <span className="text-xl font-bold text-slate-800">
+                                {todayInfo?.check_in_time ? new Date(todayInfo.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </span>
                         </div>
                         <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100">
                             <LogOut className="h-6 w-6 text-rose-500 mb-2" />
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Jam Keluar</span>
-                            <span className="text-xl font-bold text-slate-800">{todayInfo?.check_out_time || '--:--'}</span>
+                            <span className="text-xl font-bold text-slate-800">
+                                {todayInfo?.check_out_time ? new Date(todayInfo.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </span>
                         </div>
                     </div>
                 </div>

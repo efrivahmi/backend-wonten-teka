@@ -351,8 +351,8 @@ class AttendanceController extends Controller
         return response()->json([
             'shift' => $shift,
             'role' => $role,
-            'check_in_time' => $attendance ? Carbon::parse($attendance->check_in_at)->format('H:i') : null,
-            'check_out_time' => $attendance && $attendance->check_out_at ? Carbon::parse($attendance->check_out_at)->format('H:i') : null,
+            'check_in_time' => $attendance ? $attendance->check_in_at : null,
+            'check_out_time' => $attendance && $attendance->check_out_at ? $attendance->check_out_at : null,
             'check_in_address' => $attendance ? $attendance->check_in_address : null,
             'check_out_address' => $attendance ? $attendance->check_out_address : null,
         ]);
