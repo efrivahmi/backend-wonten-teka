@@ -91,6 +91,7 @@ class AttendanceController extends Controller
             'longitude' => 'required|numeric',
             'face_match_score' => 'required|numeric',
             'device_id' => 'required|string',
+            'address' => 'nullable|string',
             'flags' => 'nullable|array',
             'photo' => 'nullable|image|max:10240', // 10MB max
         ]);
@@ -180,6 +181,7 @@ class AttendanceController extends Controller
             'check_in_at' => now(),
             'check_in_latitude' => $request->latitude,
             'check_in_longitude' => $request->longitude,
+            'check_in_address' => $request->address,
             'check_in_face_score' => $request->face_match_score,
             'device_id' => $device ? $device->id : null,
             'check_in_photo_url' => $photoPath,
@@ -217,6 +219,7 @@ class AttendanceController extends Controller
             'longitude' => 'required|numeric',
             'face_match_score' => 'required|numeric',
             'device_id' => 'required|string',
+            'address' => 'nullable|string',
             'flags' => 'nullable|array',
             'photo' => 'nullable|image|max:10240',
         ]);
@@ -285,6 +288,7 @@ class AttendanceController extends Controller
             'check_out_at' => now(),
             'check_out_latitude' => $request->latitude,
             'check_out_longitude' => $request->longitude,
+            'check_out_address' => $request->address,
             'check_out_face_score' => $request->face_match_score,
             'check_out_photo_url' => $photoPath,
             'flags' => $mergedFlags,
@@ -339,9 +343,18 @@ class AttendanceController extends Controller
             'position' => $employee->position ?? $employee->department ?? 'Karyawan',
         ];
 
+        // 3. Get Today's Attendance
+        $attendance = \App\Models\AttendanceLog::where('employee_id', $employee->id)
+            ->whereDate('check_in_at', Carbon::today())
+            ->first();
+
         return response()->json([
             'shift' => $shift,
             'role' => $role,
+            'check_in_time' => $attendance ? Carbon::parse($attendance->check_in_at)->format('H:i') : null,
+            'check_out_time' => $attendance && $attendance->check_out_at ? Carbon::parse($attendance->check_out_at)->format('H:i') : null,
+            'check_in_address' => $attendance ? $attendance->check_in_address : null,
+            'check_out_address' => $attendance ? $attendance->check_out_address : null,
         ]);
     }
 }
