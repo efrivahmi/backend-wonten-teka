@@ -48,7 +48,7 @@ class ShiftTemplateController extends Controller
 
         // If this is set to default, unset other defaults
         if (isset($validated['is_default']) && $validated['is_default']) {
-            ShiftTemplate::update(['is_default' => false]);
+            ShiftTemplate::query()->update(['is_default' => false]);
         }
 
         $template = ShiftTemplate::create($validated);
@@ -82,7 +82,7 @@ class ShiftTemplateController extends Controller
 
         // If this is set to default, unset other defaults
         if (isset($validated['is_default']) && $validated['is_default'] && !$template->is_default) {
-            ShiftTemplate::update(['is_default' => false]);
+            ShiftTemplate::query()->update(['is_default' => false]);
         }
 
         $template->update($validated);
