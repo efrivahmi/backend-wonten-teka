@@ -51,8 +51,16 @@ const EmployeeDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Absensi Hari Ini */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-slate-800">Absensi Hari Ini</h2>
+                    <div className="flex items-start justify-between mb-6">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800">Absensi Hari Ini</h2>
+                            {todayInfo?.shift && (
+                                <div className="mt-2 inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">
+                                    <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                    <span>{todayInfo.shift.name}: {todayInfo.shift.start_time} - {todayInfo.shift.end_time}</span>
+                                </div>
+                            )}
+                        </div>
                         <div className="bg-emerald-50 p-2 rounded-lg">
                             <CalendarCheck className="h-5 w-5 text-emerald-600" />
                         </div>
