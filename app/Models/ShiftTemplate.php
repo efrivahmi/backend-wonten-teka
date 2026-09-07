@@ -11,8 +11,8 @@ class ShiftTemplate extends Model
     use HasFactory;
 
     protected $fillable = [
-
         'name',
+        'category',
         'start_time',
         'end_time',
         'grace_period_minutes',

@@ -19,6 +19,8 @@ import api from '../../api';
 const Attendance = () => {
     const [searchParams] = useSearchParams();
     const action = searchParams.get('action'); // 'check-in' or 'check-out'
+    const assignmentId = searchParams.get('assignment_id');
+    const templateId = searchParams.get('template_id');
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
@@ -205,6 +207,9 @@ const Attendance = () => {
                 formData.append('face_match_score', matchScore);
                 formData.append('device_id', fpResult.visitorId);
                 formData.append('photo', blob, 'attendance.jpg');
+
+                if (assignmentId) formData.append('shift_assignment_id', assignmentId);
+                if (templateId) formData.append('shift_template_id', templateId);
 
                 await api.post(endpoint, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }

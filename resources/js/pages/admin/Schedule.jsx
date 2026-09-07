@@ -11,6 +11,7 @@ import {
     Edit2
 } from 'lucide-react';
 import api from '../../api';
+import ShiftAssignmentForm from './ShiftAssignmentForm';
 
 const Schedule = () => {
     const [loading, setLoading] = useState(true);
@@ -25,6 +26,7 @@ const Schedule = () => {
     const [editingShift, setEditingShift] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
+        category: 'Reguler',
         start_time: '08:00',
         end_time: '17:00',
         grace_period_minutes: 15,
@@ -89,6 +91,7 @@ const Schedule = () => {
         setEditingShift(null);
         setFormData({
             name: '',
+            category: 'Reguler',
             start_time: '08:00',
             end_time: '17:00',
             grace_period_minutes: 15,
@@ -102,6 +105,7 @@ const Schedule = () => {
         setEditingShift(shift);
         setFormData({
             name: shift.name,
+            category: shift.category || 'Reguler',
             start_time: shift.start_time.substring(0, 5),
             end_time: shift.end_time.substring(0, 5),
             grace_period_minutes: shift.grace_period_minutes,
@@ -232,15 +236,20 @@ const Schedule = () => {
                             <div className="p-5 border-b border-slate-100 flex justify-between items-start">
                                 <div>
                                     <h3 className="font-bold text-lg text-slate-800">{shift.name}</h3>
-                                    {shift.is_default ? (
-                                        <span className="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
-                                            Default Shift
+                                    <div className="flex gap-2">
+                                        <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-bold rounded-full ${
+                                            shift.category === 'Piket' ? 'bg-orange-100 text-orange-700' : 
+                                            shift.category === 'Lembur' ? 'bg-purple-100 text-purple-700' : 
+                                            'bg-slate-100 text-slate-700'
+                                        }`}>
+                                            {shift.category || 'Reguler'}
                                         </span>
-                                    ) : (
-                                        <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">
-                                            Alternatif
-                                        </span>
-                                    )}
+                                        {shift.is_default ? (
+                                            <span className="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                                                Default Shift
+                                            </span>
+                                        ) : null}
+                                    </div>
                                 </div>
                                 <div className="relative">
                                     <button 
@@ -309,6 +318,9 @@ const Schedule = () => {
                 )}
             </div>
             
+            {/* SHIFT ASSIGNMENT FORM */}
+            <ShiftAssignmentForm />
+            
             {/* MODAL FORM */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -334,6 +346,20 @@ const Schedule = () => {
                                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                     required
                                 />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Kategori Shift</label>
+                                <select 
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleFormChange}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                >
+                                    <option value="Reguler">Reguler</option>
+                                    <option value="Piket">Piket</option>
+                                    <option value="Lembur">Lembur</option>
+                                </select>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">

@@ -93,7 +93,9 @@ class AttendanceController extends Controller
             'device_id' => 'required|string',
             'address' => 'nullable|string',
             'flags' => 'nullable|array',
-            'photo' => 'nullable|image|max:10240', // 10MB max
+            'photo' => 'nullable|image|max:10240',
+            'shift_assignment_id' => 'nullable|integer',
+            'shift_template_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -103,11 +105,10 @@ class AttendanceController extends Controller
         $status = 'present';
         $flags = $request->flags ?? [];
 
-        // Fetch Geofence Settings
+        // Geofence Check
         $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
         $geofence = $geofenceSetting ? $geofenceSetting->value : null;
 
-        // Geofence Check - Reject if not set
         if (!$geofence || !isset($geofence['latitude']) || !isset($geofence['longitude']) || $geofence['latitude'] === '' || $geofence['longitude'] === '') {
             return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
         }
@@ -123,21 +124,42 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Di luar jangkauan area absensi. Silakan mendekat ke lokasi kantor.'], 422);
         }
 
-        // Shift logic (Late)
-        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-            ->whereDate('date', Carbon::today())
+        // --- CASCADING SHIFT VALIDATION ---
+        $uncompletedPreviousShift = AttendanceLog::where('employee_id', $employee->id)
+            ->whereDate('check_in_at', Carbon::today())
+            ->whereNull('check_out_at')
             ->first();
 
-        $shiftTemplate = $shiftAssignment 
-            ? $shiftAssignment->shiftTemplate 
-            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
+        if ($uncompletedPreviousShift) {
+            return response()->json([
+                'message' => 'Silakan Check Out pada shift sebelumnya terlebih dahulu.'
+            ], 422);
+        }
+        // ----------------------------------
+
+        // Shift Identification
+        $shiftAssignmentId = $request->shift_assignment_id;
+        $shiftTemplateId = $request->shift_template_id;
+        $shiftTemplate = null;
+
+        if ($shiftAssignmentId) {
+            $assignment = \App\Models\ShiftAssignment::find($shiftAssignmentId);
+            if ($assignment && $assignment->employee_id == $employee->id) {
+                $shiftTemplate = $assignment->shiftTemplate;
+            }
+        } else if ($shiftTemplateId) {
+            $shiftTemplate = \App\Models\ShiftTemplate::find($shiftTemplateId);
+        }
+
+        if (!$shiftTemplate) {
+             $shiftTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
+        }
 
         if ($shiftTemplate) {
             $flags['shift_name'] = $shiftTemplate->name;
             $startTime = Carbon::parse($shiftTemplate->start_time);
             $gracePeriod = $shiftTemplate->grace_period_minutes ?? 0;
             
-            // If current time is after start_time + grace_period, it is late
             $lateThreshold = $startTime->copy()->addMinutes($gracePeriod);
             if (now()->greaterThan($lateThreshold)) {
                 $status = 'late';
@@ -146,26 +168,28 @@ class AttendanceController extends Controller
             $flags['shift_name'] = 'Shift Regular';
         }
 
-        // Spoofing Checks
         if (isset($flags['is_mock_location']) && $flags['is_mock_location'] == true) {
             $status = 'flagged';
         }
 
-        if ($request->face_match_score < 0.8) { // Arbitrary threshold
+        if ($request->face_match_score < 0.8) {
             $status = 'flagged';
             $flags['low_face_match_score'] = true;
         }
 
-        // Make sure not already checked in today
-        $existingLog = AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today())
-            ->first();
+        $existingLogQuery = AttendanceLog::where('employee_id', $employee->id)
+            ->whereDate('check_in_at', Carbon::today());
 
-        if ($existingLog) {
-            return response()->json(['message' => 'Already checked in today.'], 422);
+        if ($shiftAssignmentId) {
+            $existingLogQuery->where('shift_assignment_id', $shiftAssignmentId);
+        } else {
+            $existingLogQuery->whereNull('shift_assignment_id');
         }
 
-        // Lookup the actual device ID (integer) from the string fingerprint
+        if ($existingLogQuery->exists()) {
+            return response()->json(['message' => 'Sudah melakukan check in untuk shift ini hari ini.'], 422);
+        }
+
         $device = \App\Models\Device::where('device_fingerprint', $request->device_id)
             ->where('employee_id', $employee->id)
             ->first();
@@ -177,7 +201,7 @@ class AttendanceController extends Controller
 
         $attendance = AttendanceLog::create([
             'employee_id' => $employee->id,
-            
+            'shift_assignment_id' => $shiftAssignmentId,
             'check_in_at' => now(),
             'check_in_latitude' => $request->latitude,
             'check_in_longitude' => $request->longitude,
@@ -191,7 +215,7 @@ class AttendanceController extends Controller
 
         if ($status === 'flagged') {
             app(\App\Services\NotificationService::class)->sendToAdmin(
-                1, // Global company ID
+                1, 
                 'Suspicious Check-in Flagged',
                 "{$employee->full_name} had a suspicious check-in."
             );
@@ -222,29 +246,37 @@ class AttendanceController extends Controller
             'address' => 'nullable|string',
             'flags' => 'nullable|array',
             'photo' => 'nullable|image|max:10240',
+            'shift_assignment_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $attendance = AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today())
-            ->first();
+        $shiftAssignmentId = $request->shift_assignment_id;
+
+        $query = AttendanceLog::where('employee_id', $employee->id)
+            ->whereDate('check_in_at', Carbon::today());
+
+        if ($shiftAssignmentId) {
+            $query->where('shift_assignment_id', $shiftAssignmentId);
+        } else {
+            $query->whereNull('shift_assignment_id');
+        }
+
+        $attendance = $query->first();
 
         if (!$attendance) {
-            return response()->json(['message' => 'No active check-in found for today.'], 404);
+            return response()->json(['message' => 'Data check-in tidak ditemukan untuk shift ini.'], 404);
         }
 
         if ($attendance->check_out_at) {
-            return response()->json(['message' => 'Already checked out today.'], 422);
+            return response()->json(['message' => 'Sudah melakukan check out untuk shift ini.'], 422);
         }
 
-        // Fetch Geofence Settings
         $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
         $geofence = $geofenceSetting ? $geofenceSetting->value : null;
 
-        // Geofence check for checkout
         if (!$geofence || !isset($geofence['latitude']) || !isset($geofence['longitude']) || $geofence['latitude'] === '' || $geofence['longitude'] === '') {
             return response()->json(['message' => 'Harap hubungi admin terlebih dahulu. Titik lokasi absensi belum diatur.'], 422);
         }
@@ -258,14 +290,15 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Di luar jangkauan area absensi. Silakan mendekat ke lokasi kantor.'], 422);
         }
 
-        // Shift check for early checkout
-        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-            ->whereDate('date', Carbon::today())
-            ->first();
-
-        $shiftTemplate = $shiftAssignment 
-            ? $shiftAssignment->shiftTemplate 
-            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
+        $shiftTemplate = null;
+        if ($shiftAssignmentId) {
+            $assignment = \App\Models\ShiftAssignment::find($shiftAssignmentId);
+            if ($assignment) {
+                $shiftTemplate = $assignment->shiftTemplate;
+            }
+        } else {
+            $shiftTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
+        }
 
         if ($shiftTemplate && $shiftTemplate->end_time) {
             $endTime = Carbon::parse($shiftTemplate->end_time);
@@ -279,7 +312,6 @@ class AttendanceController extends Controller
             $photoPath = $request->file('photo')->store('attendance', 'public');
         }
 
-        // Merge existing flags
         $existingFlags = $attendance->flags ?? [];
         $newFlags = $request->flags ?? [];
         $mergedFlags = array_merge($existingFlags, ['checkout_flags' => $newFlags]);
@@ -336,43 +368,80 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Employee profile not found.'], 403);
         }
 
-        // 1. Determine Shift
-        $shiftAssignment = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+        $shiftAssignments = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
             ->whereDate('date', Carbon::today())
-            ->first();
+            ->with('shiftTemplate')
+            ->get();
 
-        $shiftTemplate = $shiftAssignment 
-            ? $shiftAssignment->shiftTemplate 
-            : \App\Models\ShiftTemplate::query()->where('is_default', true)->first();
+        $shifts = [];
+        $hasRegular = false;
 
-        $shift = $shiftTemplate ? [
-            'name' => $shiftTemplate->name,
-            'start_time' => Carbon::parse($shiftTemplate->start_time)->format('H:i'),
-            'end_time' => Carbon::parse($shiftTemplate->end_time)->format('H:i'),
-        ] : [
-            'name' => 'Shift Regular (Default)',
-            'start_time' => '08:00',
-            'end_time' => '17:00'
-        ];
+        foreach ($shiftAssignments as $assignment) {
+            $template = $assignment->shiftTemplate;
+            if ($template) {
+                if ($template->category === 'Reguler') {
+                    $hasRegular = true;
+                }
+                $shifts[] = [
+                    'assignment_id' => $assignment->id,
+                    'template_id' => $template->id,
+                    'name' => $template->name,
+                    'category' => $template->category,
+                    'start_time' => Carbon::parse($template->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($template->end_time)->format('H:i'),
+                ];
+            }
+        }
 
-        // 2. Determine Role
+        if (!$hasRegular) {
+            $defaultTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
+            if ($defaultTemplate) {
+                array_unshift($shifts, [
+                    'assignment_id' => null,
+                    'template_id' => $defaultTemplate->id,
+                    'name' => $defaultTemplate->name,
+                    'category' => $defaultTemplate->category ?? 'Reguler',
+                    'start_time' => Carbon::parse($defaultTemplate->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($defaultTemplate->end_time)->format('H:i'),
+                ]);
+            }
+        }
+
+        usort($shifts, function($a, $b) {
+            return strcmp($a['start_time'], $b['start_time']);
+        });
+
         $role = [
             'employment_status' => $employee->employment_status,
             'position' => $employee->position ?? $employee->department ?? 'Karyawan',
         ];
 
-        // 3. Get Today's Attendance
-        $attendance = \App\Models\AttendanceLog::where('employee_id', $employee->id)
+        $attendances = \App\Models\AttendanceLog::where('employee_id', $employee->id)
             ->whereDate('check_in_at', Carbon::today())
-            ->first();
+            ->get();
+
+        foreach ($shifts as &$shift) {
+            $log = $attendances->first(function($att) use ($shift) {
+                return $att->shift_assignment_id == $shift['assignment_id'];
+            });
+
+            if ($log) {
+                $shift['attendance'] = [
+                    'id' => $log->id,
+                    'check_in_time' => $log->check_in_at,
+                    'check_out_time' => $log->check_out_at,
+                    'check_in_address' => $log->check_in_address,
+                    'check_out_address' => $log->check_out_address,
+                    'status' => $log->status,
+                ];
+            } else {
+                $shift['attendance'] = null;
+            }
+        }
 
         return response()->json([
-            'shift' => $shift,
+            'shifts' => $shifts,
             'role' => $role,
-            'check_in_time' => $attendance ? $attendance->check_in_at : null,
-            'check_out_time' => $attendance && $attendance->check_out_at ? $attendance->check_out_at : null,
-            'check_in_address' => $attendance ? $attendance->check_in_address : null,
-            'check_out_address' => $attendance ? $attendance->check_out_address : null,
         ]);
     }
 }

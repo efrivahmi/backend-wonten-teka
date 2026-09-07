@@ -37,6 +37,7 @@ class ShiftTemplateController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:50',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'grace_period_minutes' => 'nullable|integer|min:0',
@@ -73,6 +74,7 @@ class ShiftTemplateController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:50',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'grace_period_minutes' => 'nullable|integer|min:0',

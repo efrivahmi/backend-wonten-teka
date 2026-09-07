@@ -49,7 +49,7 @@ class ShiftAssignmentController extends Controller
     }
 
     /**
-     * Store or update a shift assignment for an employee on a specific date.
+     * Store or update shift assignments for an employee on a specific date.
      */
     public function store(Request $request)
     {
@@ -61,25 +61,29 @@ class ShiftAssignmentController extends Controller
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
-            'shift_template_id' => 'required|exists:shift_templates,id',
+            'shift_template_ids' => 'required|array',
+            'shift_template_ids.*' => 'exists:shift_templates,id',
             'notes' => 'nullable|string',
         ]);
 
-        $assignment = ShiftAssignment::updateOrCreate(
-            [
-                
+        // Delete existing assignments for this employee on this date
+        ShiftAssignment::where('employee_id', $validated['employee_id'])
+            ->where('date', $validated['date'])
+            ->delete();
+
+        $assignments = [];
+        foreach ($validated['shift_template_ids'] as $templateId) {
+            $assignments[] = ShiftAssignment::create([
                 'employee_id' => $validated['employee_id'],
                 'date' => $validated['date'],
-            ],
-            [
-                'shift_template_id' => $validated['shift_template_id'],
+                'shift_template_id' => $templateId,
                 'notes' => $validated['notes'] ?? null,
-            ]
-        );
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Shift assigned successfully.',
-            'data' => $assignment->load('shiftTemplate')
+            'message' => 'Shifts assigned successfully.',
+            'data' => $assignments
         ], 200);
     }
 }
