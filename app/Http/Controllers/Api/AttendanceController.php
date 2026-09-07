@@ -178,8 +178,9 @@ class AttendanceController extends Controller
         }
 
         if ($request->face_match_score < 0.8) {
-            $status = 'flagged';
-            $flags['low_face_match_score'] = true;
+            return response()->json([
+                'message' => 'Gagal verifikasi wajah. Tingkat kemiripan di bawah 80%. Silakan coba lagi dengan pencahayaan yang baik.'
+            ], 422);
         }
 
         $existingLogQuery = AttendanceLog::where('employee_id', $employee->id)
@@ -256,6 +257,12 @@ class AttendanceController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($request->face_match_score < 0.8) {
+            return response()->json([
+                'message' => 'Gagal verifikasi wajah. Tingkat kemiripan di bawah 80%. Silakan coba lagi.'
+            ], 422);
         }
 
         $shiftAssignmentId = $request->shift_assignment_id;

@@ -335,7 +335,22 @@ const Attendance = () => {
                                     mirrored={true}
                                 />
                                 {/* Overlay frame */}
-                                <div className={`absolute inset-0 border-4 pointer-events-none transition-colors duration-500 ${submitting ? 'border-emerald-500' : scanning ? 'border-amber-400' : 'border-emerald-500/30'}`}></div>
+                                <style>{`
+                                    @keyframes scanning-laser {
+                                        0% { top: 0%; opacity: 0; }
+                                        10% { opacity: 1; }
+                                        90% { opacity: 1; }
+                                        100% { top: 98%; opacity: 0; }
+                                    }
+                                    .animate-scan-laser {
+                                        animation: scanning-laser 2.5s infinite linear;
+                                    }
+                                `}</style>
+                                <div className={`absolute inset-0 border-4 pointer-events-none transition-colors duration-500 z-10 ${submitting ? 'border-emerald-500' : scanning ? 'border-blue-400' : 'border-emerald-500/30'}`}>
+                                    {scanning && !submitting && (
+                                        <div className="absolute left-0 right-0 h-[2px] bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,1)] animate-scan-laser" />
+                                    )}
+                                </div>
                                 
                                 {submitting && (
                                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center text-white">

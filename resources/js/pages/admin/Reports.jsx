@@ -9,7 +9,8 @@ import {
     MoreVertical,
     Edit2,
     Trash2,
-    X
+    X,
+    AlertTriangle
 } from 'lucide-react';
 import api from '../../api';
 
@@ -173,13 +174,18 @@ const Reports = () => {
                                             {log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
+                                            <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${
                                                 log.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' : 
                                                 log.status === 'late' ? 'bg-rose-100 text-rose-700' :
                                                 'bg-slate-100 text-slate-700'
                                             }`}>
                                                 {log.status === 'on_time' ? 'Tepat Waktu' : log.status === 'late' ? 'Terlambat' : log.status}
                                             </span>
+                                            {(log.is_flagged || log.status === 'flagged') && (
+                                                <span className="ml-2 inline-flex items-center text-rose-600 bg-rose-50 p-1 rounded-md" title="Indikasi Kecurangan (Flagged)">
+                                                    <AlertTriangle className="h-4 w-4" />
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="relative inline-block text-left">
