@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, Clock, Bell, Loader2, LogIn, LogOut, CheckCircle2 } from 'lucide-react';
+import { CalendarCheck, Clock, Bell, Loader2, LogIn, LogOut, CheckCircle2, TrendingUp, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import api from '../../api';
 
 const EmployeeDashboard = () => {
@@ -63,6 +63,48 @@ const EmployeeDashboard = () => {
                 <p className="text-slate-500 mt-1">Selamat datang di portal karyawan Wonten Teka.</p>
             </div>
 
+            {/* Monthly Stats Row */}
+            {todayInfo?.monthly_stats && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                        <div className="flex items-center space-x-3 mb-2">
+                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                <TrendingUp className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-semibold text-slate-600">Kehadiran</span>
+                        </div>
+                        <span className="text-3xl font-bold text-slate-800">{todayInfo.monthly_stats.percentage}%</span>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                        <div className="flex items-center space-x-3 mb-2">
+                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                <CheckCircle className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-semibold text-slate-600">Hadir Tepat</span>
+                        </div>
+                        <span className="text-3xl font-bold text-slate-800">{todayInfo.monthly_stats.on_time} <span className="text-base font-medium text-slate-500">kali</span></span>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                        <div className="flex items-center space-x-3 mb-2">
+                            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                                <AlertTriangle className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-semibold text-slate-600">Terlambat</span>
+                        </div>
+                        <span className="text-3xl font-bold text-slate-800">{todayInfo.monthly_stats.late} <span className="text-base font-medium text-slate-500">kali</span></span>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                        <div className="flex items-center space-x-3 mb-2">
+                            <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
+                                <XCircle className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-semibold text-slate-600">Alpha</span>
+                        </div>
+                        <span className="text-3xl font-bold text-slate-800">{todayInfo.monthly_stats.absent} <span className="text-base font-medium text-slate-500">hari</span></span>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Jadwal Shift & Tombol Absen (Spans 2 columns on large screens) */}
@@ -113,12 +155,24 @@ const EmployeeDashboard = () => {
                                                 </p>
                                                 
                                                 {/* Attendance Times Display */}
-                                                <div className="mt-2 flex items-center gap-4 text-xs">
+                                                <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm">
                                                     {hasCheckedIn && (
-                                                        <span className="flex items-center text-emerald-600 font-medium">
-                                                            <LogIn className="w-3 h-3 mr-1" />
-                                                            In: {new Date(shift.attendance.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
+                                                        <div className="flex items-center">
+                                                            <span className="flex items-center text-slate-700 font-medium mr-2">
+                                                                <LogIn className="w-4 h-4 mr-1.5 text-slate-400" />
+                                                                In: {new Date(shift.attendance.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                                                                shift.attendance.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
+                                                                shift.attendance.status === 'present' ? 'bg-amber-100 text-amber-700' :
+                                                                shift.attendance.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                                'bg-slate-100 text-slate-700'
+                                                            }`}>
+                                                                {shift.attendance.status === 'on_time' ? 'Tepat Waktu' :
+                                                                 shift.attendance.status === 'present' ? 'Toleransi' :
+                                                                 shift.attendance.status === 'late' ? 'Terlambat' : shift.attendance.status}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                     {hasCheckedOut && (
                                                         <span className="flex items-center text-rose-600 font-medium">

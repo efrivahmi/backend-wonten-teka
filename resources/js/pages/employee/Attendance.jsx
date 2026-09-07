@@ -176,7 +176,11 @@ const Attendance = () => {
                 // Get Address using Nominatim OpenStreetMap
                 let address = '';
                 try {
-                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+                        headers: {
+                            'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+                        }
+                    });
                     const geoData = await geoRes.json();
                     address = geoData.display_name;
                 } catch (geoErr) {
@@ -454,8 +458,25 @@ const Attendance = () => {
                                 <>
                                     {/* Check IN */}
                                     <div className="space-y-3">
-                                        <div className="flex items-center text-emerald-600 font-bold">
-                                            <LogIn className="h-5 w-5 mr-2" /> Check In
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center text-emerald-600 font-bold">
+                                                <LogIn className="h-5 w-5 mr-2" /> Check In
+                                            </div>
+                                            {selectedLog.status && (
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                    selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
+                                                    selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
+                                                    selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                    selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
+                                                    'bg-slate-100 text-slate-700'
+                                                }`}>
+                                                    {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
+                                                     selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
+                                                     selectedLog.status === 'late' ? 'Terlambat' :
+                                                     selectedLog.status === 'flagged' ? 'Dipertanyakan' : 
+                                                     selectedLog.status}
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
                                             <div className="flex">

@@ -161,8 +161,13 @@ class AttendanceController extends Controller
             $gracePeriod = $shiftTemplate->grace_period_minutes ?? 0;
             
             $lateThreshold = $startTime->copy()->addMinutes($gracePeriod);
+            
             if (now()->greaterThan($lateThreshold)) {
                 $status = 'late';
+            } elseif (now()->greaterThan($startTime)) {
+                $status = 'present'; // Dalam toleransi
+            } else {
+                $status = 'on_time'; // Tepat waktu
             }
         } else {
             $flags['shift_name'] = 'Shift Regular';
@@ -439,9 +444,58 @@ class AttendanceController extends Controller
             }
         }
 
+        // --- Calculate Monthly Stats ---
+        $currentMonth = Carbon::today()->month;
+        $currentYear = Carbon::today()->year;
+
+        $monthlyLogs = \App\Models\AttendanceLog::where('employee_id', $employee->id)
+            ->whereMonth('check_in_at', $currentMonth)
+            ->whereYear('check_in_at', $currentYear)
+            ->get();
+
+        $onTimeCount = $monthlyLogs->where('status', 'on_time')->count();
+        $gracePeriodCount = $monthlyLogs->where('status', 'present')->count();
+        $lateCount = $monthlyLogs->where('status', 'late')->count();
+        $totalPresentCount = $onTimeCount + $gracePeriodCount + $lateCount;
+
+        // Determine passed working days
+        $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
+        $workingDays = $workingDaysSetting ? $workingDaysSetting->value : [1, 2, 3, 4, 5, 6];
+        if (is_string($workingDays)) {
+            $workingDays = json_decode($workingDays, true);
+        }
+        
+        $passedWorkingDays = 0;
+        $startOfMonth = Carbon::today()->startOfMonth();
+        $today = Carbon::today();
+        
+        for ($date = $startOfMonth; $date->lte($today); $date->addDay()) {
+            // isDayOfWeek requires ISO day of week (1 = Monday, 7 = Sunday)
+            // Carbon's dayOfWeek returns 0 (Sunday) to 6 (Saturday).
+            // Let's use isoFormat('E') which returns 1-7
+            $dayOfWeek = (int) $date->isoFormat('E');
+            if (in_array($dayOfWeek, $workingDays)) {
+                $passedWorkingDays++;
+            }
+        }
+
+        $absentCount = max(0, $passedWorkingDays - $totalPresentCount);
+        $percentage = $passedWorkingDays > 0 ? round(($totalPresentCount / $passedWorkingDays) * 100, 1) : 100;
+        if ($percentage > 100) $percentage = 100;
+
+        $monthlyStats = [
+            'on_time' => $onTimeCount,
+            'grace_period' => $gracePeriodCount,
+            'late' => $lateCount,
+            'absent' => $absentCount,
+            'percentage' => $percentage
+        ];
+        // -------------------------------
+
         return response()->json([
             'shifts' => $shifts,
             'role' => $role,
+            'monthly_stats' => $monthlyStats,
         ]);
     }
 }
