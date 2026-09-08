@@ -50,8 +50,6 @@ const FaceEnrollment = () => {
         loadModels();
     }, []);
 
-    const [referenceImage, setReferenceImage] = useState(null);
-
     useEffect(() => {
         let isMounted = true;
         let timeoutId = null;
@@ -80,12 +78,6 @@ const FaceEnrollment = () => {
                     if (score > 0.8) {
                         const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
                         
-                        let currentRefImage = referenceImage;
-                        if (step === 0) {
-                            currentRefImage = webcamRef.current.getScreenshot();
-                            setReferenceImage(currentRefImage);
-                        }
-                        
                         if (step < 2) {
                             setEmbeddings(newEmbeddings);
                             setStep(step + 1);
@@ -97,7 +89,7 @@ const FaceEnrollment = () => {
                             setEmbeddings(newEmbeddings);
                             setStep(step + 1);
                             setDetecting(false);
-                            saveBiometrics(newEmbeddings, currentRefImage || webcamRef.current.getScreenshot());
+                            saveBiometrics(newEmbeddings);
                             return;
                         }
                     } else {
@@ -125,16 +117,15 @@ const FaceEnrollment = () => {
             isMounted = false;
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [modelsLoaded, saving, step, embeddings, referenceImage, deviceId, steps]);
+    }, [modelsLoaded, saving, step, embeddings, deviceId]);
 
-    const saveBiometrics = async (finalEmbeddings, imageBase64) => {
+    const saveBiometrics = async (finalEmbeddings) => {
         setSaving(true);
         setMessage('Menyimpan data biometrik dan foto...');
         try {
             await api.post('/biometrics/web/enroll', {
                 embeddings: finalEmbeddings,
-                device_id: deviceId,
-                image: imageBase64
+                device_id: deviceId
             });
             
             // Go to next step

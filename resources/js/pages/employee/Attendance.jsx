@@ -86,7 +86,7 @@ const Attendance = () => {
             await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
             
             setScanMessage('Mengambil data wajah terdaftar...');
-            const res = await api.get('/biometrics/sync');
+            const res = await api.get('/biometrics/web/sync');
             setEnrolledEmbeddings(res.data.embeddings);
             
             setModelsLoaded(true);
@@ -133,7 +133,7 @@ const Attendance = () => {
                         // Take snapshot
                         const imageSrc = webcamRef.current.getScreenshot();
                         
-                        handleAttendanceSubmit(1 - bestMatch, imageSrc);
+                        handleAttendanceSubmit(1 - bestMatch, imageSrc, Array.from(detection.descriptor));
                         return; // Stop the scanning loop
                     } else {
                         setScanMessage(`Wajah tidak dikenali (Jarak: ${bestMatch.toFixed(2)}). Pastikan pencahayaan baik.`);
@@ -159,7 +159,7 @@ const Attendance = () => {
         };
     }, [action, modelsLoaded, enrolledEmbeddings, submitting]);
 
-    const handleAttendanceSubmit = async (matchScore, imageBase64) => {
+    const handleAttendanceSubmit = async (matchScore, imageBase64, faceDescriptor) => {
         setSubmitting(true);
         
         if (!navigator.geolocation) {
@@ -209,6 +209,7 @@ const Attendance = () => {
                 formData.append('longitude', lon);
                 formData.append('address', address);
                 formData.append('face_match_score', matchScore);
+                faceDescriptor.forEach((value) => formData.append('face_descriptor[]', value));
                 formData.append('device_id', fpResult.visitorId);
                 formData.append('photo', blob, 'attendance.jpg');
 
@@ -488,7 +489,7 @@ const Attendance = () => {
                                                     {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
                                                      selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
                                                      selectedLog.status === 'late' ? 'Terlambat' :
-                                                     selectedLog.status === 'flagged' ? 'Dipertanyakan' : 
+                                                     selectedLog.status === 'flagged' ? 'Dipertanyakan' :
                                                      selectedLog.status}
                                                 </span>
                                             )}

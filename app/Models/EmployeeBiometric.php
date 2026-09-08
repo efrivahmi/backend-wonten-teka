@@ -13,6 +13,7 @@ class EmployeeBiometric extends Model
         'employee_id',
 
         'face_embedding',
+        'web_face_embedding',
         'enrolled_at',
         'device_id',
     ];
@@ -34,7 +35,18 @@ class EmployeeBiometric extends Model
      */
     public function getFaceEmbeddingAttribute($value)
     {
-        return json_decode(Crypt::decryptString($value), true);
+        $decoded = json_decode(Crypt::decryptString($value), true);
+        return is_string($decoded) ? json_decode($decoded, true) : $decoded;
+    }
+
+    public function setWebFaceEmbeddingAttribute($value): void
+    {
+        $this->attributes['web_face_embedding'] = Crypt::encryptString(json_encode($value));
+    }
+
+    public function getWebFaceEmbeddingAttribute($value): ?array
+    {
+        return $value ? json_decode(Crypt::decryptString($value), true) : null;
     }
 
     public function employee(): BelongsTo

@@ -11,8 +11,10 @@ class BiometricController extends Controller
     public function enroll(Request $request)
     {
         $request->validate([
-            'embeddings' => 'required|array|min:1',
-            'device_id' => 'required|string',
+            'embeddings' => 'required|array|min:3|max:5',
+            'embeddings.*' => 'required|array|min:4',
+            'embeddings.*.*' => 'required|numeric',
+            'device_id' => 'required|string|max:255',
         ]);
 
         $user = $request->user();
@@ -22,15 +24,12 @@ class BiometricController extends Controller
             return response()->json(['message' => 'User is not linked to an employee.'], 403);
         }
 
-        // Encode the array of embeddings (from 3 poses) into JSON string
-        $embeddingsJson = json_encode($request->embeddings);
-
         // Update or create biometric record
         $biometric = EmployeeBiometric::updateOrCreate(
             ['employee_id' => $employee->id],
             [
                 
-                'face_embedding' => $embeddingsJson,
+                'face_embedding' => $request->embeddings,
                 'device_id' => $request->device_id,
                 'enrolled_at' => now(),
             ]
@@ -44,7 +43,7 @@ class BiometricController extends Controller
 
         return response()->json([
             'message' => 'Face data enrolled successfully.',
-            'biometric' => $biometric
+            'enrolled_at' => $biometric->enrolled_at,
         ], 201);
     }
 
@@ -68,7 +67,7 @@ class BiometricController extends Controller
 
         return response()->json([
             'message' => 'Face data retrieved successfully.',
-            'embeddings' => json_decode($biometric->face_embedding, true),
+            'embeddings' => $biometric->face_embedding,
         ]);
     }
 }

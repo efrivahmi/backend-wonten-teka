@@ -32,10 +32,15 @@ const Payslip = () => {
 
     const handleDownload = async (id, period) => {
         try {
-            // For MVP, we'll just mock a download or open a new tab to the API endpoint
-            // In a real app, you'd fetch the blob and trigger a download prompt
-            const token = localStorage.getItem('token');
-            window.open(`http://localhost:8000/api/payslips/${id}/download?token=${token}`, '_blank');
+            const response = await api.get(`/payslips/${id}/download`, { responseType: 'blob' });
+            const url = URL.createObjectURL(response.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `slip-gaji-${period}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Error downloading payslip:", error);
             alert("Gagal mengunduh slip gaji.");

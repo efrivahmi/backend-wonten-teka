@@ -9,3 +9,41 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+:root {
+    color-scheme: light;
+    --teka-coral: #f05d4e;
+    --teka-sunrise: #ffb347;
+    --teka-ink: #172033;
+    --teka-canvas: #f7f7f2;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    min-width: 320px;
+    color: var(--teka-ink);
+    background:
+        radial-gradient(circle at 8% 0%, rgb(255 179 71 / 16%), transparent 28rem),
+        radial-gradient(circle at 100% 15%, rgb(240 93 78 / 10%), transparent 32rem),
+        var(--teka-canvas);
+    text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgb(240 93 78 / 22%); }
+
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+:focus-visible {
+    outline: 3px solid rgb(240 93 78 / 35%);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

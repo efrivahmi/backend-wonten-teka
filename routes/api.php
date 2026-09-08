@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sync', [\App\Http\Controllers\Api\BiometricController::class, 'sync']);
         // Web specific endpoint
         Route::post('/web/enroll', [\App\Http\Controllers\Api\WebBiometricController::class, 'enroll']);
+        Route::get('/web/sync', [\App\Http\Controllers\Api\WebBiometricController::class, 'sync']);
     });
 
     // Personal Tasks
@@ -56,13 +57,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'store']);
         Route::put('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'update']);
         Route::delete('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'destroy']);
+        Route::post('/{task}/complete', [PersonalTaskController::class, 'complete']);
     });
 
     Route::prefix('attendance')->group(function () {
         Route::get('/today-info', [AttendanceController::class, 'todayInfo']);
         Route::post('/enroll-face', [AttendanceController::class, 'enrollFace']);
-        Route::post('/check-in', [AttendanceController::class, 'checkIn']);
-        Route::post('/check-out', [AttendanceController::class, 'checkOut']);
+        Route::post('/check-in', [AttendanceController::class, 'checkIn'])->middleware('active.device');
+        Route::post('/check-out', [AttendanceController::class, 'checkOut'])->middleware('active.device');
         Route::get('/history', [AttendanceController::class, 'history']);
 
         // New attendance form routes
@@ -103,12 +105,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{payslip}/download', [PayslipController::class, 'download']);
     });
 
-    Route::prefix('tasks')->group(function () {
-        Route::get('/', [PersonalTaskController::class, 'index']);
-        Route::post('/', [PersonalTaskController::class, 'store']);
-        Route::post('/{task}/complete', [PersonalTaskController::class, 'complete']);
-    });
-
     Route::get('/shifts/upcoming', [ShiftController::class, 'upcoming']);
     Route::get('/calendar', [CompanyController::class, 'calendar']);
     
@@ -119,13 +115,13 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::prefix('company')->group(function () {
         Route::get('/geofence', [CompanyController::class, 'getGeofence']);
-        Route::put('/geofence', [CompanyController::class, 'updateGeofence']);
+        Route::put('/geofence', [CompanyController::class, 'updateGeofence'])->middleware('admin');
         
         Route::get('/working-days', [CompanyController::class, 'getWorkingDays']);
-        Route::put('/working-days', [CompanyController::class, 'updateWorkingDays']);
+        Route::put('/working-days', [CompanyController::class, 'updateWorkingDays'])->middleware('admin');
     });
 
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'getStats']);
         
         Route::get('/employees', [EmployeeController::class, 'index']);
