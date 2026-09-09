@@ -96,21 +96,21 @@ const AdminLayout = () => {
         <div className="teka-shell flex h-screen">
             {/* Sidebar */}
             <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 w-64 shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-                <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
-                    <span className="text-xl font-bold text-white tracking-tight">WT Admin</span>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-white">
+                <div className="flex items-center justify-between h-20 px-5 border-b border-slate-100">
+                    <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-11 w-auto max-w-[190px] object-contain object-left" />
+                    <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-green-700">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
                 
                 <div className="p-4">
-                    <div className="bg-slate-800/50 rounded-xl p-4 flex items-center space-x-3 border border-slate-700/50">
-                        <div className="bg-emerald-500/20 text-emerald-400 p-2 rounded-lg">
+                    <div className="bg-lime-50 rounded-2xl p-4 flex items-center space-x-3 border border-lime-100">
+                        <div className="bg-green-100 text-green-700 p-2 rounded-lg">
                             <Shield className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{user.name || 'Super Admin'}</p>
-                            <p className="text-xs text-slate-400 truncate">{user.email || 'admin@wontenteka.com'}</p>
+                            <p className="text-sm font-semibold text-slate-800 truncate">{user.name || 'Super Admin'}</p>
+                            <p className="text-xs text-slate-500 truncate">{user.email || 'Administrator'}</p>
                         </div>
                     </div>
                 </div>
@@ -126,13 +126,13 @@ const AdminLayout = () => {
                                         onClick={() => toggleMenu(item.name)}
                                         className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
                                             isChildActive && !isOpen
-                                            ? 'bg-slate-800 text-white'
-                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                            ? 'bg-green-50 text-green-800'
+                                            : 'text-slate-600 hover:bg-lime-50 hover:text-green-800'
                                         }`}
                                     >
                                         <div className="flex items-center space-x-3">
-                                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isChildActive ? 'text-emerald-400' : ''}`} />
-                                            <span className={`font-medium text-sm truncate ${isChildActive ? 'text-white' : ''}`}>{item.name}</span>
+                                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isChildActive ? 'text-green-700' : ''}`} />
+                                            <span className={`font-medium text-sm truncate ${isChildActive ? 'text-green-800' : ''}`}>{item.name}</span>
                                         </div>
                                         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                                     </button>
@@ -148,8 +148,8 @@ const AdminLayout = () => {
                                                         onClick={() => setIsMobileMenuOpen(false)}
                                                         className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                                                             isActive 
-                                                            ? 'bg-emerald-600/10 text-emerald-400' 
-                                                            : 'text-slate-400 hover:text-slate-200'
+                                                            ? 'bg-lime-50 text-green-700'
+                                                            : 'text-slate-500 hover:text-green-700'
                                                         }`}
                                                     >
                                                         <child.icon className="h-4 w-4 flex-shrink-0" />
@@ -171,8 +171,8 @@ const AdminLayout = () => {
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                                     isActive 
-                                    ? 'bg-emerald-600 text-white shadow-md' 
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    ? 'bg-green-700 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-lime-50 hover:text-green-800'
                                 }`}
                             >
                                 <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -182,7 +182,7 @@ const AdminLayout = () => {
                     })}
                 </nav>
 
-                <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 bg-slate-900">
+                <div className="absolute bottom-0 w-full p-4 border-t border-slate-100 bg-white">
                     <button 
                         onClick={handleLogout}
                         className="flex items-center space-x-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"

@@ -54,11 +54,12 @@ const Login = () => {
 
     return (
         <div className="teka-hero min-h-screen flex items-center justify-end p-4 md:p-12">
-            <div className="bg-stone-100 rounded-[2rem] shadow-2xl border border-stone-700 w-full max-w-md overflow-hidden text-stone-950">
+            <div className="bg-white rounded-3xl shadow-2xl border border-white/60 w-full max-w-md overflow-hidden text-slate-900">
                 <div className="p-8 border-b border-stone-300">
-                    <p className="teka-kicker text-stone-500 mb-5">Portal kehadiran</p>
-                    <h1 className="teka-display text-5xl">Wonten <span className="teka-accent">Teka.</span></h1>
-                    <p className="text-stone-500 mt-4 text-sm">Masuk untuk mengelola hari kerja Anda.</p>
+                    <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-14 w-auto mb-6" />
+                    <p className="teka-kicker text-green-700 mb-3">Portal kehadiran</p>
+                    <h1 className="teka-display text-4xl">Wonten <span className="teka-accent">Teka</span></h1>
+                    <p className="text-slate-500 mt-3 text-sm">Sistem presensi Lemdiklat Taruna Nusantara Indonesia.</p>
                 </div>
                 
                 <div className="p-8">
@@ -79,7 +80,7 @@ const Login = () => {
                                     type="email" 
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10 w-full rounded-md border-stone-300 bg-transparent focus:border-orange-600 focus:ring focus:ring-orange-200 py-3 border px-4 text-stone-900"
+                                    className="pl-10 w-full rounded-xl border-slate-200 bg-slate-50 focus:border-green-600 focus:ring focus:ring-green-100 py-3 border px-4 text-slate-900"
                                     placeholder="Masukkan email anda"
                                     required
                                 />
@@ -96,7 +97,7 @@ const Login = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 pr-10 w-full rounded-md border-stone-300 bg-transparent focus:border-orange-600 focus:ring focus:ring-orange-200 py-3 border px-4 text-stone-900"
+                                    className="pl-10 pr-10 w-full rounded-xl border-slate-200 bg-slate-50 focus:border-green-600 focus:ring focus:ring-green-100 py-3 border px-4 text-slate-900"
                                     placeholder="Masukkan password anda"
                                     required
                                 />
@@ -121,7 +122,7 @@ const Login = () => {
                                 type="checkbox"
                                 checked={rememberMe}
                                 onChange={(e) => setRememberMe(e.target.checked)}
-                                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-stone-300 rounded"
+                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-slate-300 rounded"
                             />
                             <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700">
                                 Ingat Saya
@@ -131,7 +132,7 @@ const Login = () => {
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full bg-black text-white font-semibold py-3 px-4 rounded-md hover:bg-orange-600 transition-colors flex justify-center items-center mt-4"
+                            className="w-full bg-green-700 text-white font-semibold py-3 px-4 rounded-xl hover:bg-green-800 transition-colors flex justify-center items-center mt-4"
                         >
                             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Masuk (Login)'}
                         </button>

@@ -82,15 +82,15 @@ const EmployeeLayout = () => {
         <div className="teka-shell flex h-screen">
             {/* Sidebar */}
             <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 w-64 border-r shadow-sm transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-                <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
-                    <span className="text-xl font-bold tracking-tight text-white uppercase">Wonten <span className="teka-accent">Teka.</span></span>
+                <div className="flex items-center justify-between h-20 px-5 border-b border-slate-100">
+                    <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-11 w-auto max-w-[190px] object-contain object-left" />
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-slate-600">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
                 
                 <div className="p-4">
-                    <div className="bg-slate-50 rounded-xl p-4 flex items-center space-x-3 border border-slate-100">
+                    <div className="bg-lime-50 rounded-2xl p-4 flex items-center space-x-3 border border-lime-100">
                         <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
                             <User className="h-5 w-5" />
                         </div>

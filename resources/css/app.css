@@ -12,24 +12,26 @@
 
 :root {
     color-scheme: light;
-    --teka-coral: #ff4d00;
-    --teka-sunrise: #ff7a00;
-    --teka-ink: #0b0b0b;
-    --teka-canvas: #f1f0eb;
+    --teka-coral: #65a30d;
+    --teka-sunrise: #84e000;
+    --teka-ink: #172033;
+    --teka-canvas: #f7f8f5;
+    --teka-green: #15803d;
+    --teka-lime: #84e000;
 }
 
 .teka-shell { background: var(--teka-canvas); }
-.teka-sidebar { background: #0b0b0b; color: #f1f0eb; border-color: #282828; }
-.teka-topbar { background: rgb(241 240 235 / 88%); border-color: #d4d2ca; backdrop-filter: blur(18px); }
-.teka-panel { background: #f8f7f2; border: 1px solid #d4d2ca; box-shadow: 0 16px 50px rgb(0 0 0 / 6%); }
+.teka-sidebar { background: #fff; color: var(--teka-ink); border-color: #e5e7eb; }
+.teka-topbar { background: rgb(255 255 255 / 92%); border-color: #e5e7eb; backdrop-filter: blur(18px); }
+.teka-panel { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 12px 36px rgb(23 32 51 / 7%); }
 .teka-kicker { font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
 .teka-kicker::before { content: '■'; color: var(--teka-coral); margin-right: .55rem; }
-.teka-display { font-weight: 700; letter-spacing: -.065em; line-height: .87; text-transform: uppercase; }
+.teka-display { font-weight: 750; letter-spacing: -.045em; line-height: .98; }
 .teka-accent { color: var(--teka-coral); }
 .teka-hero {
-    color: #f1f0eb;
-    background-color: #0b0b0b;
-    background-image: linear-gradient(90deg, #0b0b0b 0%, rgb(11 11 11 / 96%) 34%, rgb(11 11 11 / 20%) 72%), url('/images/wonten-biometric-hero-v2.png');
+    color: #fff;
+    background-color: #123b23;
+    background-image: linear-gradient(90deg, rgb(8 42 24 / 97%) 0%, rgb(12 61 34 / 88%) 42%, rgb(18 59 35 / 25%) 100%), url('/images/wonten-biometric-hero-v2.png');
     background-size: cover;
     background-position: center;
 }
@@ -39,19 +41,16 @@ html { scroll-behavior: smooth; }
 body {
     min-width: 320px;
     color: var(--teka-ink);
-    background:
-        radial-gradient(circle at 8% 0%, rgb(255 179 71 / 16%), transparent 28rem),
-        radial-gradient(circle at 100% 15%, rgb(240 93 78 / 10%), transparent 32rem),
-        var(--teka-canvas);
+    background: var(--teka-canvas);
     text-rendering: optimizeLegibility;
 }
 
-::selection { background: rgb(240 93 78 / 22%); }
+::selection { background: rgb(132 224 0 / 30%); }
 
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 :focus-visible {
-    outline: 3px solid rgb(240 93 78 / 35%);
+    outline: 3px solid rgb(101 163 13 / 30%);
     outline-offset: 2px;
 }
 
