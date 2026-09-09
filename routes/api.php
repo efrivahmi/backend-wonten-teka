@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\AttendanceAdjustmentController;
 use App\Http\Controllers\Api\BusinessTripController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AppConfigController;
+use App\Http\Controllers\Api\AdminBiometricController;
 
 // Simple root API route for sanity check
 Route::get('/', function () {
@@ -176,5 +177,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Device Approvals
         Route::get('/devices/pending', [DeviceAdminController::class, 'getPendingDevices']);
         Route::post('/devices/{deviceId}/review', [DeviceAdminController::class, 'reviewDevice']);
+        Route::get('/biometrics', [AdminBiometricController::class, 'index']);
+        Route::delete('/biometrics/{employee}/reset', [AdminBiometricController::class, 'reset']);
     });
 });

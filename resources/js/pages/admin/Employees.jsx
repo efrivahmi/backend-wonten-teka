@@ -27,7 +27,7 @@ const Employees = () => {
         department: '',
         position: '',
         phone: '',
-        role: 'employee'
+        role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent'
     });
     const [saving, setSaving] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -59,7 +59,7 @@ const Employees = () => {
             department: '',
             position: '',
             phone: '',
-            role: 'employee'
+            role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent'
         });
         setIsModalOpen(true);
         setActiveDropdown(null);
@@ -75,7 +75,9 @@ const Employees = () => {
             department: emp.department || '',
             position: emp.position || '',
             phone: emp.phone || '',
-            role: emp.user?.roles?.[0]?.name || 'employee'
+            role: emp.user?.roles?.[0]?.name || 'employee',
+            gender: emp.gender || '', address: emp.address || '',
+            join_date: emp.join_date?.slice(0, 10) || '', employment_status: emp.employment_status || 'permanent'
         });
         setIsModalOpen(true);
         setActiveDropdown(null);
@@ -347,6 +349,21 @@ const Employees = () => {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <label className="text-sm font-medium text-slate-700">Jenis Kelamin
+                                        <select name="gender" value={formData.gender} onChange={handleFormChange} className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg"><option value="">Belum diisi</option><option value="male">Laki-laki</option><option value="female">Perempuan</option></select>
+                                    </label>
+                                    <label className="text-sm font-medium text-slate-700">Tanggal Bergabung
+                                        <input type="date" name="join_date" value={formData.join_date} onChange={handleFormChange} className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg" />
+                                    </label>
+                                    <label className="text-sm font-medium text-slate-700">Status Kerja
+                                        <select name="employment_status" value={formData.employment_status} onChange={handleFormChange} className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg"><option value="permanent">Tetap</option><option value="contract">Kontrak</option><option value="probation">Masa percobaan</option><option value="intern">Magang</option><option value="honorary">Honorer</option></select>
+                                    </label>
+                                </div>
+                                <label className="block text-sm font-medium text-slate-700">Alamat
+                                    <textarea name="address" value={formData.address} onChange={handleFormChange} rows="2" className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg" />
+                                </label>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                                     <div>

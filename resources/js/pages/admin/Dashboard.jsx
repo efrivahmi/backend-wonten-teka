@@ -39,7 +39,7 @@ const AdminDashboard = () => {
         );
     }
 
-    const { employees, attendance_today, pending_approvals, recent_flags } = stats;
+    const { employees, attendance_today, attendance_month, daily_attendance_trend = [], monthly_attendance_trend = [], department_attendance = [], pending_approvals, recent_flags } = stats;
 
     // Calculate percentage for attendance
     const attendancePercentage = employees.total > 0 
@@ -55,6 +55,36 @@ const AdminDashboard = () => {
                     <p className="text-stone-300 mt-6">Pantau kehadiran, tindak lanjuti persetujuan, dan kelola operasional dari satu tempat.</p>
                 </div>
             </div>
+
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 rounded-2xl bg-gradient-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
+                    <p className="text-emerald-100 text-sm font-semibold">Tingkat kehadiran • {attendance_month?.label}</p>
+                    <div className="flex items-end gap-3 mt-3"><strong className="text-5xl md:text-6xl">{attendance_month?.rate ?? 0}%</strong><span className="text-emerald-100 pb-2">bulan berjalan</span></div>
+                    <div className="mt-6 h-2 bg-white/20 rounded-full overflow-hidden"><div className="h-full bg-lime-300 rounded-full transition-all" style={{width: `${Math.min(100, attendance_month?.rate ?? 0)}%`}} /></div>
+                    <p className="mt-3 text-xs text-emerald-100">{attendance_month?.present_employee_days ?? 0} kehadiran dari {attendance_month?.expected_employee_days ?? 0} hari kerja karyawan yang diharapkan.</p>
+                </div>
+                <div className="rounded-2xl bg-white border border-slate-200 p-6">
+                    <p className="text-sm text-slate-500">Rata-rata durasi kerja</p>
+                    <strong className="block text-4xl text-slate-900 mt-3">{Math.floor((attendance_month?.average_work_minutes ?? 0) / 60)}j {(attendance_month?.average_work_minutes ?? 0) % 60}m</strong>
+                    <p className="text-xs text-slate-400 mt-3">Dari absensi bulan berjalan yang memiliki waktu keluar.</p>
+                </div>
+            </section>
+
+            <section className="grid lg:grid-cols-2 gap-6">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                    <div className="mb-6"><h2 className="font-bold text-slate-900 text-lg">Tren 6 bulan</h2><p className="text-sm text-slate-500">Persentase hadir terhadap hari kerja yang diharapkan.</p></div>
+                    <div className="h-56 flex items-end gap-3">{monthly_attendance_trend.map(month => <div key={month.label} className="flex-1 h-full flex flex-col justify-end items-center gap-2"><span className="text-xs font-bold text-emerald-700">{month.rate}%</span><div className="w-full max-w-12 bg-emerald-500 rounded-t-lg min-h-1 transition-all" style={{height: `${Math.max(2, month.rate)}%`}}/><span className="text-[10px] text-slate-500 text-center">{month.label}</span></div>)}</div>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                    <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Kehadiran per departemen</h2><p className="text-sm text-slate-500">Kondisi langsung hari ini.</p></div>
+                    <div className="space-y-4 max-h-64 overflow-y-auto">{department_attendance.map(dept => <div key={dept.department}><div className="flex justify-between text-sm mb-1"><span className="font-semibold text-slate-700">{dept.department}</span><span className="font-bold text-green-700">{dept.attendance_rate}%</span></div><div className="h-2 bg-slate-100 rounded-full"><div className="h-full bg-green-600 rounded-full" style={{width: `${Math.min(100, dept.attendance_rate)}%`}}/></div><p className="text-[11px] text-slate-400 mt-1">{dept.present} hadir • {dept.absent} belum hadir • {dept.late} terlambat</p></div>)}</div>
+                </div>
+            </section>
+
+            <section className="bg-white border border-slate-200 rounded-2xl p-6">
+                <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Konsistensi bulan berjalan</h2><p className="text-sm text-slate-500">Tingkat kehadiran pada setiap hari kerja yang sudah berlalu.</p></div>
+                <div className="flex gap-2 overflow-x-auto pb-2">{daily_attendance_trend.map(day => <div key={day.date} className="min-w-16 text-center"><div className="h-28 bg-slate-100 rounded-xl flex items-end overflow-hidden"><div className={`w-full ${day.rate >= 90 ? 'bg-emerald-500' : day.rate >= 70 ? 'bg-lime-500' : 'bg-amber-500'}`} style={{height: `${Math.max(3, day.rate)}%`}}/></div><strong className="block text-xs mt-2 text-slate-700">{day.rate}%</strong><span className="text-[10px] text-slate-400">{day.label}</span></div>)}</div>
+            </section>
 
             {/* Top Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

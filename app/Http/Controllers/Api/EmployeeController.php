@@ -123,7 +123,7 @@ class EmployeeController extends Controller
             'position' => 'nullable|string|max:100',
             'join_date' => 'nullable|date',
             'employment_status' => 'required|string',
-            'ptkp_status' => 'required|string',
+            'ptkp_status' => 'nullable|string',
             'bpjs_kesehatan_number' => 'nullable|string',
             'bpjs_ketenagakerjaan_number' => 'nullable|string',
             'bank_name' => 'nullable|string',
@@ -147,7 +147,7 @@ class EmployeeController extends Controller
             $employee->position = $validated['position'] ?? null;
             $employee->join_date = $validated['join_date'] ?? null;
             $employee->employment_status = $validated['employment_status'];
-            $employee->ptkp_status = $validated['ptkp_status'];
+            $employee->ptkp_status = $validated['ptkp_status'] ?? null;
             $employee->is_active = true;
             $employee->face_enrolled = false;
 
@@ -208,6 +208,10 @@ class EmployeeController extends Controller
             'employee_number' => 'required|string|max:50',
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
+            'gender' => 'nullable|in:male,female',
+            'address' => 'nullable|string|max:1000',
+            'join_date' => 'nullable|date',
+            'employment_status' => 'nullable|string|max:50',
             'role' => 'nullable|string'
         ]);
 
@@ -239,6 +243,10 @@ class EmployeeController extends Controller
                 'email' => $validated['email'],
                 'department' => $validated['department'],
                 'position' => $validated['position'],
+                'gender' => $validated['gender'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'join_date' => $validated['join_date'] ?? null,
+                'employment_status' => $validated['employment_status'] ?? 'permanent',
                 'is_active' => true,
             ]);
 
@@ -276,6 +284,10 @@ class EmployeeController extends Controller
             'employee_number' => 'sometimes|required|string|max:50',
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
+            'gender' => 'nullable|in:male,female',
+            'address' => 'nullable|string|max:1000',
+            'join_date' => 'nullable|date',
+            'employment_status' => 'nullable|string|max:50',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -288,6 +300,10 @@ class EmployeeController extends Controller
             if (array_key_exists('email', $validated)) $employee->email = $validated['email'];
             if (array_key_exists('department', $validated)) $employee->department = $validated['department'];
             if (array_key_exists('position', $validated)) $employee->position = $validated['position'];
+            if (array_key_exists('gender', $validated)) $employee->gender = $validated['gender'];
+            if (array_key_exists('address', $validated)) $employee->address = $validated['address'];
+            if (array_key_exists('join_date', $validated)) $employee->join_date = $validated['join_date'];
+            if (array_key_exists('employment_status', $validated)) $employee->employment_status = $validated['employment_status'];
             if (isset($validated['is_active'])) $employee->is_active = $validated['is_active'];
 
             $employee->save();

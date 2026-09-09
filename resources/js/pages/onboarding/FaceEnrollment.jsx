@@ -27,7 +27,7 @@ const matchesPose = (step, yaw, firstSideYaw) => {
         && Math.sign(yaw) !== Math.sign(firstSideYaw);
 };
 
-const FaceEnrollment = () => {
+const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
     const webcamRef = useRef(null);
     const firstSideYawRef = useRef(null);
     const navigate = useNavigate();
@@ -151,7 +151,7 @@ const FaceEnrollment = () => {
             });
             
             // Go to next step
-            navigate('/onboarding'); // Let orchestrator handle next step
+            navigate(returnTo);
         } catch (err) {
             console.error(err);
             setMessage('Gagal menyimpan biometrik. Silakan coba lagi.');

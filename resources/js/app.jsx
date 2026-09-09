@@ -1,6 +1,6 @@
 import '../css/app.css';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
@@ -21,6 +21,7 @@ import EmployeeClaims from './pages/employee/Claims';
 import EmployeePayslip from './pages/employee/Payslip';
 import EmployeeResources from './pages/employee/Resources';
 import AdminOperations from './pages/admin/Operations';
+import AdminBiometrics from './pages/admin/Biometrics';
 
 // Onboarding Pages
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
@@ -28,6 +29,19 @@ import DeviceRegister from './pages/onboarding/DeviceRegister';
 import DevicePending from './pages/onboarding/DevicePending';
 import FaceEnrollment from './pages/onboarding/FaceEnrollment';
 import CompleteProfile from './pages/onboarding/CompleteProfile';
+import api from './api';
+
+const EmployeeFeatureGuard = ({ feature, children }) => {
+    const [allowed, setAllowed] = useState(null);
+    useEffect(() => {
+        api.get('/app-config').then(response => {
+            const item = (response.data.data?.employee_menu || []).find(menu => menu.key === feature);
+            setAllowed(item ? item.enabled : true);
+        }).catch(() => setAllowed(true));
+    }, [feature]);
+    if (allowed === null) return <div className="p-12 text-center text-slate-500">Memeriksa akses fitur…</div>;
+    return allowed ? children : <Navigate to="/employee/dashboard" replace />;
+};
 
 const App = () => {
     return (
@@ -46,19 +60,20 @@ const App = () => {
                 {/* Employee Routes */}
                 <Route path="/employee" element={<EmployeeLayout />}>
                     <Route path="dashboard" element={<EmployeeDashboard />} />
-                    <Route path="attendance" element={<EmployeeAttendance />} />
-                    <Route path="leave" element={<EmployeeLeave />} />
-                    <Route path="overtime" element={<EmployeeOvertime />} />
-                    <Route path="claims" element={<EmployeeClaims />} />
-                    <Route path="payslip" element={<EmployeePayslip />} />
-                    <Route path="shifts" element={<EmployeeResources type="shifts" />} />
-                    <Route path="calendar" element={<EmployeeResources type="calendar" />} />
-                    <Route path="announcements" element={<EmployeeResources type="announcements" />} />
-                    <Route path="tasks" element={<EmployeeResources type="tasks" />} />
-                    <Route path="attendance-adjustments" element={<EmployeeResources type="adjustments" />} />
-                    <Route path="business-trips" element={<EmployeeResources type="trips" />} />
-                    <Route path="notifications" element={<EmployeeResources type="notifications" />} />
-                    <Route path="directory" element={<EmployeeResources type="directory" />} />
+                    <Route path="attendance" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
+                    <Route path="leave" element={<EmployeeFeatureGuard feature="leave"><EmployeeLeave /></EmployeeFeatureGuard>} />
+                    <Route path="overtime" element={<EmployeeFeatureGuard feature="overtime"><EmployeeOvertime /></EmployeeFeatureGuard>} />
+                    <Route path="claims" element={<EmployeeFeatureGuard feature="claims"><EmployeeClaims /></EmployeeFeatureGuard>} />
+                    <Route path="payslip" element={<EmployeeFeatureGuard feature="payroll"><EmployeePayslip /></EmployeeFeatureGuard>} />
+                    <Route path="shifts" element={<EmployeeFeatureGuard feature="schedule"><EmployeeResources type="shifts" /></EmployeeFeatureGuard>} />
+                    <Route path="calendar" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
+                    <Route path="announcements" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
+                    <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="attendance-adjustments" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
+                    <Route path="business-trips" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
+                    <Route path="notifications" element={<EmployeeFeatureGuard feature="notifications"><EmployeeResources type="notifications" /></EmployeeFeatureGuard>} />
+                    <Route path="directory" element={<EmployeeFeatureGuard feature="directory"><EmployeeResources type="directory" /></EmployeeFeatureGuard>} />
+                    <Route path="face-enrollment" element={<EmployeeFeatureGuard feature="biometric"><FaceEnrollment returnTo="/employee/dashboard" /></EmployeeFeatureGuard>} />
                 </Route>
 
                 {/* Admin Routes */}
@@ -74,6 +89,7 @@ const App = () => {
                     <Route path="payroll" element={<AdminOperations type="payroll" />} />
                     <Route path="leave-types" element={<AdminOperations type="leaveTypes" />} />
                     <Route path="attendance-flags" element={<AdminOperations type="flags" />} />
+                    <Route path="biometrics" element={<AdminBiometrics />} />
                 </Route>
 
                 {/* Fallback Route */}

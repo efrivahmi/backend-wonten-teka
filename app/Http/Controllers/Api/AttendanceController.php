@@ -195,7 +195,11 @@ class AttendanceController extends Controller
                 $request->input('face_descriptor'),
                 $biometric->web_face_embedding
             );
-        } elseif ($faceMatchScore < 0.8) {
+        } else {
+            $mobileBiometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
+            abort_unless($mobileBiometric?->face_embedding, 422, 'Data wajah mobile belum didaftarkan atau telah direset admin. Silakan rekam ulang wajah.');
+        }
+        if (!$request->filled('face_descriptor') && $faceMatchScore < 0.8) {
             return response()->json([
                 'message' => 'Gagal verifikasi wajah. Tingkat kemiripan di bawah 80%. Silakan coba lagi dengan pencahayaan yang baik.'
             ], 422);
@@ -287,7 +291,11 @@ class AttendanceController extends Controller
                 $request->input('face_descriptor'),
                 $biometric->web_face_embedding
             );
-        } elseif ($faceMatchScore < 0.8) {
+        } else {
+            $mobileBiometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
+            abort_unless($mobileBiometric?->face_embedding, 422, 'Data wajah mobile belum didaftarkan atau telah direset admin. Silakan rekam ulang wajah.');
+        }
+        if (!$request->filled('face_descriptor') && $faceMatchScore < 0.8) {
             return response()->json([
                 'message' => 'Gagal verifikasi wajah. Tingkat kemiripan di bawah 80%. Silakan coba lagi.'
             ], 422);

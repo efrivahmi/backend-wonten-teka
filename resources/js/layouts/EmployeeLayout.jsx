@@ -21,10 +21,15 @@ import api from '../api';
 
 const EmployeeLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [menuConfig, setMenuConfig] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
     
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    useEffect(() => {
+        api.get('/app-config').then(response => setMenuConfig(response.data.data?.employee_menu || [])).catch(() => setMenuConfig([]));
+    }, []);
 
     // Bounce-out mechanism if device is revoked/rejected while logged in
     useEffect(() => {
@@ -61,21 +66,26 @@ const EmployeeLayout = () => {
         return () => clearInterval(intervalId);
     }, [navigate, user]);
 
-    const navigation = [
-        { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
-        { name: 'Absensi', href: '/employee/attendance', icon: CalendarCheck },
-        { name: 'Cuti', href: '/employee/leave', icon: Briefcase },
-        { name: 'Lembur', href: '/employee/overtime', icon: Clock },
-        { name: 'Klaim/Reimburse', href: '/employee/claims', icon: FileText },
-        { name: 'Slip Gaji', href: '/employee/payslip', icon: FileText },
-        { name: 'Jadwal & Shift', href: '/employee/shifts', icon: CalendarDays },
-        { name: 'Kalender', href: '/employee/calendar', icon: CalendarDays },
-        { name: 'Pengumuman', href: '/employee/announcements', icon: Bell },
-        { name: 'Tugas Pribadi', href: '/employee/tasks', icon: ClipboardList },
-        { name: 'Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
-        { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
-        { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
-    ];
+    const menuDefinitions = {
+        attendance: { name: 'Absensi', href: '/employee/attendance', icon: CalendarCheck },
+        schedule: { name: 'Jadwal & Shift', href: '/employee/shifts', icon: CalendarDays },
+        leave: { name: 'Cuti', href: '/employee/leave', icon: Briefcase },
+        overtime: { name: 'Lembur', href: '/employee/overtime', icon: Clock },
+        claims: { name: 'Klaim/Reimburse', href: '/employee/claims', icon: FileText },
+        payroll: { name: 'Slip Gaji', href: '/employee/payslip', icon: FileText },
+        calendar: { name: 'Kalender', href: '/employee/calendar', icon: CalendarDays },
+        announcements: { name: 'Pengumuman', href: '/employee/announcements', icon: Bell },
+        tasks: { name: 'Tugas Pribadi', href: '/employee/tasks', icon: ClipboardList },
+        adjustments: { name: 'Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
+        business_trips: { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
+        directory: { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
+        notifications: { name: 'Notifikasi', href: '/employee/notifications', icon: Bell },
+        biometric: { name: 'Pendaftaran Wajah', href: '/employee/face-enrollment', icon: User },
+    };
+    const configuredNavigation = menuConfig.length
+        ? menuConfig.filter(item => item.enabled && menuDefinitions[item.key]).map(item => ({ ...menuDefinitions[item.key], name: item.label }))
+        : Object.values(menuDefinitions);
+    const navigation = [{ name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard }, ...configuredNavigation];
 
     const handleLogout = async () => {
         try {

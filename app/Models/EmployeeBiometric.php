@@ -35,6 +35,7 @@ class EmployeeBiometric extends Model
      */
     public function getFaceEmbeddingAttribute($value)
     {
+        if (!$value) return null;
         $decoded = json_decode(Crypt::decryptString($value), true);
         return is_string($decoded) ? json_decode($decoded, true) : $decoded;
     }

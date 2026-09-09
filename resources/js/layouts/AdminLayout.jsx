@@ -93,6 +93,7 @@ const AdminLayout = () => {
                 { name: 'Payroll', href: '/admin/payroll', icon: Banknote },
                 { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
                 { name: 'Flag Absensi', href: '/admin/attendance-flags', icon: Flag },
+                { name: 'Biometrik Wajah', href: '/admin/biometrics', icon: Shield },
             ]
         },
     ];

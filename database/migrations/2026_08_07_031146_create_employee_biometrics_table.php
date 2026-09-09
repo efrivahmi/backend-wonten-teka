@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('employee_biometrics', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->text('face_embedding'); // Application-level encrypted string
+            $table->text('face_embedding')->nullable(); // Mobile descriptor, encrypted
             $table->timestamp('enrolled_at')->nullable();
             $table->string('device_id')->nullable();
             $table->timestamps();

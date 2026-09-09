@@ -227,8 +227,9 @@ const Settings = () => {
                     </label>)}
                 </div>
                 <div className="grid md:grid-cols-2 gap-3">
-                    {(appConfig.employee_menu || []).map((item, index) => <label key={item.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                        <span><strong className="block text-slate-800">{item.label}</strong><small className="text-slate-500">{item.key}</small></span>
+                    {(appConfig.employee_menu || []).map((item, index) => <label key={item.key} className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
+                        <span className="min-w-24"><small className="text-slate-500">{item.key}</small></span>
+                        <input aria-label={`Nama menu ${item.key}`} value={item.label} onChange={e => setAppConfig(prev => ({...prev, employee_menu: prev.employee_menu.map((menu, i) => i === index ? {...menu, label: e.target.value} : menu)}))} className="flex-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold" />
                         <input type="checkbox" checked={item.enabled} onChange={e => setAppConfig(prev => ({...prev, employee_menu: prev.employee_menu.map((menu, i) => i === index ? {...menu, enabled: e.target.checked} : menu)}))} className="h-5 w-5 accent-green-700" />
                     </label>)}
                 </div>

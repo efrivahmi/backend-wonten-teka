@@ -9,6 +9,7 @@ use App\Models\AttendanceLog;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Claim;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -24,7 +25,7 @@ class AdminDashboardController extends Controller
         $today = Carbon::today();
 
         // 1. Total Employees
-        $totalEmployees = Employee::count();
+        $totalEmployees = Employee::where('is_active', true)->count();
 
         // 2. Attendance Stats for Today
         $presentCount = AttendanceLog::whereDate('check_in_at', $today)
@@ -91,6 +92,48 @@ class AdminDashboardController extends Controller
                 ];
             })->values();
 
+        $workingDays = Setting::where('key', 'working_days')->first()?->value ?? [1, 2, 3, 4, 5];
+        $monthStart = $today->copy()->startOfMonth();
+        $workingDaysElapsed = collect();
+        for ($date = $monthStart->copy(); $date->lte($today); $date->addDay()) {
+            if (in_array($date->dayOfWeekIso, $workingDays, true)) $workingDaysElapsed->push($date->copy());
+        }
+        $presentEmployeeDays = AttendanceLog::whereBetween('check_in_at', [$monthStart, $today->copy()->endOfDay()])
+            ->selectRaw('DATE(check_in_at) as attendance_date, employee_id')
+            ->distinct()->get()->count();
+        $expectedEmployeeDays = $totalEmployees * $workingDaysElapsed->count();
+        $monthAttendanceRate = $expectedEmployeeDays > 0
+            ? round(($presentEmployeeDays / $expectedEmployeeDays) * 100, 1)
+            : 0;
+        $averageWorkMinutes = (int) round((float) AttendanceLog::whereBetween('check_in_at', [$monthStart, $today->copy()->endOfDay()])
+            ->whereNotNull('work_duration_minutes')->avg('work_duration_minutes'));
+
+        $dailyTrend = $workingDaysElapsed->map(function ($date) use ($totalEmployees) {
+            $present = AttendanceLog::whereDate('check_in_at', $date)->distinct('employee_id')->count('employee_id');
+            return [
+                'date' => $date->toDateString(),
+                'label' => $date->format('d M'),
+                'present' => $present,
+                'rate' => $totalEmployees > 0 ? round(($present / $totalEmployees) * 100, 1) : 0,
+            ];
+        })->values();
+
+        $monthlyTrend = collect(range(5, 0))->map(function ($monthsAgo) use ($today, $workingDays, $totalEmployees) {
+            $start = $today->copy()->subMonths($monthsAgo)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+            $days = 0;
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                if (in_array($date->dayOfWeekIso, $workingDays, true)) $days++;
+            }
+            $present = AttendanceLog::whereBetween('check_in_at', [$start, $end])
+                ->selectRaw('DATE(check_in_at), employee_id')->distinct()->get()->count();
+            $expected = $totalEmployees * $days;
+            return ['label' => $start->translatedFormat('M Y'), 'rate' => $expected > 0 ? round(($present / $expected) * 100, 1) : 0];
+        })->push([
+            'label' => $today->translatedFormat('M Y'),
+            'rate' => $monthAttendanceRate,
+        ])->values();
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -112,6 +155,16 @@ class AdminDashboardController extends Controller
                 ],
                 'recent_flags' => $flags,
                 'department_attendance' => $departments,
+                'attendance_month' => [
+                    'label' => $today->translatedFormat('F Y'),
+                    'rate' => $monthAttendanceRate,
+                    'present_employee_days' => $presentEmployeeDays,
+                    'expected_employee_days' => $expectedEmployeeDays,
+                    'working_days_elapsed' => $workingDaysElapsed->count(),
+                    'average_work_minutes' => $averageWorkMinutes,
+                ],
+                'daily_attendance_trend' => $dailyTrend,
+                'monthly_attendance_trend' => $monthlyTrend,
             ]
         ]);
     }
