@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/employee/complete-profile', [EmployeeController::class, 'completeProfile']);
     Route::get('/employee/options', [EmployeeController::class, 'getOptions']);
+    Route::get('/employee/directory', [EmployeeController::class, 'directory']);
+    Route::put('/employee/profile', [EmployeeController::class, 'updateOwnProfile']);
 
     Route::prefix('device')->group(function () {
         Route::post('/register', [DeviceController::class, 'register']);

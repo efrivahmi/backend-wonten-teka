@@ -10,7 +10,11 @@ import {
     Menu,
     X,
     User,
-    Bell
+    Bell,
+    CalendarDays,
+    ClipboardList,
+    Plane,
+    SlidersHorizontal
 } from 'lucide-react';
 import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../api';
@@ -64,6 +68,13 @@ const EmployeeLayout = () => {
         { name: 'Lembur', href: '/employee/overtime', icon: Clock },
         { name: 'Klaim/Reimburse', href: '/employee/claims', icon: FileText },
         { name: 'Slip Gaji', href: '/employee/payslip', icon: FileText },
+        { name: 'Jadwal & Shift', href: '/employee/shifts', icon: CalendarDays },
+        { name: 'Kalender', href: '/employee/calendar', icon: CalendarDays },
+        { name: 'Pengumuman', href: '/employee/announcements', icon: Bell },
+        { name: 'Tugas Pribadi', href: '/employee/tasks', icon: ClipboardList },
+        { name: 'Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
+        { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
+        { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
     ];
 
     const handleLogout = async () => {
@@ -141,9 +152,9 @@ const EmployeeLayout = () => {
                     </button>
                     
                     <div className="flex items-center space-x-4 ml-auto">
-                        <button className="text-slate-400 hover:text-emerald-600 transition-colors p-2">
+                        <Link to="/employee/notifications" className="text-slate-400 hover:text-emerald-600 transition-colors p-2">
                             <Bell className="h-5 w-5" />
-                        </button>
+                        </Link>
                     </div>
                 </header>
 

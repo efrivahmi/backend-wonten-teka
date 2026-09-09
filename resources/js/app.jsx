@@ -19,6 +19,8 @@ import EmployeeLeave from './pages/employee/Leave';
 import EmployeeOvertime from './pages/employee/Overtime';
 import EmployeeClaims from './pages/employee/Claims';
 import EmployeePayslip from './pages/employee/Payslip';
+import EmployeeResources from './pages/employee/Resources';
+import AdminOperations from './pages/admin/Operations';
 
 // Onboarding Pages
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
@@ -49,6 +51,14 @@ const App = () => {
                     <Route path="overtime" element={<EmployeeOvertime />} />
                     <Route path="claims" element={<EmployeeClaims />} />
                     <Route path="payslip" element={<EmployeePayslip />} />
+                    <Route path="shifts" element={<EmployeeResources type="shifts" />} />
+                    <Route path="calendar" element={<EmployeeResources type="calendar" />} />
+                    <Route path="announcements" element={<EmployeeResources type="announcements" />} />
+                    <Route path="tasks" element={<EmployeeResources type="tasks" />} />
+                    <Route path="attendance-adjustments" element={<EmployeeResources type="adjustments" />} />
+                    <Route path="business-trips" element={<EmployeeResources type="trips" />} />
+                    <Route path="notifications" element={<EmployeeResources type="notifications" />} />
+                    <Route path="directory" element={<EmployeeResources type="directory" />} />
                 </Route>
 
                 {/* Admin Routes */}
@@ -59,6 +69,11 @@ const App = () => {
                     <Route path="schedule" element={<AdminSchedule />} />
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="devices" element={<AdminOperations type="devices" />} />
+                    <Route path="events" element={<AdminOperations type="events" />} />
+                    <Route path="payroll" element={<AdminOperations type="payroll" />} />
+                    <Route path="leave-types" element={<AdminOperations type="leaveTypes" />} />
+                    <Route path="attendance-flags" element={<AdminOperations type="flags" />} />
                 </Route>
 
                 {/* Fallback Route */}

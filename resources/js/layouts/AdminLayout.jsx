@@ -13,7 +13,13 @@ import {
     Bell,
     MapPin,
     CalendarCheck,
-    ChevronDown
+    ChevronDown,
+    CalendarDays,
+    Banknote,
+    ListChecks,
+    Smartphone,
+    Flag,
+    Briefcase
 } from 'lucide-react';
 import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../api';
@@ -78,6 +84,17 @@ const AdminLayout = () => {
             ]
         },
         { name: 'Laporan', href: '/admin/reports', icon: FileBarChart },
+        {
+            name: 'Operasional',
+            icon: ListChecks,
+            children: [
+                { name: 'Perangkat', href: '/admin/devices', icon: Smartphone },
+                { name: 'Event', href: '/admin/events', icon: CalendarDays },
+                { name: 'Payroll', href: '/admin/payroll', icon: Banknote },
+                { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
+                { name: 'Flag Absensi', href: '/admin/attendance-flags', icon: Flag },
+            ]
+        },
     ];
 
     const handleLogout = async () => {

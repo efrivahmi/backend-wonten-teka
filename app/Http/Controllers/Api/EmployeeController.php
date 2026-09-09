@@ -13,6 +13,50 @@ use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
+    public function directory(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $employees = Employee::query()
+            ->where('is_active', true)
+            ->when($search !== '', fn ($query) => $query->where(function ($nested) use ($search) {
+                $nested->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%")
+                    ->orWhere('position', 'like', "%{$search}%");
+            }))
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'department', 'position', 'phone', 'photo_url']);
+
+        return response()->json(['data' => $employees]);
+    }
+
+    public function updateOwnProfile(Request $request)
+    {
+        $employee = $request->user()->employee;
+        abort_unless($employee, 403, 'Profil karyawan tidak ditemukan.');
+
+        $validated = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($request->user()->id)],
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:1000',
+        ]);
+
+        DB::transaction(function () use ($employee, $validated, $request) {
+            $employee->update([
+                'full_name' => $validated['full_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+            ]);
+            $request->user()->update(['name' => $validated['full_name'], 'email' => $validated['email']]);
+        });
+
+        return response()->json([
+            'message' => 'Profil berhasil diperbarui.',
+            'user' => $request->user()->fresh()->load('employee', 'roles'),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();

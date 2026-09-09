@@ -12,23 +12,31 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
+        $credentials = $request->validate([
+            // Kept as `email` for compatibility with released mobile builds,
+            // but the value may also be an employee number.
+            'email' => 'required|string|max:255',
             'password' => 'required',
             'device_name' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = trim($credentials['email']);
+        $user = User::query()
+            ->where('email', $identifier)
+            ->orWhereHas('employee', function ($query) use ($identifier) {
+                $query->where('employee_number', $identifier);
+            })
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['Email/NIP atau kata sandi tidak sesuai.'],
             ]);
         }
         
         if (! $user->is_active) {
             throw ValidationException::withMessages([
-                'email' => ['Your account is disabled.'],
+                'email' => ['Akun Anda sedang dinonaktifkan. Hubungi admin.'],
             ]);
         }
 
