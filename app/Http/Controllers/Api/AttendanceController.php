@@ -146,13 +146,19 @@ class AttendanceController extends Controller
         $shiftTemplate = null;
 
         if ($shiftAssignmentId) {
-            $assignment = \App\Models\ShiftAssignment::find($shiftAssignmentId);
-            if (!$assignment || $assignment->employee_id !== $employee->id) {
+            $assignment = \App\Models\ShiftAssignment::whereKey($shiftAssignmentId)
+                ->where('employee_id', $employee->id)
+                ->whereDate('date', Carbon::today())
+                ->first();
+            if (!$assignment) {
                 return response()->json(['message' => 'Shift tidak terdaftar untuk karyawan ini.'], 422);
             }
             $shiftTemplate = $assignment->shiftTemplate;
         } else if ($shiftTemplateId) {
-            $shiftTemplate = \App\Models\ShiftTemplate::find($shiftTemplateId);
+            $hasAssignedShift = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+                ->whereDate('date', Carbon::today())->exists();
+            $shiftTemplate = $hasAssignedShift ? null : \App\Models\ShiftTemplate::whereKey($shiftTemplateId)
+                ->where('is_default', true)->first();
         }
 
         if (!$shiftTemplate) {
@@ -326,7 +332,10 @@ class AttendanceController extends Controller
 
         $shiftTemplate = null;
         if ($shiftAssignmentId) {
-            $assignment = \App\Models\ShiftAssignment::find($shiftAssignmentId);
+            $assignment = \App\Models\ShiftAssignment::whereKey($shiftAssignmentId)
+                ->where('employee_id', $employee->id)
+                ->whereDate('date', Carbon::today())
+                ->first();
             if ($assignment) {
                 $shiftTemplate = $assignment->shiftTemplate;
             }
@@ -408,14 +417,9 @@ class AttendanceController extends Controller
             ->get();
 
         $shifts = [];
-        $hasRegular = false;
-
         foreach ($shiftAssignments as $assignment) {
             $template = $assignment->shiftTemplate;
             if ($template) {
-                if ($template->category === 'Reguler') {
-                    $hasRegular = true;
-                }
                 $shifts[] = [
                     'assignment_id' => $assignment->id,
                     'template_id' => $template->id,
@@ -427,7 +431,7 @@ class AttendanceController extends Controller
             }
         }
 
-        if (!$hasRegular) {
+        if ($shiftAssignments->isEmpty()) {
             $defaultTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
             if ($defaultTemplate) {
                 array_unshift($shifts, [
@@ -447,7 +451,9 @@ class AttendanceController extends Controller
 
         $role = [
             'employment_status' => $employee->employment_status,
-            'position' => $employee->position ?? $employee->department ?? 'Karyawan',
+            'position' => $employee->position ?? 'Karyawan',
+            'department' => $employee->department ?? 'Belum ditentukan',
+            'employee_name' => $employee->full_name,
         ];
 
         $attendances = \App\Models\AttendanceLog::where('employee_id', $employee->id)
@@ -455,6 +461,12 @@ class AttendanceController extends Controller
             ->get();
 
         foreach ($shifts as &$shift) {
+            $startAt = Carbon::today()->setTimeFromTimeString($shift['start_time']);
+            $endAt = Carbon::today()->setTimeFromTimeString($shift['end_time']);
+            $shift['time_status'] = now()->lt($startAt) ? 'upcoming' : (now()->lte($endAt) ? 'active' : 'ended');
+            $shift['time_status_label'] = $shift['time_status'] === 'upcoming'
+                ? 'Belum dimulai'
+                : ($shift['time_status'] === 'active' ? 'Sedang berlangsung' : 'Jadwal selesai');
             $log = $attendances->first(function($att) use ($shift) {
                 return $att->shift_assignment_id == $shift['assignment_id'];
             });

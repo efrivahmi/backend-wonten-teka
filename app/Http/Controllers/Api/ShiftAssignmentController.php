@@ -28,7 +28,10 @@ class ShiftAssignmentController extends Controller
         $endDate = Carbon::parse($endDateStr);
 
         // Fetch active employees
-        $employees = Employee::where('status', 'active')->get();
+        $employees = Employee::where('is_active', true)
+            ->orderBy('department')
+            ->orderBy('full_name')
+            ->get();
 
         // Fetch assignments for the period
         $assignments = ShiftAssignment::query()
