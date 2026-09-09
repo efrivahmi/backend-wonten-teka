@@ -67,6 +67,10 @@ return [
 
     'timezone' => 'UTC',
 
+    // Human work schedules are interpreted in the organisation's local time,
+    // while persisted timestamps remain UTC.
+    'business_timezone' => env('APP_BUSINESS_TIMEZONE', 'Asia/Jakarta'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

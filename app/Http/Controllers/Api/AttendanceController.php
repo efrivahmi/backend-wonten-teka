@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Services\FaceDescriptorService;
+use App\Services\ShiftTimeService;
 
 class AttendanceController extends Controller
 {
@@ -76,6 +77,9 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
+        $shiftClock = app(ShiftTimeService::class);
+        $businessNow = $shiftClock->now();
+        [$dayStartUtc, $dayEndUtc] = $shiftClock->utcDayBounds($businessNow);
 
         if (!$employee) {
             return response()->json(['message' => 'Employee profile not found.'], 403);
@@ -129,7 +133,7 @@ class AttendanceController extends Controller
 
         // --- CASCADING SHIFT VALIDATION ---
         $uncompletedPreviousShift = AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today())
+            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
             ->whereNull('check_out_at')
             ->first();
 
@@ -148,7 +152,7 @@ class AttendanceController extends Controller
         if ($shiftAssignmentId) {
             $assignment = \App\Models\ShiftAssignment::whereKey($shiftAssignmentId)
                 ->where('employee_id', $employee->id)
-                ->whereDate('date', Carbon::today())
+                ->whereDate('date', $businessNow->toDateString())
                 ->first();
             if (!$assignment) {
                 return response()->json(['message' => 'Shift tidak terdaftar untuk karyawan ini.'], 422);
@@ -156,7 +160,7 @@ class AttendanceController extends Controller
             $shiftTemplate = $assignment->shiftTemplate;
         } else if ($shiftTemplateId) {
             $hasAssignedShift = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-                ->whereDate('date', Carbon::today())->exists();
+                ->whereDate('date', $businessNow->toDateString())->exists();
             $shiftTemplate = $hasAssignedShift ? null : \App\Models\ShiftTemplate::whereKey($shiftTemplateId)
                 ->where('is_default', true)->first();
         }
@@ -167,14 +171,17 @@ class AttendanceController extends Controller
 
         if ($shiftTemplate) {
             $flags['shift_name'] = $shiftTemplate->name;
-            $startTime = Carbon::parse($shiftTemplate->start_time);
+            $startTime = $shiftClock->scheduledStart(
+                $shiftTemplate->start_time->format('H:i'),
+                $businessNow,
+            );
             $gracePeriod = $shiftTemplate->grace_period_minutes ?? 0;
 
             $lateThreshold = $startTime->copy()->addMinutes($gracePeriod);
 
-            if (now()->greaterThan($lateThreshold)) {
+            if ($businessNow->greaterThan($lateThreshold)) {
                 $status = 'late';
-            } elseif (now()->greaterThan($startTime)) {
+            } elseif ($businessNow->greaterThan($startTime)) {
                 $status = 'present'; // Dalam toleransi
             } else {
                 $status = 'on_time'; // Tepat waktu
@@ -206,7 +213,7 @@ class AttendanceController extends Controller
         }
 
         $existingLogQuery = AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today());
+            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc]);
 
         if ($shiftAssignmentId) {
             $existingLogQuery->where('shift_assignment_id', $shiftAssignmentId);
@@ -259,6 +266,9 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
+        $shiftClock = app(ShiftTimeService::class);
+        $businessNow = $shiftClock->now();
+        [$dayStartUtc, $dayEndUtc] = $shiftClock->utcDayBounds($businessNow);
 
         $flags = $request->flags;
         if (is_string($flags)) {
@@ -303,8 +313,12 @@ class AttendanceController extends Controller
 
         $shiftAssignmentId = $request->shift_assignment_id;
 
+        // A night shift can check out on the following calendar day. Search from
+        // the start of the previous business day so its check-in remains visible.
+        [$previousDayStartUtc] = $shiftClock->utcDayBounds($businessNow->copy()->subDay());
+
         $query = AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today());
+            ->whereBetween('check_in_at', [$previousDayStartUtc, $dayEndUtc]);
 
         if ($shiftAssignmentId) {
             $query->where('shift_assignment_id', $shiftAssignmentId);
@@ -312,7 +326,7 @@ class AttendanceController extends Controller
             $query->whereNull('shift_assignment_id');
         }
 
-        $attendance = $query->first();
+        $attendance = $query->latest('check_in_at')->first();
 
         if (!$attendance) {
             return response()->json(['message' => 'Data check-in tidak ditemukan untuk shift ini.'], 404);
@@ -339,10 +353,10 @@ class AttendanceController extends Controller
         }
 
         $shiftTemplate = null;
+        $assignment = null;
         if ($shiftAssignmentId) {
             $assignment = \App\Models\ShiftAssignment::whereKey($shiftAssignmentId)
                 ->where('employee_id', $employee->id)
-                ->whereDate('date', Carbon::today())
                 ->first();
             if ($assignment) {
                 $shiftTemplate = $assignment->shiftTemplate;
@@ -352,8 +366,14 @@ class AttendanceController extends Controller
         }
 
         if ($shiftTemplate && $shiftTemplate->end_time) {
-            $endTime = Carbon::parse($shiftTemplate->end_time);
-            if (now()->lessThan($endTime)) {
+            $workDate = $assignment?->date
+                ?? $attendance->check_in_at->copy()->setTimezone(config('app.business_timezone'));
+            $endTime = $shiftClock->scheduledEnd(
+                $shiftTemplate->start_time->format('H:i'),
+                $shiftTemplate->end_time->format('H:i'),
+                $workDate,
+            );
+            if ($businessNow->lessThan($endTime)) {
                 return response()->json(['message' => 'Belum waktunya pulang. Jam pulang Anda adalah ' . $endTime->format('H:i')], 422);
             }
         }
@@ -418,9 +438,12 @@ class AttendanceController extends Controller
         if (!$employee) {
             return response()->json(['message' => 'Employee profile not found.'], 403);
         }
+        $shiftClock = app(ShiftTimeService::class);
+        $businessNow = $shiftClock->now();
+        [$dayStartUtc, $dayEndUtc] = $shiftClock->utcDayBounds($businessNow);
 
         $shiftAssignments = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-            ->whereDate('date', Carbon::today())
+            ->whereDate('date', $businessNow->toDateString())
             ->with('shiftTemplate')
             ->get();
 
@@ -465,13 +488,13 @@ class AttendanceController extends Controller
         ];
 
         $attendances = \App\Models\AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('check_in_at', Carbon::today())
+            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
             ->get();
 
         foreach ($shifts as &$shift) {
-            $startAt = Carbon::today()->setTimeFromTimeString($shift['start_time']);
-            $endAt = Carbon::today()->setTimeFromTimeString($shift['end_time']);
-            $shift['time_status'] = now()->lt($startAt) ? 'upcoming' : (now()->lte($endAt) ? 'active' : 'ended');
+            $startAt = $shiftClock->scheduledStart($shift['start_time'], $businessNow);
+            $endAt = $shiftClock->scheduledEnd($shift['start_time'], $shift['end_time'], $businessNow);
+            $shift['time_status'] = $businessNow->lt($startAt) ? 'upcoming' : ($businessNow->lte($endAt) ? 'active' : 'ended');
             $shift['time_status_label'] = $shift['time_status'] === 'upcoming'
                 ? 'Belum dimulai'
                 : ($shift['time_status'] === 'active' ? 'Sedang berlangsung' : 'Jadwal selesai');
@@ -494,8 +517,8 @@ class AttendanceController extends Controller
         }
 
         // --- Calculate Monthly Stats ---
-        $currentMonth = Carbon::today()->month;
-        $currentYear = Carbon::today()->year;
+        $currentMonth = $businessNow->month;
+        $currentYear = $businessNow->year;
 
         $monthlyLogs = \App\Models\AttendanceLog::where('employee_id', $employee->id)
             ->whereMonth('check_in_at', $currentMonth)
@@ -515,8 +538,8 @@ class AttendanceController extends Controller
         }
 
         $passedWorkingDays = 0;
-        $startOfMonth = Carbon::today()->startOfMonth();
-        $today = Carbon::today();
+        $startOfMonth = $businessNow->copy()->startOfMonth();
+        $today = $businessNow->copy()->startOfDay();
 
         for ($date = $startOfMonth; $date->lte($today); $date->addDay()) {
             // isDayOfWeek requires ISO day of week (1 = Monday, 7 = Sunday)
