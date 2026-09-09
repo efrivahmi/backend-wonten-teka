@@ -11,8 +11,25 @@ const steps = [
     { title: 'Menoleh Kanan', instruction: 'Tolehkan wajah Anda sedikit ke kanan.' },
 ];
 
+const getYawRatio = (landmarks) => {
+    const jaw = landmarks.getJawOutline();
+    const nose = landmarks.getNose();
+    const faceWidth = Math.max(1, jaw[16].x - jaw[0].x);
+    const faceCenter = (jaw[0].x + jaw[16].x) / 2;
+    return (nose[3].x - faceCenter) / faceWidth;
+};
+
+const matchesPose = (step, yaw, firstSideYaw) => {
+    if (step === 0) return Math.abs(yaw) < 0.035;
+    if (step === 1) return Math.abs(yaw) > 0.045;
+    return Math.abs(yaw) > 0.045
+        && firstSideYaw !== null
+        && Math.sign(yaw) !== Math.sign(firstSideYaw);
+};
+
 const FaceEnrollment = () => {
     const webcamRef = useRef(null);
+    const firstSideYawRef = useRef(null);
     const navigate = useNavigate();
     
     const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -75,8 +92,11 @@ const FaceEnrollment = () => {
 
                 if (detection) {
                     const score = detection.detection.score;
-                    if (score > 0.8) {
+                    const yaw = getYawRatio(detection.landmarks);
+                    if (score > 0.8 && matchesPose(step, yaw, firstSideYawRef.current)) {
                         const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
+
+                        if (step === 1) firstSideYawRef.current = yaw;
                         
                         if (step < 2) {
                             setEmbeddings(newEmbeddings);
@@ -93,7 +113,9 @@ const FaceEnrollment = () => {
                             return;
                         }
                     } else {
-                        setMessage(`Wajah terdeteksi (Skor: ${(score * 100).toFixed(0)}%), tetapi kurang jelas. Posisikan lebih baik.`);
+                        setMessage(score <= 0.8
+                            ? 'Wajah kurang jelas. Tambah pencahayaan dan dekatkan kamera.'
+                            : steps[step].instruction);
                     }
                 } else {
                     setMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
@@ -121,7 +143,7 @@ const FaceEnrollment = () => {
 
     const saveBiometrics = async (finalEmbeddings) => {
         setSaving(true);
-        setMessage('Menyimpan data biometrik dan foto...');
+        setMessage('Menyimpan deskriptor wajah terenkripsi...');
         try {
             await api.post('/biometrics/web/enroll', {
                 embeddings: finalEmbeddings,
@@ -140,12 +162,13 @@ const FaceEnrollment = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-md w-full relative">
+        <div className="min-h-screen bg-black flex items-center justify-center p-4 md:p-8">
+            <div className="bg-stone-100 rounded-[2rem] shadow-2xl overflow-hidden max-w-lg w-full relative border border-stone-700">
                 
-                <div className="p-6 text-center bg-slate-800 text-white">
-                    <h2 className="text-xl font-bold mb-1">Pendaftaran Wajah</h2>
-                    <p className="text-slate-300 text-sm">Tahap {step + 1} dari 3: {steps[step]?.title}</p>
+                <div className="p-7 bg-black text-white">
+                    <p className="teka-kicker text-stone-400 mb-5">Identitas biometrik</p>
+                    <h2 className="teka-display text-4xl">Daftarkan <span className="teka-accent">wajah.</span></h2>
+                    <p className="text-stone-400 text-sm mt-4">Tahap {Math.min(step + 1, 3)} dari 3 · {steps[step]?.title || 'Selesai'}</p>
                 </div>
 
                 <div className="relative bg-black aspect-video flex items-center justify-center">

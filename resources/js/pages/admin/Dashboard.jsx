@@ -48,9 +48,12 @@ const AdminDashboard = () => {
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Dashboard Admin</h1>
-                <p className="text-slate-500 mt-1">Ringkasan aktivitas hari ini dan persetujuan yang tertunda.</p>
+            <div className="teka-hero min-h-64 rounded-[2rem] p-7 md:p-10 flex flex-col justify-between">
+                <p className="teka-kicker text-stone-400">Pusat kendali organisasi</p>
+                <div className="pt-12 max-w-2xl">
+                    <h1 className="teka-display text-5xl md:text-7xl">Data yang membuat tim <span className="teka-accent">bergerak.</span></h1>
+                    <p className="text-stone-300 mt-6">Pantau kehadiran, tindak lanjuti persetujuan, dan kelola operasional dari satu tempat.</p>
+                </div>
             </div>
 
             {/* Top Stat Cards */}

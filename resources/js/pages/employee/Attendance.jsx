@@ -43,6 +43,7 @@ const Attendance = () => {
     const [scanning, setScanning] = useState(false);
     const [scanMessage, setScanMessage] = useState('Memuat data...');
     const [scanError, setScanError] = useState('');
+    const [requiresWebEnrollment, setRequiresWebEnrollment] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -93,7 +94,11 @@ const Attendance = () => {
             setScanMessage('Silakan menghadap kamera...');
         } catch (err) {
             console.error(err);
-            setScanError('Gagal memuat AI atau data wajah. Pastikan Anda sudah mendaftarkan wajah (Enrollment).');
+            const missingEnrollment = err.response?.status === 404;
+            setRequiresWebEnrollment(missingEnrollment);
+            setScanError(missingEnrollment
+                ? (err.response?.data?.message || 'Wajah untuk browser belum didaftarkan.')
+                : 'Gagal memuat pemindai wajah. Periksa koneksi lalu coba kembali.');
         }
     };
 
@@ -314,11 +319,11 @@ const Attendance = () => {
                                 <AlertCircle className="h-10 w-10 mb-3" />
                                 <h3 className="font-bold mb-1">Gagal</h3>
                                 <p className="text-sm">{scanError}</p>
-                                <button 
-                                    onClick={() => navigate('/employee/dashboard')}
+                                <button
+                                    onClick={() => navigate(requiresWebEnrollment ? '/onboarding/face-enrollment' : '/employee/dashboard')}
                                     className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700"
                                 >
-                                    Kembali ke Dashboard
+                                    {requiresWebEnrollment ? 'Daftarkan Wajah Web' : 'Kembali ke Dashboard'}
                                 </button>
                             </div>
                         ) : !modelsLoaded ? (

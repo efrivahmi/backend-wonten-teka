@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
 use App\Models\PayrollRun;
-use App\Models\Payslip;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Services\PayrollService;
+use Illuminate\Validation\ValidationException;
 
 class PayrollController extends Controller
 {
@@ -33,7 +32,7 @@ class PayrollController extends Controller
     /**
      * Generate a new payroll run for the given month and year.
      */
-    public function store(Request $request)
+    public function store(Request $request, PayrollService $payrollService)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
@@ -59,68 +58,16 @@ class PayrollController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
-            $run = PayrollRun::create([
-                
-                'period_month' => $month,
-                'period_year' => $year,
-                'status' => 'draft',
-                'run_by' => $user->id,
-            ]);
-
-            // Fetch active employees
-            $employees = Employee::where('status', 'active')->get();
-
-            foreach ($employees as $emp) {
-                // Simplified MVP Payroll Calculation
-                $basicSalary = $emp->basic_salary ?? 0;
-                
-                // Assume 100% attendance, some dummy allowances
-                $allowance = $basicSalary * 0.1; // 10% allowance
-                $grossSalary = $basicSalary + $allowance;
-                
-                // Deductions (BPJS MVP, flat 3% deduction)
-                $bpjsEmployee = $basicSalary * 0.03;
-                $pph21 = 0; // Skip PPh21 for MVP simplicity unless configured
-                
-                $totalDeductions = $bpjsEmployee + $pph21;
-                $netSalary = $grossSalary - $totalDeductions;
-
-                Payslip::create([
-                    'payroll_run_id' => $run->id,
-                    'employee_id' => $emp->id,
-                    
-                    'basic_salary' => $basicSalary,
-                    'total_earnings' => $allowance,
-                    'total_deductions' => $totalDeductions,
-                    'gross_salary' => $grossSalary,
-                    'net_salary' => $netSalary,
-                    'pph21_amount' => $pph21,
-                    'bpjs_kesehatan_employee' => $basicSalary * 0.01,
-                    'bpjs_jht_employee' => $basicSalary * 0.02,
-                    'components_detail' => [
-                        'earnings' => [
-                            ['name' => 'Gaji Pokok', 'amount' => $basicSalary],
-                            ['name' => 'Tunjangan Transport', 'amount' => $allowance],
-                        ],
-                        'deductions' => [
-                            ['name' => 'BPJS Kesehatan', 'amount' => $basicSalary * 0.01],
-                            ['name' => 'BPJS Ketenagakerjaan', 'amount' => $basicSalary * 0.02],
-                        ]
-                    ],
-                ]);
-            }
-
-            DB::commit();
+            $run = $payrollService->generatePayrollRun($month, $year, $user->id);
 
             return response()->json([
                 'message' => 'Payroll run generated successfully.',
                 'data' => $run
             ], 201);
 
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json(['message' => 'Failed to generate payroll.', 'error' => $e->getMessage()], 500);
         }
     }

@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\DeviceAdminController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\AttendanceAdjustmentController;
 use App\Http\Controllers\Api\BusinessTripController;
+use App\Http\Controllers\Api\NotificationController;
 
 // Simple root API route for sanity check
 Route::get('/', function () {
@@ -34,6 +35,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
 
     Route::post('/employee/complete-profile', [EmployeeController::class, 'completeProfile']);
     Route::get('/employee/options', [EmployeeController::class, 'getOptions']);

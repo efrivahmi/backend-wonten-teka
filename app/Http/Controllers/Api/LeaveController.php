@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\LeaveBalance;
 use App\Services\ApprovalService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class LeaveController extends Controller
 {
@@ -78,7 +80,36 @@ class LeaveController extends Controller
         $endDate = Carbon::parse($request->end_date);
         $totalDays = $startDate->diffInDays($endDate) + 1; // Simplistic day calculation (doesn't skip weekends/holidays yet)
 
-        // TODO: Validate against leave balance if required by leave type
+        $leaveType = LeaveType::active()->findOrFail($request->leave_type_id);
+
+        if ($leaveType->requires_attachment && !$request->filled('attachment_url')) {
+            throw ValidationException::withMessages([
+                'attachment_url' => 'Jenis cuti ini memerlukan lampiran.',
+            ]);
+        }
+
+        $overlaps = LeaveRequest::where('employee_id', $employee->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereDate('start_date', '<=', $endDate)
+            ->whereDate('end_date', '>=', $startDate)
+            ->exists();
+
+        if ($overlaps) {
+            throw ValidationException::withMessages([
+                'start_date' => 'Rentang tanggal bertabrakan dengan pengajuan lain.',
+            ]);
+        }
+
+        $balance = LeaveBalance::where('employee_id', $employee->id)
+            ->where('leave_type_id', $leaveType->id)
+            ->where('year', $startDate->year)
+            ->first();
+
+        if ($balance && $totalDays > $balance->remaining_days) {
+            throw ValidationException::withMessages([
+                'end_date' => "Sisa cuti hanya {$balance->remaining_days} hari.",
+            ]);
+        }
 
         $leaveRequest = LeaveRequest::create([
             

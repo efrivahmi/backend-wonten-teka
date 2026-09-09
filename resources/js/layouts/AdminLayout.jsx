@@ -93,9 +93,9 @@ const AdminLayout = () => {
     };
 
     return (
-        <div className="flex h-screen bg-slate-50">
+        <div className="teka-shell flex h-screen">
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+            <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 w-64 shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
                     <span className="text-xl font-bold text-white tracking-tight">WT Admin</span>
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-white">
@@ -195,7 +195,7 @@ const AdminLayout = () => {
 
             {/* Main Content */}
             <div className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden bg-slate-50 relative z-0">
-                <header className="bg-white border-b border-slate-200 h-16 flex items-center px-4 md:px-8 justify-between z-10 flex-shrink-0">
+                <header className="teka-topbar border-b h-16 flex items-center px-4 md:px-8 justify-between z-10 flex-shrink-0">
                     <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-slate-500 hover:text-slate-800 p-2">
                         <Menu className="h-6 w-6" />
                     </button>

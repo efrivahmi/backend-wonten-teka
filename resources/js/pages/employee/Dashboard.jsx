@@ -58,9 +58,12 @@ const EmployeeDashboard = () => {
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Halo, {user.name} 👋</h1>
-                <p className="text-slate-500 mt-1">Selamat datang di portal karyawan Wonten Teka.</p>
+            <div className="teka-hero min-h-72 rounded-[2rem] p-7 md:p-10 flex flex-col justify-between overflow-hidden">
+                <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
+                <div className="max-w-xl py-10">
+                    <h1 className="teka-display text-5xl md:text-7xl">Hadir. Bergerak. <span className="teka-accent">Berdampak.</span></h1>
+                    <p className="text-stone-300 mt-6 max-w-md">Halo, {user.name}. Kelola kehadiran dan pekerjaan hari ini dalam satu alur yang jelas.</p>
+                </div>
             </div>
 
             {/* Monthly Stats Row */}

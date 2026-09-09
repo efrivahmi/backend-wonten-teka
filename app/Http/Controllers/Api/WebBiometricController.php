@@ -42,8 +42,23 @@ class WebBiometricController extends Controller
         abort_unless($employee, 403, 'Profil karyawan tidak ditemukan.');
         $biometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
 
-        abort_unless($biometric?->web_face_embedding, 404, 'Data wajah web belum didaftarkan.');
+        abort_unless($biometric, 404, 'Data wajah belum pernah didaftarkan.');
 
-        return response()->json(['embeddings' => $biometric->web_face_embedding]);
+        $embeddings = $biometric->web_face_embedding;
+        if (!$embeddings && $this->isWebDescriptorSet($biometric->face_embedding)) {
+            $embeddings = $biometric->face_embedding;
+            $biometric->update(['web_face_embedding' => $embeddings]);
+        }
+
+        abort_unless($embeddings, 404, 'Wajah untuk browser belum didaftarkan. Silakan lakukan pendaftaran wajah web.');
+
+        return response()->json(['embeddings' => $embeddings]);
+    }
+
+    private function isWebDescriptorSet(mixed $embeddings): bool
+    {
+        return is_array($embeddings)
+            && count($embeddings) >= 3
+            && collect($embeddings)->every(fn ($descriptor) => is_array($descriptor) && count($descriptor) === 128);
     }
 }

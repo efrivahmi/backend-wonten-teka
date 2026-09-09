@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Company;
 use App\Models\Employee;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
@@ -12,13 +11,14 @@ use App\Models\BpjsRate;
 use App\Models\Pph21TerRate;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class PayrollService
 {
     /**
      * Generate a new payroll run for the specified month and year.
      */
-    public function generatePayrollRun(Company $company, int $month, int $year, int $runByUserId): PayrollRun
+    public function generatePayrollRun(int $month, int $year, int $runByUserId): PayrollRun
     {
         // Check if run already exists
         $existingRun = PayrollRun::query()
@@ -30,7 +30,7 @@ class PayrollService
             throw new \Exception("Payroll for this period is already finalized.");
         }
 
-        return DB::transaction(function () use ($company, $month, $year, $runByUserId, $existingRun) {
+        return DB::transaction(function () use ($month, $year, $runByUserId, $existingRun) {
             
             $run = $existingRun ?? PayrollRun::create([
                 
@@ -50,6 +50,12 @@ class PayrollService
                 ->active()
                 ->where('applies_to', 'all')
                 ->get();
+
+            if (!$components->contains(fn ($component) => strtolower($component->code) === 'base')) {
+                throw ValidationException::withMessages([
+                    'payroll_components' => 'Komponen gaji pokok dengan kode BASE harus dikonfigurasi terlebih dahulu.',
+                ]);
+            }
 
             // Load all active employees
             $employees = Employee::query()
@@ -119,23 +125,28 @@ class PayrollService
         }
         $totalEarnings += $claimsTotal;
 
-        // 3. Simplified BPJS Calculations (MVP logic)
-        // In a real scenario, these come from BpjsRate model. We'll simulate standard rates here.
-        // Cap for Kesehatan is usually ~12m, JP is ~10m.
-        $bpjsKesehatanCap = 12000000;
-        $bpjsJpCap = 10042300;
-        
-        $baseForKesehatan = min($basicSalary, $bpjsKesehatanCap);
-        $baseForJp = min($basicSalary, $bpjsJpCap);
-        
-        $bpjsKesEmployee = $baseForKesehatan * 0.01;
-        $bpjsKesEmployer = $baseForKesehatan * 0.04;
-        
-        $bpjsJhtEmployee = $basicSalary * 0.02;
-        $bpjsJhtEmployer = $basicSalary * 0.037;
-        
-        $bpjsJpEmployee = $baseForJp * 0.01;
-        $bpjsJpEmployer = $baseForJp * 0.02;
+        // 3. BPJS rates are selected by payroll effective date.
+        $bpjsRates = BpjsRate::query()
+            ->whereDate('effective_from', '<=', $payrollDate)
+            ->where(fn ($query) => $query->whereNull('effective_to')->orWhereDate('effective_to', '>=', $payrollDate))
+            ->orderByDesc('effective_from')
+            ->get()
+            ->unique('program')
+            ->keyBy(fn ($rate) => strtolower($rate->program));
+
+        $calculateRate = function (string $program, string $rateColumn) use ($bpjsRates, $basicSalary): float {
+            $rate = $bpjsRates->get($program);
+            if (!$rate) return 0.0;
+            $base = $rate->salary_cap ? min($basicSalary, (float) $rate->salary_cap) : $basicSalary;
+            return $base * (float) $rate->{$rateColumn};
+        };
+
+        $bpjsKesEmployee = $calculateRate('kesehatan', 'employee_rate');
+        $bpjsKesEmployer = $calculateRate('kesehatan', 'employer_rate');
+        $bpjsJhtEmployee = $calculateRate('jht', 'employee_rate');
+        $bpjsJhtEmployer = $calculateRate('jht', 'employer_rate');
+        $bpjsJpEmployee = $calculateRate('jp', 'employee_rate');
+        $bpjsJpEmployer = $calculateRate('jp', 'employer_rate');
 
         // Total deductions from employee for BPJS
         $totalBpjsDeduction = $bpjsKesEmployee + $bpjsJhtEmployee + $bpjsJpEmployee;

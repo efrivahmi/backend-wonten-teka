@@ -12,10 +12,26 @@
 
 :root {
     color-scheme: light;
-    --teka-coral: #f05d4e;
-    --teka-sunrise: #ffb347;
-    --teka-ink: #172033;
-    --teka-canvas: #f7f7f2;
+    --teka-coral: #ff4d00;
+    --teka-sunrise: #ff7a00;
+    --teka-ink: #0b0b0b;
+    --teka-canvas: #f1f0eb;
+}
+
+.teka-shell { background: var(--teka-canvas); }
+.teka-sidebar { background: #0b0b0b; color: #f1f0eb; border-color: #282828; }
+.teka-topbar { background: rgb(241 240 235 / 88%); border-color: #d4d2ca; backdrop-filter: blur(18px); }
+.teka-panel { background: #f8f7f2; border: 1px solid #d4d2ca; box-shadow: 0 16px 50px rgb(0 0 0 / 6%); }
+.teka-kicker { font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.teka-kicker::before { content: '■'; color: var(--teka-coral); margin-right: .55rem; }
+.teka-display { font-weight: 700; letter-spacing: -.065em; line-height: .87; text-transform: uppercase; }
+.teka-accent { color: var(--teka-coral); }
+.teka-hero {
+    color: #f1f0eb;
+    background-color: #0b0b0b;
+    background-image: linear-gradient(90deg, #0b0b0b 0%, rgb(11 11 11 / 96%) 34%, rgb(11 11 11 / 20%) 72%), url('/images/wonten-biometric-hero-v2.png');
+    background-size: cover;
+    background-position: center;
 }
 
 html { scroll-behavior: smooth; }
