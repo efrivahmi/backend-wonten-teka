@@ -22,13 +22,7 @@ const CompleteProfile = () => {
         department: '',
         position: '',
         join_date: '',
-        employment_status: 'Tetap',
-        ptkp_status: 'TK/0',
-        bpjs_kesehatan_number: '',
-        bpjs_ketenagakerjaan_number: '',
-        bank_name: '',
-        bank_account_number: '',
-        bank_account_holder: ''
+        employment_status: 'Tetap'
     });
 
     useEffect(() => {
@@ -178,47 +172,6 @@ const CompleteProfile = () => {
                                 </select>
                             </div>
 
-                            {/* Financial & Legal Info */}
-                            <div className="md:col-span-2 mt-4">
-                                <h3 className="font-semibold text-slate-800 border-b pb-2 mb-2">Informasi Pajak, BPJS & Rekening</h3>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">NPWP</label>
-                                <input type="text" name="npwp" value={formData.npwp || ''} onChange={handleChange} className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Status PTKP (Pajak) *</label>
-                                <select name="ptkp_status" value={formData.ptkp_status || 'TK/0'} onChange={handleChange} required className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border bg-white">
-                                    <option value="TK/0">TK/0 (Tidak Kawin, 0 Tanggungan)</option>
-                                    <option value="TK/1">TK/1 (Tidak Kawin, 1 Tanggungan)</option>
-                                    <option value="TK/2">TK/2 (Tidak Kawin, 2 Tanggungan)</option>
-                                    <option value="TK/3">TK/3 (Tidak Kawin, 3 Tanggungan)</option>
-                                    <option value="K/0">K/0 (Kawin, 0 Tanggungan)</option>
-                                    <option value="K/1">K/1 (Kawin, 1 Tanggungan)</option>
-                                    <option value="K/2">K/2 (Kawin, 2 Tanggungan)</option>
-                                    <option value="K/3">K/3 (Kawin, 3 Tanggungan)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No BPJS Kesehatan</label>
-                                <input type="text" name="bpjs_kesehatan_number" value={formData.bpjs_kesehatan_number || ''} onChange={handleChange} className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No BPJS Ketenagakerjaan</label>
-                                <input type="text" name="bpjs_ketenagakerjaan_number" value={formData.bpjs_ketenagakerjaan_number || ''} onChange={handleChange} className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Bank</label>
-                                <input type="text" name="bank_name" value={formData.bank_name || ''} onChange={handleChange} placeholder="Contoh: BCA, Mandiri, BRI" className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No Rekening</label>
-                                <input type="text" name="bank_account_number" value={formData.bank_account_number || ''} onChange={handleChange} className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Pemilik Rekening</label>
-                                <input type="text" name="bank_account_holder" value={formData.bank_account_holder || ''} onChange={handleChange} className="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-200 py-2 px-3 border" />
-                            </div>
                         </div>
 
                         <div className="pt-4 border-t border-slate-100 flex justify-end">

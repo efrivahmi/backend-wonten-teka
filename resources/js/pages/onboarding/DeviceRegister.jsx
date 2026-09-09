@@ -97,7 +97,7 @@ const DeviceRegister = () => {
         setError(null);
         try {
             const deviceInfo = getDeviceInfo();
-            await api.post('/device/register', {
+            const response = await api.post('/device/register', {
                 device_fingerprint: fingerprint,
                 device_name: deviceInfo.deviceName,
                 device_model: deviceInfo.deviceModel,
@@ -105,15 +105,10 @@ const DeviceRegister = () => {
                 app_version: 'web-1.0'
             });
 
-            // If success, it's either active or pending depending on backend logic
-            navigate('/onboarding/device-pending');
+            navigate(response.data.device?.status === 'active'
+                ? '/employee/dashboard'
+                : '/onboarding/device-pending');
         } catch (err) {
-            // Because we changed the logic in DeviceAdminController, the DeviceController
-            // might still block it if bound to another user.
-            // But actually, the backend DeviceController@register throws 403 if bound to ANOTHER user.
-            // Let's handle that by showing the error, and maybe a "Request Transfer" button if we implement it on backend.
-            // Since we haven't updated DeviceController@register yet, it will throw 403.
-            // I should update DeviceController.php next.
             setError(err.response?.data?.message || 'Gagal mendaftarkan perangkat.');
         } finally {
             setRegistering(false);
@@ -136,7 +131,7 @@ const DeviceRegister = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 mb-2">Daftarkan Perangkat Ini</h2>
                 <p className="text-slate-600 mb-8 text-sm leading-relaxed">
-                    Untuk keamanan ekstra, sistem kami menerapkan kebijakan akses perangkat. Anda perlu mendaftarkan perangkat anda agar dapat digunakan untuk absensi dan aktivitas lainnya.
+                    Ajukan perangkat ini untuk dikaitkan ke akun Anda. Admin perlu menyetujuinya sebelum dashboard, absensi, dan fitur karyawan dapat diakses.
                 </p>
 
                 {error && (
@@ -151,7 +146,7 @@ const DeviceRegister = () => {
                     disabled={registering}
                     className="w-full bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-emerald-700 transition flex justify-center items-center"
                 >
-                    {registering ? <Loader2 className="animate-spin h-5 w-5" /> : 'Daftarkan Device Ini'}
+                    {registering ? <Loader2 className="animate-spin h-5 w-5" /> : 'Ajukan Perangkat'}
                 </button>
             </div>
         </div>

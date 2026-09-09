@@ -52,12 +52,20 @@ class DeviceAdminController extends Controller
         }
 
         if ($request->action === 'approve') {
-            // Changed business logic: Allow multiple devices per employee
-            // Admin approval simply activates this specific device without deactivating others.
-            $device->update(['status' => 'active']);
+            // Other approved devices remain active. Approval applies only to this
+            // employee/device association.
+            $device->update([
+                'status' => 'active',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+            ]);
             $message = 'Device approved successfully.';
         } else {
-            $device->update(['status' => 'rejected']);
+            $device->update([
+                'status' => 'rejected',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+            ]);
             $message = 'Device rejected.';
         }
 
