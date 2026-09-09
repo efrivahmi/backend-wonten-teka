@@ -11,7 +11,7 @@ class AppConfigController extends Controller
     public function show()
     {
         $stored = Setting::where('key', 'app_config')->first()?->value ?? [];
-        return response()->json(['data' => array_replace_recursive($this->defaults(), $stored)]);
+        return $this->sendResponse(array_replace_recursive($this->defaults(), $stored), 'Konfigurasi aplikasi berhasil dimuat.');
     }
 
     public function update(Request $request)
@@ -32,7 +32,7 @@ class AppConfigController extends Controller
         $config = array_replace_recursive($this->defaults(), $data);
         Setting::updateOrCreate(['key' => 'app_config'], ['value' => $config]);
 
-        return response()->json(['message' => 'Konfigurasi aplikasi disimpan.', 'data' => $config]);
+        return $this->sendResponse($config, 'Konfigurasi aplikasi disimpan.');
     }
 
     private function defaults(): array
