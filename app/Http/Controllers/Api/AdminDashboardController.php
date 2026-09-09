@@ -64,6 +64,33 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->get();
 
+        $departments = Employee::query()
+            ->where('is_active', true)
+            ->whereNotNull('department')
+            ->selectRaw('department, COUNT(*) as total_employees')
+            ->groupBy('department')
+            ->orderBy('department')
+            ->get()
+            ->map(function ($department) use ($today) {
+                $present = AttendanceLog::whereDate('check_in_at', $today)
+                    ->whereHas('employee', fn ($query) => $query->where('department', $department->department))
+                    ->distinct('employee_id')->count('employee_id');
+                $late = AttendanceLog::whereDate('check_in_at', $today)
+                    ->where('status', 'late')
+                    ->whereHas('employee', fn ($query) => $query->where('department', $department->department))
+                    ->distinct('employee_id')->count('employee_id');
+                $total = (int) $department->total_employees;
+
+                return [
+                    'department' => $department->department,
+                    'total' => $total,
+                    'present' => $present,
+                    'late' => $late,
+                    'absent' => max(0, $total - $present),
+                    'attendance_rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0,
+                ];
+            })->values();
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -83,7 +110,8 @@ class AdminDashboardController extends Controller
                     'overtimes' => $pendingOvertimes,
                     'claims' => $pendingClaims
                 ],
-                'recent_flags' => $flags
+                'recent_flags' => $flags,
+                'department_attendance' => $departments,
             ]
         ]);
     }

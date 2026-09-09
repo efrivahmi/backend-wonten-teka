@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\LeaveBalance;
-use App\Services\ApprovalService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -55,7 +54,7 @@ class LeaveController extends Controller
     /**
      * Submit a new leave request.
      */
-    public function request(Request $request, ApprovalService $approvalService)
+    public function request(Request $request)
     {
         $user = $request->user();
         $employee = $user->employee;
@@ -120,15 +119,17 @@ class LeaveController extends Controller
             'total_days' => $totalDays,
             'reason' => $request->reason,
             'attachment_url' => $request->attachment_url,
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
-        // Trigger the multi-level approval engine
-        $approvalService->submitRequest($leaveRequest, $user, 'leave_request');
+        if ($balance) {
+            $balance->increment('used_days', $totalDays);
+            $balance->decrement('remaining_days', $totalDays);
+        }
 
         return response()->json([
-            'message' => 'Leave request submitted successfully.',
-            'data' => $leaveRequest->load('approvalInstance')
+            'message' => 'Leave request recorded successfully.',
+            'data' => $leaveRequest
         ]);
     }
 }

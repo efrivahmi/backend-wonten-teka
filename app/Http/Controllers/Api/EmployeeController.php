@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\User;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -28,11 +29,14 @@ class EmployeeController extends Controller
 
     public function getOptions(Request $request)
     {
+        $configured = Setting::where('key', 'app_config')->first()?->value['dropdowns'] ?? [];
         $departments = Employee::whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department')
             ->merge(['Pimpinan', 'Tata Usaha', 'Kurikulum', 'Kesiswaan', 'Sarana Prasarana', 'Keuangan', 'SDM', 'Humas', 'Pengasuhan', 'Keamanan', 'Teknologi Informasi'])
+            ->merge($configured['departments'] ?? [])
             ->unique()->sort()->values();
         $positions = Employee::whereNotNull('position')->where('position', '!=', '')->distinct()->pluck('position')
             ->merge(['Kepala Lembaga', 'Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Tata Usaha', 'Guru', 'Wali Kelas', 'Pembina', 'Pelatih', 'Staf Administrasi', 'Staf Keuangan', 'Staf IT', 'Petugas Keamanan'])
+            ->merge($configured['positions'] ?? [])
             ->unique()->sort()->values();
         
         return response()->json([
@@ -51,7 +55,8 @@ class EmployeeController extends Controller
             ],
             'ptkp_statuses' => collect(['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'])
                 ->map(fn ($value) => ['value' => $value, 'label' => $value])->values(),
-            'banks' => ['BCA', 'Mandiri', 'BNI', 'BRI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'Bank Jabar Banten', 'BTN', 'Mega'],
+            'banks' => collect(['BCA', 'Mandiri', 'BNI', 'BRI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'Bank Jabar Banten', 'BTN', 'Mega'])
+                ->merge($configured['banks'] ?? [])->unique()->values(),
         ]);
     }
 

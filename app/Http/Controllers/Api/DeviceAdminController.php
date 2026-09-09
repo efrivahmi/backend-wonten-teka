@@ -21,7 +21,7 @@ class DeviceAdminController extends Controller
         }
 
         // Fetch pending devices for the admin's company
-        $pendingDevices = Device::with(['employee:id,first_name,last_name,email'])
+        $pendingDevices = Device::with(['employee:id,full_name,email,department'])
             
             ->where('status', 'pending_approval')
             ->orderBy('created_at', 'desc')

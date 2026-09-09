@@ -20,6 +20,9 @@ class AttendanceAdminController extends Controller
 
         $logs = AttendanceLog::query()
             ->with(['employee', 'employee.user'])
+            ->when($request->filled('department'), fn ($query) => $query->whereHas(
+                'employee', fn ($employee) => $employee->where('department', $request->string('department'))
+            ))
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 

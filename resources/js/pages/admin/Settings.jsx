@@ -43,6 +43,8 @@ const LocationPicker = ({ geofence, setGeofence }) => {
 const Settings = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savingApp, setSavingApp] = useState(false);
+    const [appConfig, setAppConfig] = useState({ branding: {}, employee_menu: [], dropdowns: {} });
     const [geofence, setGeofence] = useState({
         latitude: -6.1754,
         longitude: 106.8272,
@@ -56,7 +58,11 @@ const Settings = () => {
     const fetchSettings = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/company/geofence');
+            const [response, configResponse] = await Promise.all([
+                api.get('/company/geofence'),
+                api.get('/app-config'),
+            ]);
+            setAppConfig(configResponse.data.data);
             if (response.data && response.data.latitude) {
                 setGeofence({
                     latitude: parseFloat(response.data.latitude),
@@ -70,6 +76,23 @@ const Settings = () => {
             setLoading(false);
         }
     };
+
+    const saveAppConfig = async () => {
+        try {
+            setSavingApp(true);
+            await api.put('/admin/app-config', appConfig);
+            alert('Konfigurasi tampilan dan menu berhasil disimpan.');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Gagal menyimpan konfigurasi aplikasi.');
+        } finally {
+            setSavingApp(false);
+        }
+    };
+
+    const setDropdown = (key, value) => setAppConfig(prev => ({
+        ...prev,
+        dropdowns: { ...prev.dropdowns, [key]: value.split(',').map(item => item.trim()).filter(Boolean) },
+    }));
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -184,6 +207,33 @@ const Settings = () => {
                     </form>
                 </div>
             </div>
+
+            <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6">
+                <div>
+                    <h2 className="text-xl font-bold text-slate-800">Tampilan dan akses aplikasi</h2>
+                    <p className="text-sm text-slate-500">Perubahan ini dipakai oleh website dan aplikasi mobile tanpa mengubah source code.</p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <label className="text-sm font-semibold text-slate-700">Nama portal
+                        <input value={appConfig.branding?.portal_name || ''} onChange={e => setAppConfig(prev => ({...prev, branding: {...prev.branding, portal_name: e.target.value}}))} className="mt-2 w-full px-4 py-3 border border-slate-200 rounded-xl" />
+                    </label>
+                    <label className="text-sm font-semibold text-slate-700">URL gambar hero
+                        <input value={appConfig.branding?.hero_image_url || ''} onChange={e => setAppConfig(prev => ({...prev, branding: {...prev.branding, hero_image_url: e.target.value}}))} className="mt-2 w-full px-4 py-3 border border-slate-200 rounded-xl" placeholder="https://..." />
+                    </label>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                    {['departments', 'positions', 'banks'].map(key => <label key={key} className="text-sm font-semibold text-slate-700 capitalize">{key}
+                        <textarea value={(appConfig.dropdowns?.[key] || []).join(', ')} onChange={e => setDropdown(key, e.target.value)} rows="4" className="mt-2 w-full px-4 py-3 border border-slate-200 rounded-xl" />
+                    </label>)}
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                    {(appConfig.employee_menu || []).map((item, index) => <label key={item.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <span><strong className="block text-slate-800">{item.label}</strong><small className="text-slate-500">{item.key}</small></span>
+                        <input type="checkbox" checked={item.enabled} onChange={e => setAppConfig(prev => ({...prev, employee_menu: prev.employee_menu.map((menu, i) => i === index ? {...menu, enabled: e.target.checked} : menu)}))} className="h-5 w-5 accent-green-700" />
+                    </label>)}
+                </div>
+                <button type="button" onClick={saveAppConfig} disabled={savingApp} className="px-6 py-3 bg-green-700 text-white font-bold rounded-xl disabled:opacity-50">{savingApp ? 'Menyimpan…' : 'Simpan konfigurasi aplikasi'}</button>
+            </section>
         </div>
     );
 };

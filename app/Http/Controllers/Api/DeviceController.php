@@ -25,30 +25,8 @@ class DeviceController extends Controller
             return response()->json(['message' => 'User is not linked to an employee.'], 403);
         }
 
-        // Auto-approve if this is the employee's first device ever
-        $hasAnyDevice = $employee->devices()->exists();
-        $status = $hasAnyDevice ? 'pending_approval' : 'active';
-
-        // Check if employee already has an active device
-        $activeDevice = $employee->devices()->active()->first();
-
-        // If they are registering the same device, just return it
-        if ($activeDevice && $activeDevice->device_fingerprint === $request->device_fingerprint) {
-            return response()->json(['device' => $activeDevice, 'message' => 'Device already registered and active.']);
-        }
-
-        // Check if THIS physical device is already bound to ANOTHER active employee
-        $deviceBoundToOther = Device::where('device_fingerprint', $request->device_fingerprint)
-            ->where('employee_id', '!=', $employee->id)
-            ->where('status', 'active')
-            ->first();
-            
-        if ($deviceBoundToOther) {
-            // Force pending if trying to transfer from another account
-            $status = 'pending_approval';
-        }
-
-        // Create new device or update existing if it somehow exists (e.g. revoked or previously pending)
+        // Multiple devices per employee and shared operational devices are allowed.
+        // Registration is idempotent for the employee/fingerprint pair.
         $device = Device::updateOrCreate(
             [
                 'employee_id' => $employee->id,
@@ -59,13 +37,13 @@ class DeviceController extends Controller
                 'device_model' => $request->device_model,
                 'os_version' => $request->os_version,
                 'app_version' => $request->app_version,
-                'status' => $status,
+                'status' => 'active',
             ]
         );
 
         return response()->json([
             'device' => $device,
-            'message' => 'Device registration requested. Waiting for admin approval.',
+            'message' => 'Device registered and active.',
         ], 201);
     }
 
