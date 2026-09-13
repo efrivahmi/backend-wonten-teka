@@ -52,8 +52,12 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/images/e-absensi-logo-generated.png": {
+    "file": "assets/e-absensi-logo-generated--2_PVwyD.png",
+    "src": "resources/images/e-absensi-logo-generated.png"
+  },
   "resources/js/app.jsx": {
-    "file": "assets/app-sYYWsXT5.js",
+    "file": "assets/app-Deeme_G3.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -62,6 +66,7 @@
       "assets/app-UNLtLJWf.css"
     ],
     "assets": [
+      "assets/e-absensi-logo-generated--2_PVwyD.png",
       "assets/marker-icon-hN30_KVU.png",
       "assets/marker-shadow-f7SaPCxT.png",
       "assets/layers-BWBAp2CZ.png",
