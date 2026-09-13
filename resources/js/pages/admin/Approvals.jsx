@@ -147,6 +147,7 @@ const Approvals = () => {
                                                 <p className="text-xs text-slate-500 truncate" title={subDetailText}>
                                                     {subDetailText}
                                                 </p>
+                                                {approvableData.attachment_url && <a href={approvableData.attachment_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-xs font-semibold text-emerald-700 hover:underline">Lihat lampiran</a>}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center text-sm text-slate-500">

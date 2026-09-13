@@ -10,6 +10,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Services\ApprovalService;
+use Illuminate\Support\Facades\Storage;
 
 class LeaveController extends Controller
 {
@@ -54,7 +56,7 @@ class LeaveController extends Controller
     /**
      * Submit a new leave request.
      */
-    public function request(Request $request)
+    public function request(Request $request, ApprovalService $approvalService)
     {
         $user = $request->user();
         $employee = $user->employee;
@@ -68,7 +70,8 @@ class LeaveController extends Controller
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:255',
-            'attachment_url' => 'nullable|url',
+            'attachment_url' => 'nullable|string|max:2048',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -81,7 +84,7 @@ class LeaveController extends Controller
 
         $leaveType = LeaveType::active()->findOrFail($request->leave_type_id);
 
-        if ($leaveType->requires_attachment && !$request->filled('attachment_url')) {
+        if ($leaveType->requires_attachment && !$request->filled('attachment_url') && !$request->hasFile('attachment')) {
             throw ValidationException::withMessages([
                 'attachment_url' => 'Jenis cuti ini memerlukan lampiran.',
             ]);
@@ -110,6 +113,11 @@ class LeaveController extends Controller
             ]);
         }
 
+        $attachmentUrl = $request->attachment_url;
+        if ($request->hasFile('attachment')) {
+            $attachmentUrl = Storage::url($request->file('attachment')->store('leave-attachments', 'public'));
+        }
+
         $leaveRequest = LeaveRequest::create([
             
             'employee_id' => $employee->id,
@@ -118,18 +126,15 @@ class LeaveController extends Controller
             'end_date' => $endDate,
             'total_days' => $totalDays,
             'reason' => $request->reason,
-            'attachment_url' => $request->attachment_url,
-            'status' => 'approved',
+            'attachment_url' => $attachmentUrl,
+            'status' => 'pending',
         ]);
 
-        if ($balance) {
-            $balance->increment('used_days', $totalDays);
-            $balance->decrement('remaining_days', $totalDays);
-        }
+        $approvalService->submitRequest($leaveRequest, $user, 'leave_request');
 
         return response()->json([
-            'message' => 'Leave request recorded successfully.',
-            'data' => $leaveRequest
+            'message' => 'Pengajuan cuti dikirim dan menunggu persetujuan admin.',
+            'data' => $leaveRequest->load('approvalInstance')
         ]);
     }
 }

@@ -21,7 +21,8 @@ const Overtime = () => {
         date: '',
         start_time: '',
         end_time: '',
-        notes: ''
+        overtime_type: 'Hari Kerja',
+        reason: ''
     });
 
     useEffect(() => {
@@ -52,7 +53,7 @@ const Overtime = () => {
             await api.post('/overtime/request', formData);
             alert("Pengajuan lembur berhasil dikirim!");
             setShowModal(false);
-            setFormData({ date: '', start_time: '', end_time: '', notes: '' });
+            setFormData({ date: '', start_time: '', end_time: '', overtime_type: 'Hari Kerja', reason: '' });
             fetchHistory(); // Refresh history
         } catch (error) {
             console.error("Error submitting overtime request:", error);
@@ -124,7 +125,7 @@ const Overtime = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <p className="text-sm text-slate-500 max-w-xs truncate">{req.notes || '-'}</p>
+                                            <p className="text-sm text-slate-500 max-w-xs truncate">{req.reason || '-'}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${
@@ -203,12 +204,19 @@ const Overtime = () => {
                                 </div>
                             </div>
                             <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Hari</label>
+                                <select name="overtime_type" value={formData.overtime_type} onChange={handleInputChange} className="w-full border-slate-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="Hari Kerja">Hari Kerja</option>
+                                    <option value="Hari Libur">Hari Libur</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Pekerjaan / Catatan</label>
                                 <textarea 
-                                    name="notes" 
+                                    name="reason" 
                                     required 
                                     rows="3"
-                                    value={formData.notes}
+                                    value={formData.reason}
                                     onChange={handleInputChange}
                                     className="w-full border-slate-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     placeholder="Jelaskan apa yang Anda kerjakan selama lembur..."

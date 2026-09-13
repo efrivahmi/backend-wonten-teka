@@ -19,6 +19,7 @@ const Leave = () => {
     // Modal state for Requesting Leave
     const [showModal, setShowModal] = useState(false);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [attachment, setAttachment] = useState(null);
     const [formData, setFormData] = useState({
         leave_type_id: '',
         start_date: '',
@@ -58,10 +59,14 @@ const Leave = () => {
         e.preventDefault();
         try {
             setSubmitLoading(true);
-            await api.post('/leave/request', formData);
+            const payload = new FormData();
+            Object.entries(formData).forEach(([key, value]) => payload.append(key, value));
+            if (attachment) payload.append('attachment', attachment);
+            await api.post('/leave/request', payload);
             alert("Pengajuan cuti berhasil dikirim!");
             setShowModal(false);
             setFormData({ leave_type_id: '', start_date: '', end_date: '', reason: '' });
+            setAttachment(null);
             fetchData(); // Refresh history
         } catch (error) {
             console.error("Error submitting leave request:", error);
@@ -251,6 +256,16 @@ const Leave = () => {
                                     className="w-full border-slate-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
                                     placeholder="Jelaskan alasan cuti/izin Anda..."
                                 ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Lampiran pendukung <span className="font-normal text-slate-400">(opsional)</span></label>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx"
+                                    onChange={(event) => setAttachment(event.target.files?.[0] || null)}
+                                    className="block w-full rounded-lg border border-slate-200 bg-white p-2 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:font-semibold file:text-emerald-700"
+                                />
+                                <p className="mt-1 text-xs text-slate-400">Foto atau dokumen JPG, PNG, WEBP, PDF, DOC/DOCX, maksimal 5 MB.</p>
                             </div>
                             
                             <div className="pt-4 flex items-center justify-end space-x-3">

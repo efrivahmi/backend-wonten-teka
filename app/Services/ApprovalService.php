@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalInstance;
 use App\Models\ApprovalAction;
+use App\Models\LeaveBalance;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -21,11 +23,19 @@ class ApprovalService
             ->where('is_active', true)
             ->first();
 
-        // If no flow is defined, we could either auto-approve or throw an exception.
-        // Auto-approve is a common fallback if a company doesn't configure approvals for a module.
+        // Requests must never silently approve themselves. Provide a safe
+        // one-step admin flow until the company configures a custom flow.
         if (!$flow) {
-            $approvable->update(['status' => 'approved']); // Requires the model to have a 'status' field
-            return null;
+            $flow = ApprovalFlow::create([
+                'request_type' => $requestType,
+                'name' => 'Persetujuan Admin - '.str_replace('_', ' ', $requestType),
+                'steps' => [[
+                    'step' => 1,
+                    'approver_type' => 'role',
+                    'approver_value' => 'admin',
+                ]],
+                'is_active' => true,
+            ]);
         }
 
         // Initialize the approval instance
@@ -78,6 +88,23 @@ class ApprovalService
                 // Update the original model's status if it has one
                 if (method_exists($instance->approvable, 'update')) {
                     $instance->approvable->update(['status' => 'approved']);
+                }
+
+                if ($instance->approvable instanceof LeaveRequest) {
+                    $leave = $instance->approvable;
+                    $balance = LeaveBalance::where('employee_id', $leave->employee_id)
+                        ->where('leave_type_id', $leave->leave_type_id)
+                        ->where('year', $leave->start_date->year)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($balance) {
+                        if ($balance->remaining_days < $leave->total_days) {
+                            throw new \RuntimeException('Sisa cuti karyawan tidak mencukupi.');
+                        }
+                        $balance->increment('used_days', $leave->total_days);
+                        $balance->decrement('remaining_days', $leave->total_days);
+                    }
                 }
             }
 

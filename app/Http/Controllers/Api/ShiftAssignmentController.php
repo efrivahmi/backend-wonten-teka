@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\ShiftAssignment;
 use App\Models\ShiftTemplate;
+use App\Models\RecurringShiftAssignment;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -41,6 +42,9 @@ class ShiftAssignmentController extends Controller
 
         // Fetch available templates
         $templates = ShiftTemplate::active()->get();
+        $recurringAssignments = RecurringShiftAssignment::with(['shiftTemplate', 'employee'])
+            ->orderBy('day_of_week')
+            ->get();
 
         return response()->json([
             'start_date' => $startDateStr,
@@ -48,6 +52,7 @@ class ShiftAssignmentController extends Controller
             'employees' => $employees,
             'assignments' => $assignments,
             'templates' => $templates,
+            'recurring_assignments' => $recurringAssignments,
         ]);
     }
 
@@ -59,6 +64,39 @@ class ShiftAssignmentController extends Controller
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($request->filled('recurring_day_of_week')) {
+            $validated = $request->validate([
+                'employee_ids' => 'required|array|min:1',
+                'employee_ids.*' => 'integer|exists:employees,id',
+                'shift_template_id' => 'required|exists:shift_templates,id',
+                'recurring_day_of_week' => 'required|integer|min:1|max:7',
+                'starts_on' => 'nullable|date',
+                'ends_on' => 'nullable|date|after_or_equal:starts_on',
+                'notes' => 'nullable|string|max:500',
+            ]);
+
+            $assignments = collect($validated['employee_ids'])->map(fn ($employeeId) =>
+                RecurringShiftAssignment::updateOrCreate([
+                    'employee_id' => $employeeId,
+                    'shift_template_id' => $validated['shift_template_id'],
+                    'day_of_week' => $validated['recurring_day_of_week'],
+                ], [
+                    'starts_on' => $validated['starts_on'] ?? null,
+                    'ends_on' => $validated['ends_on'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                ])
+            );
+
+            return response()->json([
+                'message' => 'Jadwal shift mingguan berhasil ditugaskan.',
+                'data' => $assignments,
+            ]);
+        }
+
+        if ($request->filled('shift_template_id') && !$request->has('shift_template_ids')) {
+            $request->merge(['shift_template_ids' => [$request->input('shift_template_id')]]);
         }
 
         $validated = $request->validate([

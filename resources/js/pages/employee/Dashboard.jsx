@@ -42,6 +42,12 @@ const EmployeeDashboard = () => {
     }
 
     const shifts = todayInfo?.shifts || [];
+    const attendanceChart = todayInfo?.monthly_stats ? [
+        { label: 'Tepat waktu', value: todayInfo.monthly_stats.on_time || 0, color: 'bg-emerald-500' },
+        { label: 'Terlambat', value: todayInfo.monthly_stats.late || 0, color: 'bg-amber-500' },
+        { label: 'Tidak hadir', value: todayInfo.monthly_stats.absent || 0, color: 'bg-rose-500' },
+    ] : [];
+    const chartMax = Math.max(1, ...attendanceChart.map(item => item.value));
 
     const handleAttendance = (action, shift) => {
         const query = new URLSearchParams({
@@ -108,10 +114,26 @@ const EmployeeDashboard = () => {
                 </div>
             )}
 
+            {attendanceChart.length > 0 && (
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                        <div><h2 className="text-xl font-bold text-slate-800">Ringkasan Kehadiran Bulan Ini</h2><p className="text-sm text-slate-500">Perbandingan catatan kehadiran Anda pada bulan berjalan.</p></div>
+                        <span className="text-sm font-semibold text-emerald-700">Tingkat kehadiran {todayInfo.monthly_stats.percentage}%</span>
+                    </div>
+                    <div className="space-y-4">
+                        {attendanceChart.map(item => <div key={item.label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-3 text-sm">
+                            <span className="text-slate-600">{item.label}</span>
+                            <div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.max(item.value > 0 ? 8 : 0, (item.value / chartMax) * 100)}%` }} /></div>
+                            <strong className="text-right text-slate-800">{item.value}</strong>
+                        </div>)}
+                    </div>
+                </section>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Jadwal Shift & Tombol Absen (Spans 2 columns on large screens) */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center">
                             <Clock className="h-5 w-5 mr-2 text-blue-600" />
@@ -233,18 +255,18 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* Pengumuman */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit">
+                <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center space-x-2">
                         <Bell className="h-5 w-5 text-amber-500" />
                         <h3 className="text-lg font-bold text-slate-800">Pengumuman Terbaru</h3>
                     </div>
                     <div className="p-0">
                         {announcements.length > 0 ? (
-                            <ul className="divide-y divide-slate-100">
+                            <ul className="grid divide-y divide-slate-100 md:grid-cols-2 md:divide-y-0 md:divide-x">
                                 {announcements.map((ann, idx) => (
                                     <li key={idx} className="p-6 hover:bg-slate-50/50 transition-colors">
                                         <h4 className="font-bold text-slate-800 mb-1">{ann.title}</h4>
-                                        <p className="text-sm text-slate-600 whitespace-pre-line">{ann.content}</p>
+                                        <p className="text-sm text-slate-600 whitespace-pre-line">{ann.body || ann.content}</p>
                                         <p className="text-xs text-slate-400 mt-3 font-medium">
                                             {new Date(ann.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         </p>

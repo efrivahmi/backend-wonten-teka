@@ -15,6 +15,12 @@ const ShiftAssignmentForm = () => {
     
     // Past assignments cache to quickly show what is already assigned
     const [weeklyAssignments, setWeeklyAssignments] = useState([]);
+    const [recurringAssignments, setRecurringAssignments] = useState([]);
+    const [recurringEmployees, setRecurringEmployees] = useState([]);
+    const [recurringDay, setRecurringDay] = useState('1');
+    const [recurringShift, setRecurringShift] = useState('');
+
+    const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
     useEffect(() => {
         fetchData();
@@ -40,10 +46,35 @@ const ShiftAssignmentForm = () => {
             setEmployees(response.data.employees || []);
             setTemplates(response.data.templates || []);
             setWeeklyAssignments(response.data.assignments || []);
+            setRecurringAssignments(response.data.recurring_assignments || []);
         } catch (error) {
             console.error("Error fetching assignments data:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const saveRecurringAssignment = async (event) => {
+        event.preventDefault();
+        if (!recurringShift || recurringEmployees.length === 0) {
+            alert('Pilih shift dan minimal satu karyawan.');
+            return;
+        }
+        try {
+            setSaving(true);
+            await api.post('/admin/shift-assignments', {
+                employee_ids: recurringEmployees,
+                shift_template_id: Number(recurringShift),
+                recurring_day_of_week: Number(recurringDay),
+            });
+            setRecurringEmployees([]);
+            const response = await api.get('/admin/shift-assignments');
+            setRecurringAssignments(response.data.recurring_assignments || []);
+            alert('Jadwal mingguan berhasil disimpan.');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Gagal menyimpan jadwal mingguan.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -96,6 +127,41 @@ const ShiftAssignmentForm = () => {
             </div>
             
             <div className="p-6">
+                <form onSubmit={saveRecurringAssignment} className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-5">
+                    <div>
+                        <h3 className="font-bold text-emerald-900">Jadwal Mingguan Berulang</h3>
+                        <p className="mt-1 text-sm text-emerald-800/70">Cocok untuk piket Senin–Minggu. Buat template 16.00–16.00, pilih harinya, lalu pilih beberapa karyawan sekaligus.</p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Hari piket</label>
+                            <select value={recurringDay} onChange={(event) => setRecurringDay(event.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2">
+                                {dayNames.slice(1).map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Template shift</label>
+                            <select required value={recurringShift} onChange={(event) => setRecurringShift(event.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2">
+                                <option value="">-- Pilih Shift --</option>
+                                {templates.map(template => <option key={template.id} value={template.id}>{template.name} ({template.start_time?.slice(0, 5)}–{template.end_time?.slice(0, 5)})</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Karyawan yang bertugas</label>
+                        <div className="grid max-h-56 gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-2">
+                            {employees.map(employee => <label key={employee.id} className="flex items-center gap-3 rounded-lg p-2 hover:bg-slate-50">
+                                <input type="checkbox" checked={recurringEmployees.includes(employee.id)} onChange={() => setRecurringEmployees(current => current.includes(employee.id) ? current.filter(id => id !== employee.id) : [...current, employee.id])} className="rounded border-slate-300 text-emerald-600" />
+                                <span className="text-sm text-slate-700">{employee.full_name}</span>
+                            </label>)}
+                        </div>
+                    </div>
+                    <div className="flex justify-end"><button disabled={saving} className="rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Simpan Jadwal Mingguan</button></div>
+                    {recurringAssignments.length > 0 && <div className="border-t border-emerald-200 pt-4">
+                        <p className="mb-2 text-sm font-semibold text-slate-700">Penugasan mingguan aktif</p>
+                        <div className="flex flex-wrap gap-2">{recurringAssignments.map(item => <span key={item.id} className="rounded-full bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm">{dayNames[item.day_of_week]} · {item.shift_template?.name} · {item.employee?.full_name}</span>)}</div>
+                    </div>}
+                </form>
                 <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

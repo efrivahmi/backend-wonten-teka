@@ -76,7 +76,7 @@ const EmployeeLayout = () => {
         calendar: { name: 'Kalender', href: '/employee/calendar', icon: CalendarDays },
         announcements: { name: 'Pengumuman', href: '/employee/announcements', icon: Bell },
         tasks: { name: 'Tugas Pribadi', href: '/employee/tasks', icon: ClipboardList },
-        adjustments: { name: 'Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
+        adjustments: { name: 'Ajukan Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
         business_trips: { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
         directory: { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
         notifications: { name: 'Notifikasi', href: '/employee/notifications', icon: Bell },
@@ -91,9 +91,9 @@ const EmployeeLayout = () => {
     const items = (keys) => keys.map(configuredItem).filter(Boolean);
     const navigation = [
         { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
-        { name: 'Presensi', icon: CalendarCheck, children: items(['attendance', 'schedule', 'adjustments', 'business_trips']) },
-        { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims']) },
-        { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'announcements', 'tasks', 'directory', 'notifications']) },
+        { name: 'Presensi', icon: CalendarCheck, children: items(['attendance', 'schedule', 'business_trips']) },
+        { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims', 'adjustments']) },
+        { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'tasks', 'notifications']) },
         { name: 'Keuangan', icon: FileText, children: items(['payroll']) },
         {
             name: 'Biometrik',

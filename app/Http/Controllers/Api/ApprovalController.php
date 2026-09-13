@@ -19,6 +19,9 @@ class ApprovalController extends Controller
     public function pending(Request $request)
     {
         $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         
         $pending = ApprovalInstance::with('approvable')
             
@@ -35,8 +38,9 @@ class ApprovalController extends Controller
     {
         $user = $request->user();
 
-        // Security check
-        
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $validator = Validator::make($request->all(), [
             'decision' => 'required|in:approve,reject',
