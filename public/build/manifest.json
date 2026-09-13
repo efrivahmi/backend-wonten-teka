@@ -44,7 +44,7 @@
     "src": "node_modules/leaflet/dist/images/marker-shadow.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DPtUYEqY.css",
+    "file": "assets/app-D_jY6x6P.css",
     "name": "app",
     "names": [
       "app.css"
@@ -53,16 +53,13 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-BXnnBPxn.js",
+    "file": "assets/app-n5nOg7xk.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
-    "dynamicImports": [
-      "resources/js/app.jsx"
-    ],
     "css": [
       "assets/app-1DTFk8zz.css",
-      "assets/app-DPtUYEqY.css"
+      "assets/app-D_jY6x6P.css"
     ],
     "assets": [
       "assets/marker-icon-hN30_KVU.png",

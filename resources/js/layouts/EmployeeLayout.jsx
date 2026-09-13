@@ -16,8 +16,8 @@ import {
     Plane,
     SlidersHorizontal
 } from 'lucide-react';
-import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../api';
+import { getDeviceFingerprint } from '../deviceIdentity';
 
 const EmployeeLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,11 +39,9 @@ const EmployeeLayout = () => {
         let intervalId;
         const checkDeviceValidity = async () => {
             try {
-                const fp = await fpPromise.load();
-                const result = await fp.get();
-                
+                const fingerprint = await getDeviceFingerprint();
                 const response = await api.get('/device/status', {
-                    params: { device_fingerprint: result.visitorId }
+                    params: { device_fingerprint: fingerprint }
                 });
 
                 if (!response.data.device || response.data.device.status !== 'active') {

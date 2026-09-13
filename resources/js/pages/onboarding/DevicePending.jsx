@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft } from 'lucide-react';
-import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../../api';
+import { getDeviceFingerprint } from '../../deviceIdentity';
 
 const DevicePending = () => {
     const navigate = useNavigate();
@@ -11,11 +11,9 @@ const DevicePending = () => {
         let intervalId;
         const checkStatus = async () => {
             try {
-                const fp = await fpPromise.load();
-                const result = await fp.get();
-                
+                const fingerprint = await getDeviceFingerprint();
                 const response = await api.get('/device/status', {
-                    params: { device_fingerprint: result.visitorId }
+                    params: { device_fingerprint: fingerprint }
                 });
 
                 if (response.data.device && response.data.device.status === 'active') {

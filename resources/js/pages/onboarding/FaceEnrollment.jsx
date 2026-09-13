@@ -4,6 +4,7 @@ import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
 import { Camera, Loader2, CheckCircle2 } from 'lucide-react';
 import api from '../../api';
+import { getDeviceFingerprint } from '../../deviceIdentity';
 
 const steps = [
     { title: 'Menghadap Depan', instruction: 'Posisikan wajah Anda tepat di tengah.' },
@@ -54,10 +55,7 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                 setModelsLoaded(true);
                 setMessage(steps[0].instruction);
 
-                // Try to get FP ID for device_id
-                const fp = await import('@fingerprintjs/fingerprintjs').then(fpPromise => fpPromise.load());
-                const result = await fp.get();
-                setDeviceId(result.visitorId);
+                setDeviceId(await getDeviceFingerprint());
 
             } catch (err) {
                 console.error("Failed to load models", err);

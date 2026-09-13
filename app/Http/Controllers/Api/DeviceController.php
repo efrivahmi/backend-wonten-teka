@@ -12,10 +12,10 @@ class DeviceController extends Controller
     {
         $request->validate([
             'device_fingerprint' => 'required|string',
-            'device_name' => 'required|string',
-            'device_model' => 'nullable|string',
-            'os_version' => 'nullable|string',
-            'app_version' => 'nullable|string',
+            'device_name' => 'required|string|min:3|max:80',
+            'device_model' => 'nullable|string|max:100',
+            'os_version' => 'nullable|string|max:100',
+            'app_version' => 'nullable|string|max:50',
         ]);
 
         $user = $request->user();
@@ -33,7 +33,7 @@ class DeviceController extends Controller
         ]);
 
         $device->fill([
-            'device_name' => $request->device_name,
+            'device_name' => trim($request->device_name),
             'device_model' => $request->device_model,
             'os_version' => $request->os_version,
             'app_version' => $request->app_version,

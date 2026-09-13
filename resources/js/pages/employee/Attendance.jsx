@@ -15,6 +15,7 @@ import {
     X
 } from 'lucide-react';
 import api from '../../api';
+import { getDeviceFingerprint } from '../../deviceIdentity';
 
 const Attendance = () => {
     const [searchParams] = useSearchParams();
@@ -194,9 +195,7 @@ const Attendance = () => {
 
                 const endpoint = action === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
 
-                // Try to get FP ID for device_id
-                const fp = await import('@fingerprintjs/fingerprintjs').then(fpPromise => fpPromise.load());
-                const fpResult = await fp.get();
+                const deviceFingerprint = await getDeviceFingerprint();
 
                 // Convert base64 to Blob reliably
                 const byteString = atob(imageBase64.split(',')[1]);
@@ -215,7 +214,7 @@ const Attendance = () => {
                 formData.append('address', address);
                 formData.append('face_match_score', matchScore);
                 faceDescriptor.forEach((value) => formData.append('face_descriptor[]', value));
-                formData.append('device_id', fpResult.visitorId);
+                formData.append('device_id', deviceFingerprint);
                 formData.append('photo', blob, 'attendance.jpg');
 
                 if (assignmentId) formData.append('shift_assignment_id', assignmentId);

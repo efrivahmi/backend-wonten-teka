@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Laptop, Loader2, AlertCircle } from 'lucide-react';
-import fpPromise from '@fingerprintjs/fingerprintjs';
 import api from '../../api';
+import { getDeviceFingerprint, saveDeviceFingerprint } from '../../deviceIdentity';
 
 const DeviceRegister = () => {
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
     const [error, setError] = useState(null);
     const [fingerprint, setFingerprint] = useState('');
+    const [deviceLabel, setDeviceLabel] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
         const checkDevice = async () => {
             try {
-                // Initialize fingerprintjs
-                const fp = await fpPromise.load();
-                const result = await fp.get();
-                const fpId = result.visitorId;
+                const fpId = await getDeviceFingerprint();
                 setFingerprint(fpId);
 
                 // Check status
@@ -86,24 +84,30 @@ const DeviceRegister = () => {
         let finalDeviceName = deviceModel ? `${deviceModel} (${browser})` : `${os} (${browser})`;
         
         return {
-            deviceName: finalDeviceName.substring(0, 50),
-            deviceModel: (deviceModel || (os.includes("Windows") || os.includes("Mac") || os.includes("Linux") ? "Desktop/Laptop PC" : "Unknown Mobile")).substring(0, 50),
+            deviceModel: finalDeviceName.substring(0, 80),
             osVersion: os.substring(0, 50)
         };
     };
 
     const handleRegister = async () => {
+        const identityName = deviceLabel.trim();
+        if (identityName.length < 3) {
+            setError('Masukkan nama perangkat minimal 3 karakter.');
+            return;
+        }
         setRegistering(true);
         setError(null);
         try {
             const deviceInfo = getDeviceInfo();
             const response = await api.post('/device/register', {
                 device_fingerprint: fingerprint,
-                device_name: deviceInfo.deviceName,
+                device_name: identityName,
                 device_model: deviceInfo.deviceModel,
                 os_version: deviceInfo.osVersion,
                 app_version: 'web-1.0'
             });
+
+            saveDeviceFingerprint(fingerprint);
 
             navigate(response.data.device?.status === 'active'
                 ? '/employee/dashboard'
@@ -141,9 +145,25 @@ const DeviceRegister = () => {
                     </div>
                 )}
 
+                <div className="mb-6 text-left">
+                    <label htmlFor="device-label" className="block text-sm font-semibold text-slate-700 mb-2">
+                        Nama identitas perangkat
+                    </label>
+                    <input
+                        id="device-label"
+                        value={deviceLabel}
+                        onChange={(event) => setDeviceLabel(event.target.value)}
+                        maxLength={80}
+                        placeholder="Contoh: Laptop Kantor Andi"
+                        autoComplete="off"
+                        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-800 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none"
+                    />
+                    <p className="mt-2 text-xs text-slate-500">Nama ini akan terlihat oleh admin saat menyetujui perangkat.</p>
+                </div>
+
                 <button
                     onClick={handleRegister}
-                    disabled={registering}
+                    disabled={registering || deviceLabel.trim().length < 3}
                     className="w-full bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-emerald-700 transition flex justify-center items-center"
                 >
                     {registering ? <Loader2 className="animate-spin h-5 w-5" /> : 'Ajukan Perangkat'}
