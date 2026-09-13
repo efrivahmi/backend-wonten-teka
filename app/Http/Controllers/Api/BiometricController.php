@@ -34,8 +34,8 @@ class BiometricController extends Controller
     {
         $request->validate([
             'embeddings' => 'required|array|min:3|max:5',
-            'embeddings.*' => 'required|array|min:4',
-            'embeddings.*.*' => 'required|numeric',
+            'embeddings.*' => 'required|array|size:10',
+            'embeddings.*.*' => 'required|numeric|between:-2,2',
             'device_id' => 'required|string|max:255',
         ]);
 

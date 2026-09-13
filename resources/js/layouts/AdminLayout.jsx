@@ -79,6 +79,7 @@ const AdminLayout = () => {
             children: [
                 { name: 'Karyawan', href: '/admin/employees', icon: Users },
                 { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
+                { name: 'Klaim / Reimburse', href: '/admin/claims', icon: FileBarChart },
                 { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
             ],
         },
@@ -106,6 +107,7 @@ const AdminLayout = () => {
                 { name: 'Biometrik Wajah', href: '/admin/biometrics', icon: Shield },
                 { name: 'Analitik Departemen', href: '/admin/department-analytics', icon: FileBarChart },
                 { name: 'Pusat Ekspor', href: '/admin/export', icon: FileBarChart },
+                { name: 'Log Audit', href: '/admin/audit-logs', icon: Shield },
                 { name: 'Pengaturan Perusahaan', href: '/admin/org-settings', icon: MapPin },
                 { name: 'Pengaturan Sistem', href: '/admin/settings', icon: Shield },
             ]

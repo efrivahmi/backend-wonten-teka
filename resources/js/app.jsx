@@ -65,21 +65,44 @@ const App = () => {
                 <Route path="/employee" element={<EmployeeLayout />}>
                     <Route path="dashboard" element={<EmployeeDashboard />} />
                     <Route path="attendance" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
+                    <Route path="attendance/detail" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
+                    <Route path="attendance/report" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
+                    <Route path="attendance/dispute" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
+                    <Route path="attendance/adjustment-form" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
+                    <Route path="attendance/business-trip-form" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
                     <Route path="leave" element={<EmployeeFeatureGuard feature="leave"><EmployeeLeave /></EmployeeFeatureGuard>} />
+                    <Route path="leave/new" element={<EmployeeFeatureGuard feature="leave"><EmployeeLeave /></EmployeeFeatureGuard>} />
+                    <Route path="leave/detail" element={<EmployeeFeatureGuard feature="leave"><EmployeeLeave /></EmployeeFeatureGuard>} />
+                    <Route path="leave/approval-detail" element={<EmployeeFeatureGuard feature="leave"><EmployeeLeave /></EmployeeFeatureGuard>} />
                     <Route path="overtime" element={<EmployeeFeatureGuard feature="overtime"><EmployeeOvertime /></EmployeeFeatureGuard>} />
+                    <Route path="overtime/new" element={<EmployeeFeatureGuard feature="overtime"><EmployeeOvertime /></EmployeeFeatureGuard>} />
+                    <Route path="overtime/detail" element={<EmployeeFeatureGuard feature="overtime"><EmployeeOvertime /></EmployeeFeatureGuard>} />
                     <Route path="claims" element={<EmployeeFeatureGuard feature="claims"><EmployeeClaims /></EmployeeFeatureGuard>} />
+                    <Route path="claims/new" element={<EmployeeFeatureGuard feature="claims"><EmployeeClaims /></EmployeeFeatureGuard>} />
+                    <Route path="claims/detail" element={<EmployeeFeatureGuard feature="claims"><EmployeeClaims /></EmployeeFeatureGuard>} />
                     <Route path="payslip" element={<EmployeeFeatureGuard feature="payroll"><EmployeePayslip /></EmployeeFeatureGuard>} />
+                    <Route path="payslip/detail" element={<EmployeeFeatureGuard feature="payroll"><EmployeePayslip /></EmployeeFeatureGuard>} />
                     <Route path="shifts" element={<EmployeeFeatureGuard feature="schedule"><EmployeeResources type="shifts" /></EmployeeFeatureGuard>} />
+                    <Route path="schedule/shifts" element={<EmployeeFeatureGuard feature="schedule"><EmployeeResources type="shifts" /></EmployeeFeatureGuard>} />
                     <Route path="calendar" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
+                    <Route path="calendar/event" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
                     <Route path="announcements" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
+                    <Route path="announcements/detail" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
                     <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="habits" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="habits/new" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="habits/detail" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
                     <Route path="attendance-adjustments" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
                     <Route path="business-trips" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
                     <Route path="notifications" element={<EmployeeFeatureGuard feature="notifications"><EmployeeResources type="notifications" /></EmployeeFeatureGuard>} />
                     <Route path="directory" element={<EmployeeFeatureGuard feature="directory"><EmployeeResources type="directory" /></EmployeeFeatureGuard>} />
                     <Route path="face-enrollment" element={<EmployeeFeatureGuard feature="biometric"><FaceEnrollment returnTo="/employee/face-profile" /></EmployeeFeatureGuard>} />
                     <Route path="face-profile" element={<EmployeeFeatureGuard feature="biometric"><FaceProfile /></EmployeeFeatureGuard>} />
+                    <Route path="profile/face-update" element={<EmployeeFeatureGuard feature="biometric"><FaceProfile /></EmployeeFeatureGuard>} />
                     <Route path="profile" element={<EmployeeProfile />} />
+                    <Route path="profile/edit" element={<EmployeeProfile />} />
+                    <Route path="settings" element={<EmployeeProfile />} />
+                    <Route path="help" element={<EmployeeProfile />} />
                 </Route>
 
                 {/* Admin Routes */}
@@ -87,9 +110,15 @@ const App = () => {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="employees" element={<AdminEmployees />} />
+                    <Route path="employees/detail" element={<AdminEmployees />} />
+                    <Route path="employees/edit" element={<AdminEmployees />} />
+                    <Route path="employees/onboarding" element={<AdminEmployees />} />
                     <Route path="schedule" element={<AdminSchedule />} />
+                    <Route path="shifts" element={<AdminSchedule />} />
+                    <Route path="shifts/form" element={<AdminSchedule />} />
                     <Route path="shift-assignments" element={<AdminSchedule />} />
                     <Route path="reports" element={<AdminReports />} />
+                    <Route path="audit-logs" element={<AdminReports />} />
                     <Route path="attendance-daily" element={<AdminReports />} />
                     <Route path="department-analytics" element={<AdminReports />} />
                     <Route path="export" element={<AdminReports />} />
@@ -97,10 +126,14 @@ const App = () => {
                     <Route path="org-settings" element={<AdminSettings />} />
                     <Route path="devices" element={<AdminOperations type="devices" />} />
                     <Route path="events" element={<AdminOperations type="events" />} />
+                    <Route path="events/edit" element={<AdminOperations type="events" />} />
                     <Route path="announcements" element={<AdminAnnouncements />} />
                     <Route path="payroll" element={<AdminOperations type="payroll" />} />
+                    <Route path="payroll/detail" element={<AdminOperations type="payroll" />} />
                     <Route path="payroll-config" element={<AdminOperations type="payroll" />} />
                     <Route path="leave-types" element={<AdminOperations type="leaveTypes" />} />
+                    <Route path="leave-types/form" element={<AdminOperations type="leaveTypes" />} />
+                    <Route path="claims" element={<AdminApprovals />} />
                     <Route path="attendance-flags" element={<AdminOperations type="flags" />} />
                     <Route path="biometrics" element={<AdminBiometrics />} />
                     <Route path="profile" element={<AdminProfile />} />
