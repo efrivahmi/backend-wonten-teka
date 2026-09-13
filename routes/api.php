@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('biometrics')->group(function () {
+        Route::get('/status', [\App\Http\Controllers\Api\BiometricController::class, 'status']);
         Route::post('/enroll', [\App\Http\Controllers\Api\BiometricController::class, 'enroll']);
         Route::get('/sync', [\App\Http\Controllers\Api\BiometricController::class, 'sync']);
         // Web specific endpoint

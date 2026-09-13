@@ -8,6 +8,28 @@ use Illuminate\Http\Request;
 
 class BiometricController extends Controller
 {
+    public function status(Request $request)
+    {
+        $employee = $request->user()->employee;
+        abort_unless($employee, 403, 'Profil karyawan tidak ditemukan.');
+        $biometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
+        $mobileEmbeddings = $biometric?->face_embedding;
+        $webEmbeddings = $biometric?->web_face_embedding;
+
+        return response()->json(['data' => [
+            'is_enrolled' => (bool) $biometric,
+            'enrolled_at' => $biometric?->enrolled_at?->toIso8601String(),
+            'mobile' => [
+                'available' => is_array($mobileEmbeddings) && count($mobileEmbeddings) >= 3,
+                'pose_count' => is_array($mobileEmbeddings) ? count($mobileEmbeddings) : 0,
+            ],
+            'web' => [
+                'available' => is_array($webEmbeddings) && count($webEmbeddings) >= 3,
+                'pose_count' => is_array($webEmbeddings) ? count($webEmbeddings) : 0,
+            ],
+        ]]);
+    }
+
     public function enroll(Request $request)
     {
         $request->validate([

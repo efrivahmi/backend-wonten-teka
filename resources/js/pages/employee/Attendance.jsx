@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../api';
 import { getDeviceFingerprint } from '../../deviceIdentity';
+import { loadLocalFaceEmbeddings, saveLocalFaceEmbeddings } from '../../biometricStorage';
 
 const Attendance = () => {
     const [searchParams] = useSearchParams();
@@ -88,8 +89,16 @@ const Attendance = () => {
             await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
             setScanMessage('Mengambil data wajah terdaftar...');
-            const res = await api.get('/biometrics/web/sync');
-            setEnrolledEmbeddings(res.data.embeddings);
+            let registeredEmbeddings;
+            try {
+                const res = await api.get('/biometrics/web/sync');
+                registeredEmbeddings = res.data.embeddings;
+                await saveLocalFaceEmbeddings(registeredEmbeddings);
+            } catch (syncError) {
+                registeredEmbeddings = await loadLocalFaceEmbeddings();
+                if (!registeredEmbeddings) throw syncError;
+            }
+            setEnrolledEmbeddings(registeredEmbeddings);
 
             setModelsLoaded(true);
             setScanMessage('Silakan menghadap kamera...');

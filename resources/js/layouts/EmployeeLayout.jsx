@@ -78,7 +78,7 @@ const EmployeeLayout = () => {
         business_trips: { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
         directory: { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
         notifications: { name: 'Notifikasi', href: '/employee/notifications', icon: Bell },
-        biometric: { name: 'Pendaftaran Wajah', href: '/employee/face-enrollment', icon: User },
+        biometric: { name: 'Data Wajah Saya', href: '/employee/face-profile', icon: User },
     };
     const configuredNavigation = menuConfig.length
         ? menuConfig.filter(item => item.enabled && menuDefinitions[item.key]).map(item => ({ ...menuDefinitions[item.key], name: item.label }))

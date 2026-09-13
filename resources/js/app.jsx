@@ -22,6 +22,7 @@ import EmployeePayslip from './pages/employee/Payslip';
 import EmployeeResources from './pages/employee/Resources';
 import AdminOperations from './pages/admin/Operations';
 import AdminBiometrics from './pages/admin/Biometrics';
+import FaceProfile from './pages/employee/FaceProfile';
 
 // Onboarding Pages
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
@@ -73,7 +74,8 @@ const App = () => {
                     <Route path="business-trips" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
                     <Route path="notifications" element={<EmployeeFeatureGuard feature="notifications"><EmployeeResources type="notifications" /></EmployeeFeatureGuard>} />
                     <Route path="directory" element={<EmployeeFeatureGuard feature="directory"><EmployeeResources type="directory" /></EmployeeFeatureGuard>} />
-                    <Route path="face-enrollment" element={<EmployeeFeatureGuard feature="biometric"><FaceEnrollment returnTo="/employee/dashboard" /></EmployeeFeatureGuard>} />
+                    <Route path="face-enrollment" element={<EmployeeFeatureGuard feature="biometric"><FaceEnrollment returnTo="/employee/face-profile" /></EmployeeFeatureGuard>} />
+                    <Route path="face-profile" element={<EmployeeFeatureGuard feature="biometric"><FaceProfile /></EmployeeFeatureGuard>} />
                 </Route>
 
                 {/* Admin Routes */}
