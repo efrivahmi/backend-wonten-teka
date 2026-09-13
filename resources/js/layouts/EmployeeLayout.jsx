@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { getDeviceFingerprint } from '../deviceIdentity';
+import BrandLogo from '../components/BrandLogo';
 
 const EmployeeLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -96,6 +97,7 @@ const EmployeeLayout = () => {
         { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims', 'adjustments']) },
         { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'tasks', 'notifications']) },
         { name: 'Keuangan', icon: FileText, children: items(['payroll']) },
+        { name: 'Profil Saya', href: '/employee/profile', icon: User },
         {
             name: 'Biometrik',
             icon: User,
@@ -125,24 +127,12 @@ const EmployeeLayout = () => {
             {/* Sidebar */}
             <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden border-r shadow-sm transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:w-64 md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                 <div className="flex h-20 flex-shrink-0 items-center justify-between px-5 border-b border-slate-100">
-                    <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-11 w-auto max-w-[190px] object-contain object-left" />
+                    <div className="flex min-w-0 items-center gap-3"><BrandLogo className="h-11 w-11 shrink-0"/><span className="min-w-0 text-sm font-extrabold leading-tight text-emerald-900">e-Absensi<br/><span className="text-[11px] font-semibold text-slate-500">Lemdiklat Taruna Nusantara Indonesia</span></span></div>
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-slate-600">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
                 
-                <div className="flex-shrink-0 p-4 pb-2">
-                    <div className="bg-lime-50 rounded-2xl p-4 flex items-center space-x-3 border border-lime-100">
-                        <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
-                            <User className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 truncate">{user.name || 'Karyawan'}</p>
-                            <p className="text-xs text-slate-500 truncate">{user.email || 'user@wontenteka.com'}</p>
-                        </div>
-                    </div>
-                </div>
-
                 <nav className="scrollbar-hidden min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-4 py-2 pb-6">
                     {navigation.map((item) => {
                         if (item.children) {

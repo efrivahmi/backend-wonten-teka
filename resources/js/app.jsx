@@ -23,6 +23,7 @@ import EmployeeResources from './pages/employee/Resources';
 import AdminOperations from './pages/admin/Operations';
 import AdminBiometrics from './pages/admin/Biometrics';
 import AdminAnnouncements from './pages/admin/Announcements';
+import AdminProfile from './pages/admin/Profile';
 import FaceProfile from './pages/employee/FaceProfile';
 import EmployeeProfile from './pages/employee/Profile';
 
@@ -87,15 +88,22 @@ const App = () => {
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="employees" element={<AdminEmployees />} />
                     <Route path="schedule" element={<AdminSchedule />} />
+                    <Route path="shift-assignments" element={<AdminSchedule />} />
                     <Route path="reports" element={<AdminReports />} />
+                    <Route path="attendance-daily" element={<AdminReports />} />
+                    <Route path="department-analytics" element={<AdminReports />} />
+                    <Route path="export" element={<AdminReports />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="org-settings" element={<AdminSettings />} />
                     <Route path="devices" element={<AdminOperations type="devices" />} />
                     <Route path="events" element={<AdminOperations type="events" />} />
                     <Route path="announcements" element={<AdminAnnouncements />} />
                     <Route path="payroll" element={<AdminOperations type="payroll" />} />
+                    <Route path="payroll-config" element={<AdminOperations type="payroll" />} />
                     <Route path="leave-types" element={<AdminOperations type="leaveTypes" />} />
                     <Route path="attendance-flags" element={<AdminOperations type="flags" />} />
                     <Route path="biometrics" element={<AdminBiometrics />} />
+                    <Route path="profile" element={<AdminProfile />} />
                 </Route>
 
                 {/* Fallback Route */}

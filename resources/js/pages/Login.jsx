@@ -1,150 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, Fingerprint, Loader2, Lock, Mail, MapPin, ShieldCheck } from 'lucide-react';
 import api from '../api';
+import BrandLogo from '../components/BrandLogo';
 
-const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const savedEmail = localStorage.getItem('remembered_email');
-        if (savedEmail) {
-            setEmail(savedEmail);
-            setRememberMe(true);
-        }
-    }, []);
-
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await api.post('/login', {
-                email,
-                password,
-                device_name: 'web_browser',
-            });
-            
-            const { token, user } = response.data;
-            
-            localStorage.setItem('auth_token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            
-            if (rememberMe) {
-                localStorage.setItem('remembered_email', email);
-            } else {
-                localStorage.removeItem('remembered_email');
-            }
-            
-            // Redirect to the onboarding orchestrator instead of directly to dashboard
-            navigate('/onboarding');
-            
-        } catch (err) {
-            setError(err.response?.data?.message || 'Gagal login. Periksa kembali email dan password Anda.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="teka-hero min-h-screen flex items-center justify-end p-4 md:p-12">
-            <div className="bg-white rounded-3xl shadow-2xl border border-white/60 w-full max-w-md overflow-hidden text-slate-900">
-                <div className="p-8 border-b border-stone-300">
-                    <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-14 w-auto mb-6" />
-                    <p className="teka-kicker text-green-700 mb-3">Portal kehadiran</p>
-                    <h1 className="teka-display text-4xl">Wonten <span className="teka-accent">Teka</span></h1>
-                    <p className="text-slate-500 mt-3 text-sm">Sistem presensi Lemdiklat Taruna Nusantara Indonesia.</p>
-                </div>
-                
-                <div className="p-8">
-                    {error && (
-                        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
-                            {error}
-                        </div>
-                    )}
-                    
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-slate-400" />
-                                </div>
-                                <input 
-                                    type="email" 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10 w-full rounded-xl border-slate-200 bg-slate-50 focus:border-green-600 focus:ring focus:ring-green-100 py-3 border px-4 text-slate-900"
-                                    placeholder="Masukkan email anda"
-                                    required
-                                />
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-slate-400" />
-                                </div>
-                                <input 
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 pr-10 w-full rounded-xl border-slate-200 bg-slate-50 focus:border-green-600 focus:ring focus:ring-green-100 py-3 border px-4 text-slate-900"
-                                    placeholder="Masukkan password anda"
-                                    required
-                                />
-                                <button 
-                                    type="button"
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? (
-                                        <EyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                                    ) : (
-                                        <Eye className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center">
-                            <input
-                                id="remember-me"
-                                name="remember-me"
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-slate-300 rounded"
-                            />
-                            <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700">
-                                Ingat Saya
-                            </label>
-                        </div>
-                        
-                        <button 
-                            type="submit" 
-                            disabled={loading}
-                            className="w-full bg-green-700 text-white font-semibold py-3 px-4 rounded-xl hover:bg-green-800 transition-colors flex justify-center items-center mt-4"
-                        >
-                            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Masuk (Login)'}
-                        </button>
-                    </form>
-                </div>
-                
-                <div className="bg-stone-200 p-4 text-center text-xs text-stone-500 border-t border-stone-300">
-                    &copy; {new Date().getFullYear()} Lemdiklat Taruna Nusantara Indonesia
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default Login;
+export default function Login() {
+    const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [showPassword,setShowPassword]=useState(false); const [rememberMe,setRememberMe]=useState(false); const [loading,setLoading]=useState(false); const [error,setError]=useState(''); const navigate=useNavigate();
+    useEffect(()=>{const saved=localStorage.getItem('remembered_email'); if(saved){setEmail(saved);setRememberMe(true);}},[]);
+    const submit=async event=>{event.preventDefault();setLoading(true);setError('');try{const {data}=await api.post('/login',{email,password,device_name:'web_browser'});localStorage.setItem('auth_token',data.token);localStorage.setItem('user',JSON.stringify(data.user));rememberMe?localStorage.setItem('remembered_email',email):localStorage.removeItem('remembered_email');navigate('/onboarding');}catch(err){setError(err.response?.data?.message||'Email/NIP atau kata sandi tidak sesuai.');}finally{setLoading(false);}};
+    return <main className="min-h-screen bg-[#f4f8f3] lg:grid lg:grid-cols-[1.08fr_.92fr]">
+        <section className="relative hidden overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-800 to-green-600 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+            <div className="absolute -right-32 top-20 h-96 w-96 rounded-full border-[70px] border-white/5"/><div className="absolute -bottom-20 left-24 h-72 w-72 rounded-full bg-lime-300/10 blur-2xl"/>
+            <div className="relative flex items-center gap-4"><BrandLogo className="h-14 w-14 shrink-0"/><div><p className="text-xl font-extrabold">e-Absensi</p><p className="text-sm text-emerald-100">Lemdiklat Taruna Nusantara Indonesia</p></div></div>
+            <div className="relative max-w-2xl"><span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em]">Sistem kehadiran terpadu</span><h1 className="mt-7 text-5xl font-black leading-[1.08] xl:text-6xl">Presensi lebih mudah, aman, dan terukur.</h1><p className="mt-6 max-w-xl text-lg leading-8 text-emerald-100">Kelola kehadiran, jadwal shift, pengajuan, dan aktivitas kerja melalui satu layanan yang terhubung.</p><div className="mt-9 grid max-w-xl grid-cols-3 gap-3">{[[Fingerprint,'Verifikasi wajah'],[MapPin,'Validasi lokasi'],[ShieldCheck,'Perangkat aman']].map(([Icon,label])=><div key={label} className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><Icon className="mb-3 h-6 w-6 text-lime-300"/><p className="text-sm font-semibold">{label}</p></div>)}</div></div>
+            <p className="relative text-sm text-emerald-200">© {new Date().getFullYear()} Lemdiklat Taruna Nusantara Indonesia</p>
+        </section>
+        <section className="flex min-h-screen items-center justify-center p-5 sm:p-10"><div className="w-full max-w-md">
+            <div className="mb-9 flex items-center gap-3 lg:hidden"><BrandLogo className="h-12 w-12 shrink-0"/><div><p className="font-extrabold text-emerald-900">e-Absensi</p><p className="text-xs text-slate-500">Lemdiklat Taruna Nusantara Indonesia</p></div></div>
+            <p className="text-sm font-bold uppercase tracking-[.16em] text-emerald-700">Selamat datang kembali</p><h2 className="mt-3 text-4xl font-black tracking-tight text-slate-900">Masuk ke akun Anda</h2><p className="mt-3 text-slate-500">Gunakan email atau NIP yang telah terdaftar.</p>
+            {error&&<div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
+            <form onSubmit={submit} className="mt-8 space-y-5"><label className="block text-sm font-semibold text-slate-700">Email atau NIP<div className="relative mt-2"><Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"/><input value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username" placeholder="nama@lemdiklat.id atau NIP" className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"/></div></label><label className="block text-sm font-semibold text-slate-700">Kata sandi<div className="relative mt-2"><Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"/><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="current-password" placeholder="Masukkan kata sandi" className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"/><button type="button" onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPassword?<EyeOff className="h-5 w-5"/>:<Eye className="h-5 w-5"/>}</button></div></label><label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={rememberMe} onChange={e=>setRememberMe(e.target.checked)} className="rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"/>Ingat akun ini</label><button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 py-4 font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:opacity-60">{loading?<Loader2 className="h-5 w-5 animate-spin"/>:<CheckCircle2 className="h-5 w-5"/>}Masuk</button></form>
+        </div></section>
+    </main>;
+}

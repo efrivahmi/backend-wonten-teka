@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- Nama produk lama: Wonten Teka. --}}
     <title>e-Absensi Lemdiklat Taruna Nusantara Indonesia</title>
-    <link rel="icon" type="image/png" href="/images/lemdiklat-logo.png">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/e-absensi-logo.svg') }}?v=2">
     
     <!-- Meta tag for Vite React Fast Refresh -->
     @viteReactRefresh
