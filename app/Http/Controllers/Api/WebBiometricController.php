@@ -14,18 +14,26 @@ class WebBiometricController extends Controller
             'embeddings' => 'required|array|min:3|max:5',
             'embeddings.*' => 'required|array|size:128',
             'embeddings.*.*' => 'required|numeric|between:-10,10',
+            'mobile_embeddings' => 'nullable|array|min:3|max:5',
+            'mobile_embeddings.*' => 'required|array|size:10',
+            'mobile_embeddings.*.*' => 'required|numeric|between:-2,2',
             'device_id' => 'required|string|max:255',
         ]);
         $employee = $request->user()->employee;
         abort_unless($employee, 403, 'Profil karyawan tidak ditemukan.');
 
+        $biometricData = [
+            'web_face_embedding' => $data['embeddings'],
+            'device_id' => $data['device_id'],
+            'enrolled_at' => now(),
+        ];
+        if (array_key_exists('mobile_embeddings', $data)) {
+            $biometricData['face_embedding'] = $data['mobile_embeddings'];
+        }
+
         $biometric = EmployeeBiometric::updateOrCreate(
             ['employee_id' => $employee->id],
-            [
-                'web_face_embedding' => $data['embeddings'],
-                'device_id' => $data['device_id'],
-                'enrolled_at' => now(),
-            ]
+            $biometricData
         );
 
         $employee->update(['face_enrolled' => true, 'face_enrolled_at' => now()]);

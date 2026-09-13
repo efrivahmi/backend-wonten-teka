@@ -29,6 +29,24 @@ const matchesPose = (step, yaw, firstSideYaw) => {
         && Math.sign(yaw) !== Math.sign(firstSideYaw);
 };
 
+const mobileLandmarkVector = (detection) => {
+    const box = detection.detection.box;
+    const average = (points) => ({
+        x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+        y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+    });
+    const leftEye = average(detection.landmarks.getLeftEye());
+    const rightEye = average(detection.landmarks.getRightEye());
+    const nose = average(detection.landmarks.getNose().slice(-3));
+    const mouth = detection.landmarks.getMouth();
+    const leftMouth = mouth.reduce((left, point) => point.x < left.x ? point : left);
+    const rightMouth = mouth.reduce((right, point) => point.x > right.x ? point : right);
+    return [leftEye, rightEye, nose, leftMouth, rightMouth].flatMap((point) => [
+        (point.x - box.x) / box.width,
+        (point.y - box.y) / box.height,
+    ]);
+};
+
 const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
     const webcamRef = useRef(null);
     const firstSideYawRef = useRef(null);
@@ -37,6 +55,7 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [step, setStep] = useState(0); // 0: Front, 1: Left, 2: Right
     const [embeddings, setEmbeddings] = useState([]);
+    const [mobileEmbeddings, setMobileEmbeddings] = useState([]);
     const [detecting, setDetecting] = useState(false);
     const [message, setMessage] = useState('Memuat AI pendeteksi wajah...');
     const [saving, setSaving] = useState(false);
@@ -111,11 +130,13 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                         setMessage(faceRatio < .08 ? 'Wajah terlalu jauh. Dekatkan kamera.' : 'Wajah terlalu dekat. Mundur sedikit.');
                     } else if (score > 0.8 && poseOkay) {
                         const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
+                        const newMobileEmbeddings = [...mobileEmbeddings, mobileLandmarkVector(detection)];
 
                         if (step === 1) firstSideYawRef.current = yaw;
                         
                         if (step < 2) {
                             setEmbeddings(newEmbeddings);
+                            setMobileEmbeddings(newMobileEmbeddings);
                             setStep(step + 1);
                             setMessage(`Bagus! Tingkat kecocokan/kejelasan: ${(score * 100).toFixed(0)}%. Selanjutnya: ${steps[step + 1].instruction}`);
                             setDetecting(false);
@@ -123,9 +144,10 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                         } else {
                             // Finished
                             setEmbeddings(newEmbeddings);
+                            setMobileEmbeddings(newMobileEmbeddings);
                             setStep(step + 1);
                             setDetecting(false);
-                            saveBiometrics(newEmbeddings);
+                            saveBiometrics(newEmbeddings, newMobileEmbeddings);
                             return;
                         }
                     } else {
@@ -156,14 +178,15 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
             isMounted = false;
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [modelsLoaded, saving, step, embeddings, deviceId]);
+    }, [modelsLoaded, saving, step, embeddings, mobileEmbeddings, deviceId]);
 
-    const saveBiometrics = async (finalEmbeddings) => {
+    const saveBiometrics = async (finalEmbeddings, finalMobileEmbeddings) => {
         setSaving(true);
         setMessage('Menyimpan deskriptor wajah terenkripsi...');
         try {
             await api.post('/biometrics/web/enroll', {
                 embeddings: finalEmbeddings,
+                mobile_embeddings: finalMobileEmbeddings,
                 device_id: deviceId
             });
             await saveLocalFaceEmbeddings(finalEmbeddings);
@@ -176,6 +199,7 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
             setSaving(false);
             setStep(0);
             setEmbeddings([]);
+            setMobileEmbeddings([]);
         }
     };
 
