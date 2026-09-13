@@ -26,7 +26,7 @@ import { getDeviceFingerprint } from '../deviceIdentity';
 
 const AdminLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [openMenus, setOpenMenus] = useState({'Pengaturan Absensi': true});
+    const [openMenus, setOpenMenus] = useState({ Presensi: true });
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -71,17 +71,25 @@ const AdminLayout = () => {
 
     const navigation = [
         { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-        { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
-        { name: 'Karyawan', href: '/admin/employees', icon: Users },
+        {
+            name: 'SDM & Persetujuan',
+            icon: Users,
+            children: [
+                { name: 'Karyawan', href: '/admin/employees', icon: Users },
+                { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
+                { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
+            ],
+        },
         { 
-            name: 'Pengaturan Absensi', 
+            name: 'Presensi',
             icon: CalendarCheck, 
             children: [
                 { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
                 { name: 'Lokasi Absensi', href: '/admin/settings', icon: MapPin },
-            ]
+                { name: 'Laporan Absensi', href: '/admin/reports', icon: FileBarChart },
+                { name: 'Flag Absensi', href: '/admin/attendance-flags', icon: Flag },
+            ],
         },
-        { name: 'Laporan', href: '/admin/reports', icon: FileBarChart },
         {
             name: 'Operasional',
             icon: ListChecks,
@@ -89,8 +97,6 @@ const AdminLayout = () => {
                 { name: 'Perangkat', href: '/admin/devices', icon: Smartphone },
                 { name: 'Event', href: '/admin/events', icon: CalendarDays },
                 { name: 'Payroll', href: '/admin/payroll', icon: Banknote },
-                { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
-                { name: 'Flag Absensi', href: '/admin/attendance-flags', icon: Flag },
                 { name: 'Biometrik Wajah', href: '/admin/biometrics', icon: Shield },
             ]
         },

@@ -53,7 +53,7 @@ class AppConfigController extends Controller
                 ['key' => 'business_trips', 'label' => 'Perjalanan Dinas', 'enabled' => true],
                 ['key' => 'directory', 'label' => 'Direktori Karyawan', 'enabled' => true],
                 ['key' => 'notifications', 'label' => 'Notifikasi', 'enabled' => true],
-                ['key' => 'biometric', 'label' => 'Pendaftaran Wajah', 'enabled' => true],
+                ['key' => 'biometric', 'label' => 'Data Wajah Saya', 'enabled' => true],
                 ['key' => 'profile', 'label' => 'Profil', 'enabled' => true],
             ],
             'dropdowns' => [],

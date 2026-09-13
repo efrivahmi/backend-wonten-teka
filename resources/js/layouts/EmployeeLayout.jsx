@@ -14,7 +14,8 @@ import {
     CalendarDays,
     ClipboardList,
     Plane,
-    SlidersHorizontal
+    SlidersHorizontal,
+    ChevronDown
 } from 'lucide-react';
 import api from '../api';
 import { getDeviceFingerprint } from '../deviceIdentity';
@@ -22,6 +23,7 @@ import { getDeviceFingerprint } from '../deviceIdentity';
 const EmployeeLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [menuConfig, setMenuConfig] = useState([]);
+    const [openMenus, setOpenMenus] = useState({ Presensi: true });
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -80,10 +82,30 @@ const EmployeeLayout = () => {
         notifications: { name: 'Notifikasi', href: '/employee/notifications', icon: Bell },
         biometric: { name: 'Data Wajah Saya', href: '/employee/face-profile', icon: User },
     };
-    const configuredNavigation = menuConfig.length
-        ? menuConfig.filter(item => item.enabled && menuDefinitions[item.key]).map(item => ({ ...menuDefinitions[item.key], name: item.label }))
-        : Object.values(menuDefinitions);
-    const navigation = [{ name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard }, ...configuredNavigation];
+    const configuredItem = (key) => {
+        const definition = menuDefinitions[key];
+        const configured = menuConfig.find(item => item.key === key);
+        if (!definition || (key !== 'biometric' && configured?.enabled === false)) return null;
+        return { ...definition, name: key === 'biometric' ? definition.name : (configured?.label || definition.name) };
+    };
+    const items = (keys) => keys.map(configuredItem).filter(Boolean);
+    const navigation = [
+        { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
+        { name: 'Presensi', icon: CalendarCheck, children: items(['attendance', 'schedule', 'adjustments', 'business_trips']) },
+        { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims']) },
+        { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'announcements', 'tasks', 'directory', 'notifications']) },
+        { name: 'Keuangan', icon: FileText, children: items(['payroll']) },
+        {
+            name: 'Biometrik',
+            icon: User,
+            children: [
+                configuredItem('biometric'),
+                { name: 'Rekam Ulang Wajah', href: '/employee/face-enrollment', icon: CalendarCheck },
+            ].filter(Boolean),
+        },
+    ].filter(item => !item.children || item.children.length > 0);
+
+    const toggleMenu = (name) => setOpenMenus(previous => ({ ...previous, [name]: !previous[name] }));
 
     const handleLogout = async () => {
         try {
@@ -122,6 +144,20 @@ const EmployeeLayout = () => {
 
                 <nav className="px-4 py-4 space-y-1 overflow-y-auto" style={{ height: 'calc(100vh - 180px)' }}>
                     {navigation.map((item) => {
+                        if (item.children) {
+                            const isChildActive = item.children.some(child => location.pathname.startsWith(child.href));
+                            const isOpen = openMenus[item.name] ?? isChildActive;
+                            return <div key={item.name} className="space-y-1">
+                                <button onClick={() => toggleMenu(item.name)} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${isChildActive ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                    <div className="flex items-center space-x-3"><item.icon className="h-5 w-5 flex-shrink-0" /><span className="text-sm font-medium truncate">{item.name}</span></div>
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                                {isOpen && <div className="pl-10 pr-1 py-1 space-y-1">{item.children.map(child => {
+                                    const isActive = location.pathname.startsWith(child.href);
+                                    return <Link key={child.href} to={child.href} onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-lime-50 text-emerald-700 font-medium' : 'text-slate-500 hover:text-emerald-700'}`}><child.icon className="h-4 w-4 flex-shrink-0" /><span className="text-sm truncate">{child.name}</span></Link>;
+                                })}</div>}
+                            </div>;
+                        }
                         const isActive = location.pathname.startsWith(item.href);
                         return (
                             <Link
