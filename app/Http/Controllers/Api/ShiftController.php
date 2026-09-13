@@ -36,7 +36,7 @@ class ShiftController extends Controller
         $default = ShiftTemplate::active()->where('is_default', true)->first();
         $schedule = collect();
 
-        foreach (range(0, 13) as $offset) {
+        foreach (range(0, 6) as $offset) {
             $date = Carbon::today()->addDays($offset);
             if ($explicit->has($date->toDateString())) {
                 $explicit->get($date->toDateString())->each(fn ($item) => $schedule->push($item));
@@ -47,7 +47,13 @@ class ShiftController extends Controller
                 (!$item->starts_on || $date->gte($item->starts_on)) &&
                 (!$item->ends_on || $date->lte($item->ends_on))
             );
-            $effective = $weekly->isNotEmpty() ? $weekly : ($default ? collect([(object) ['shift_template_id' => $default->id, 'shiftTemplate' => $default]]) : collect());
+            // A default template is a fallback rule, not seven separate
+            // assignments. Show it once for today so the schedule stays clear.
+            $effective = $weekly->isNotEmpty()
+                ? $weekly
+                : ($offset === 0 && $default
+                    ? collect([(object) ['shift_template_id' => $default->id, 'shiftTemplate' => $default]])
+                    : collect());
 
             foreach ($effective as $index => $item) {
                 $schedule->push([
