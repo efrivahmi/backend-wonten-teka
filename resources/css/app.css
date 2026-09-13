@@ -20,14 +20,51 @@
     --teka-lime: #84e000;
 }
 
-.teka-shell { background: var(--teka-canvas); }
-.teka-sidebar { background: #fff; color: var(--teka-ink); border-color: #e5e7eb; }
-.teka-topbar { background: rgb(255 255 255 / 92%); border-color: #e5e7eb; backdrop-filter: blur(18px); }
-.teka-panel { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 12px 36px rgb(23 32 51 / 7%); }
-.teka-kicker { font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
-.teka-kicker::before { content: '■'; color: var(--teka-coral); margin-right: .55rem; }
-.teka-display { font-weight: 750; letter-spacing: -.045em; line-height: .98; }
-.teka-accent { color: var(--teka-coral); }
+.teka-shell {
+    background: var(--teka-canvas);
+}
+
+.teka-sidebar {
+    background: #fff;
+    color: var(--teka-ink);
+    border-color: #e5e7eb;
+}
+
+.teka-topbar {
+    background: rgb(255 255 255 / 92%);
+    border-color: #e5e7eb;
+    backdrop-filter: blur(18px);
+}
+
+.teka-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 36px rgb(23 32 51 / 7%);
+}
+
+.teka-kicker {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.teka-kicker::before {
+    content: '■';
+    color: var(--teka-coral);
+    margin-right: .55rem;
+}
+
+.teka-display {
+    font-weight: 750;
+    letter-spacing: -.045em;
+    line-height: .98;
+}
+
+.teka-accent {
+    color: var(--teka-coral);
+}
+
 .teka-hero {
     color: #fff;
     background-color: #123b23;
@@ -36,7 +73,9 @@
     background-position: center;
 }
 
-html { scroll-behavior: smooth; }
+html {
+    scroll-behavior: smooth;
+}
 
 body {
     min-width: 320px;
@@ -45,9 +84,17 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-::selection { background: rgb(132 224 0 / 30%); }
+::selection {
+    background: rgb(132 224 0 / 30%);
+}
 
-button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button,
+a,
+input,
+select,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}
 
 :focus-visible {
     outline: 3px solid rgb(101 163 13 / 30%);
@@ -55,7 +102,10 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+
+    *,
+    *::before,
+    *::after {
         scroll-behavior: auto !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;

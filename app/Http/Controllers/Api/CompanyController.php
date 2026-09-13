@@ -118,6 +118,9 @@ class CompanyController extends Controller
      */
     public function getGeofence(Request $request)
     {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         
         $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
         $geofence = $geofenceSetting ? $geofenceSetting->value : [
@@ -200,6 +203,9 @@ class CompanyController extends Controller
      */
     public function getWorkingDays(Request $request)
     {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         
         $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
         $workingDays = $workingDaysSetting ? $workingDaysSetting->value : [1, 2, 3, 4, 5];

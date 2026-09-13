@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
-import { 
-    CalendarCheck, 
-    Loader2, 
+import {
+    CalendarCheck,
+    Loader2,
     MapPin,
     LogIn,
     LogOut,
@@ -25,7 +25,7 @@ const Attendance = () => {
 
     const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState([]);
-    
+
     // Calendar state
     const today = new Date();
     const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1);
@@ -81,15 +81,15 @@ const Attendance = () => {
     const setupScanner = async () => {
         try {
             setScanMessage('Memuat AI Model...');
-            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'; 
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
             await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
             await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
             await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            
+
             setScanMessage('Mengambil data wajah terdaftar...');
             const res = await api.get('/biometrics/web/sync');
             setEnrolledEmbeddings(res.data.embeddings);
-            
+
             setModelsLoaded(true);
             setScanMessage('Silakan menghadap kamera...');
         } catch (err) {
@@ -104,7 +104,7 @@ const Attendance = () => {
 
     useEffect(() => {
         if (!action || !modelsLoaded || !enrolledEmbeddings || submitting) return;
-        
+
         let isMounted = true;
         let timeoutId = null;
 
@@ -134,10 +134,10 @@ const Attendance = () => {
                     if (bestMatch < 0.45) { // Threshold for matching
                         setScanMessage('Wajah Cocok! Mengambil foto dan lokasi GPS...');
                         setScanning(false);
-                        
+
                         // Take snapshot
                         const imageSrc = webcamRef.current.getScreenshot();
-                        
+
                         handleAttendanceSubmit(1 - bestMatch, imageSrc, Array.from(detection.descriptor));
                         return; // Stop the scanning loop
                     } else {
@@ -149,7 +149,7 @@ const Attendance = () => {
             } catch (err) {
                 console.error(err);
             }
-            
+
             setScanning(false);
             if (isMounted) {
                 timeoutId = setTimeout(processDetection, 1000);
@@ -157,7 +157,7 @@ const Attendance = () => {
         };
 
         processDetection();
-        
+
         return () => {
             isMounted = false;
             if (timeoutId) clearTimeout(timeoutId);
@@ -166,7 +166,7 @@ const Attendance = () => {
 
     const handleAttendanceSubmit = async (matchScore, imageBase64, faceDescriptor) => {
         setSubmitting(true);
-        
+
         if (!navigator.geolocation) {
             setScanError("Browser Anda tidak mendukung deteksi lokasi (GPS).");
             setSubmitting(false);
@@ -177,7 +177,7 @@ const Attendance = () => {
             try {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                
+
                 // Get Address using Nominatim OpenStreetMap
                 let address = '';
                 try {
@@ -193,7 +193,7 @@ const Attendance = () => {
                 }
 
                 const endpoint = action === 'check-in' ? '/attendance/check-in' : '/attendance/check-out';
-                
+
                 // Try to get FP ID for device_id
                 const fp = await import('@fingerprintjs/fingerprintjs').then(fpPromise => fpPromise.load());
                 const fpResult = await fp.get();
@@ -206,7 +206,7 @@ const Attendance = () => {
                 for (let i = 0; i < byteString.length; i++) {
                     ia[i] = byteString.charCodeAt(i);
                 }
-                const blob = new Blob([ab], {type: mimeString});
+                const blob = new Blob([ab], { type: mimeString });
 
                 // Use FormData for file upload
                 const formData = new FormData();
@@ -224,10 +224,10 @@ const Attendance = () => {
                 await api.post(endpoint, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                
+
                 alert(`Berhasil ${action === 'check-in' ? 'Check-In' : 'Check-Out'}!`);
                 window.location.href = '/employee/dashboard'; // redirect
-                
+
             } catch (e) {
                 setScanError(`Gagal ${action}: ` + (e.response?.data?.message || 'Error Server'));
                 setSubmitting(false);
@@ -242,7 +242,7 @@ const Attendance = () => {
     const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1).getDay(); // 0 is Sun, 1 is Mon
     const startingDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Make Monday = 0
-    
+
     const prevMonth = () => {
         if (currentMonth === 1) {
             setCurrentMonth(12);
@@ -283,14 +283,14 @@ const Attendance = () => {
 
         // No log
         // Check if date is in the past
-        today.setHours(0,0,0,0);
+        today.setHours(0, 0, 0, 0);
         if (loopDate < today) {
             if (isWorkingDay) {
                 return 'bg-rose-100 text-rose-700 border-rose-300'; // Missed working day (Alpha)
             }
             return 'bg-slate-100 text-slate-400 border-slate-200'; // Past weekend/holiday
         }
-        
+
         return 'bg-white text-slate-600 border-slate-100'; // Future or today (not yet checked in)
     };
 
@@ -357,7 +357,7 @@ const Attendance = () => {
                                         <div className="absolute left-0 right-0 h-[2px] bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,1)] animate-scan-laser" />
                                     )}
                                 </div>
-                                
+
                                 {submitting && (
                                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center text-white">
                                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
@@ -392,7 +392,7 @@ const Attendance = () => {
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Riwayat Absensi (Kalender)</h1>
                     <p className="text-slate-500 mt-1">Pantau kehadiran harian dan detail lokasi/foto absen Anda.</p>
                 </div>
-                
+
                 {/* Legend */}
                 <div className="flex space-x-3 text-xs font-medium text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
                     <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-emerald-400 mr-1.5"></span> Hadir</div>
@@ -431,13 +431,13 @@ const Attendance = () => {
                             {Array.from({ length: startingDay }).map((_, i) => (
                                 <div key={`empty-${i}`} className="h-20 rounded-xl bg-slate-50 border border-slate-100 opacity-50"></div>
                             ))}
-                            
+
                             {/* Calendar Days */}
                             {Array.from({ length: daysInMonth }).map((_, i) => {
                                 const day = i + 1;
                                 const statusClass = getDayStatusColor(day);
                                 return (
-                                    <button 
+                                    <button
                                         key={day}
                                         onClick={() => openModal(day)}
                                         className={`h-20 rounded-xl border flex flex-col p-2 hover:opacity-80 transition-opacity relative ${statusClass}`}
@@ -445,7 +445,7 @@ const Attendance = () => {
                                         <span className="text-sm font-bold opacity-75">{day}</span>
                                         {getLogForDay(day) && (
                                             <div className="mt-auto text-xs font-semibold">
-                                                {new Date(getLogForDay(day).check_in_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}
+                                                {new Date(getLogForDay(day).check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         )}
                                     </button>
@@ -468,7 +468,7 @@ const Attendance = () => {
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                             {selectedLog === 'none' ? (
                                 <div className="text-center py-8 text-slate-500">
@@ -484,18 +484,17 @@ const Attendance = () => {
                                                 <LogIn className="h-5 w-5 mr-2" /> Check In
                                             </div>
                                             {selectedLog.status && (
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                    selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
-                                                    selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
-                                                    selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
-                                                    selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
-                                                    'bg-slate-100 text-slate-700'
-                                                }`}>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
+                                                        selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
+                                                            selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                                selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-slate-100 text-slate-700'
+                                                    }`}>
                                                     {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
-                                                     selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
-                                                     selectedLog.status === 'late' ? 'Terlambat' :
-                                                     selectedLog.status === 'flagged' ? 'Dipertanyakan' :
-                                                     selectedLog.status}
+                                                        selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
+                                                            selectedLog.status === 'late' ? 'Terlambat' :
+                                                                selectedLog.status === 'flagged' ? 'Dipertanyakan' :
+                                                                    selectedLog.status}
                                                 </span>
                                             )}
                                         </div>
