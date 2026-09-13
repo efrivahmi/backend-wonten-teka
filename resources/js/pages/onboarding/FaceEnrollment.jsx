@@ -41,6 +41,8 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
     const [message, setMessage] = useState('Memuat AI pendeteksi wajah...');
     const [saving, setSaving] = useState(false);
     const [deviceId, setDeviceId] = useState('web_browser');
+    const [qualityProgress, setQualityProgress] = useState(0);
+    const [quality, setQuality] = useState({ face: false, light: false, position: false });
 
     useEffect(() => {
         const loadModels = async () => {
@@ -84,6 +86,11 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                 }
 
                 setDetecting(true);
+                const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(video, 0, 0, 32, 32);
+                const pixels = ctx.getImageData(0, 0, 32, 32).data; let luma = 0;
+                for (let i = 0; i < pixels.length; i += 16) luma += .2126 * pixels[i] + .7152 * pixels[i + 1] + .0722 * pixels[i + 2];
+                const lightOkay = luma / (pixels.length / 16) >= 55;
                 
                 const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
@@ -92,7 +99,17 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                 if (detection) {
                     const score = detection.detection.score;
                     const yaw = getYawRatio(detection.landmarks);
-                    if (score > 0.8 && matchesPose(step, yaw, firstSideYawRef.current)) {
+                    const box = detection.detection.box;
+                    const faceRatio = (box.width * box.height) / (video.videoWidth * video.videoHeight);
+                    const positionOkay = faceRatio >= .08 && faceRatio <= .65;
+                    const poseOkay = matchesPose(step, yaw, firstSideYawRef.current);
+                    setQuality({ face: true, light: lightOkay, position: positionOkay && poseOkay });
+                    setQualityProgress(Math.round(25 + (lightOkay ? 25 : 0) + (positionOkay ? 20 : 0) + (poseOkay ? 30 : 0)));
+                    if (!lightOkay) {
+                        setMessage('Terlalu gelap. Pindah ke tempat yang lebih terang.');
+                    } else if (!positionOkay) {
+                        setMessage(faceRatio < .08 ? 'Wajah terlalu jauh. Dekatkan kamera.' : 'Wajah terlalu dekat. Mundur sedikit.');
+                    } else if (score > 0.8 && poseOkay) {
                         const newEmbeddings = [...embeddings, Array.from(detection.descriptor)];
 
                         if (step === 1) firstSideYawRef.current = yaw;
@@ -117,6 +134,7 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                             : steps[step].instruction);
                     }
                 } else {
+                    setQuality({ face: false, light: lightOkay, position: false }); setQualityProgress(lightOkay ? 25 : 0);
                     setMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
                 }
             } catch (error) {
@@ -188,6 +206,8 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                             />
                             {/* Overlay frame */}
                             <div className="absolute inset-0 border-4 border-emerald-500/30 m-8 rounded-full pointer-events-none"></div>
+                            <style>{`@keyframes enroll-scan{0%{top:10%;opacity:.2}50%{opacity:1}100%{top:88%;opacity:.2}} .enroll-scan{animation:enroll-scan 1.8s ease-in-out infinite alternate}`}</style>
+                            <div className="pointer-events-none absolute inset-[12%] rounded-[42%] border-2 border-dashed border-white/80 shadow-[0_0_0_999px_rgba(0,0,0,.2)]"><div className="enroll-scan absolute left-0 right-0 h-0.5 bg-emerald-300 shadow-[0_0_14px_#6ee7b7]"/></div>
                         </>
                     )}
                 </div>
@@ -196,6 +216,9 @@ const FaceEnrollment = ({ returnTo = '/onboarding' }) => {
                     <p className={`text-sm mb-6 ${detecting ? 'text-amber-600' : 'text-slate-600'}`}>
                         {message}
                     </p>
+
+                    <div className="mb-4"><div className="mb-2 flex justify-between text-xs font-bold text-slate-600"><span>Kualitas tahap ini</span><span>{qualityProgress}%</span></div><div className="h-2.5 overflow-hidden rounded-full bg-slate-200"><div className={`h-full transition-all duration-500 ${quality.light ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{width:`${qualityProgress}%`}}/></div></div>
+                    <div className="mb-5 flex justify-center gap-2">{[['Wajah',quality.face],['Cahaya',quality.light],['Posisi',quality.position]].map(([label,valid])=><span key={label} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${valid?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-500'}`}>{valid?'✓':'○'} {label}</span>)}</div>
 
                     <div className="flex justify-center gap-2 mb-6">
                         {[0, 1, 2].map((i) => (

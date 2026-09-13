@@ -47,6 +47,8 @@ const Attendance = () => {
     const [scanError, setScanError] = useState('');
     const [requiresWebEnrollment, setRequiresWebEnrollment] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [scanProgress, setScanProgress] = useState(0);
+    const [scanQuality, setScanQuality] = useState({ face: false, light: false, position: false, match: false });
 
     useEffect(() => {
         if (!action) {
@@ -128,11 +130,23 @@ const Attendance = () => {
 
             try {
                 setScanning(true);
+                const sampleCanvas = document.createElement('canvas');
+                sampleCanvas.width = 32; sampleCanvas.height = 32;
+                const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true });
+                sampleContext.drawImage(video, 0, 0, 32, 32);
+                const pixels = sampleContext.getImageData(0, 0, 32, 32).data;
+                let luma = 0;
+                for (let i = 0; i < pixels.length; i += 16) luma += .2126 * pixels[i] + .7152 * pixels[i + 1] + .0722 * pixels[i + 2];
+                const averageLuma = luma / (pixels.length / 16);
+                const lightOkay = averageLuma >= 55;
                 const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
                 if (detection) {
+                    const box = detection.detection.box;
+                    const faceRatio = (box.width * box.height) / (video.videoWidth * video.videoHeight);
+                    const positionOkay = faceRatio >= .08 && faceRatio <= .65;
                     let bestMatch = 1.0;
                     for (let i = 0; i < enrolledEmbeddings.length; i++) {
                         const distance = faceapi.euclideanDistance(detection.descriptor, new Float32Array(enrolledEmbeddings[i]));
@@ -141,7 +155,16 @@ const Attendance = () => {
                         }
                     }
 
-                    if (bestMatch < 0.45) { // Threshold for matching
+                    const matchOkay = bestMatch < 0.45;
+                    const matchProgress = Math.max(0, Math.min(1, (1 - bestMatch) / .55));
+                    setScanQuality({ face: true, light: lightOkay, position: positionOkay, match: matchOkay });
+                    setScanProgress(Math.min(100, Math.round(25 + (lightOkay ? 20 : 0) + (positionOkay ? 20 : 0) + matchProgress * 35)));
+
+                    if (!lightOkay) {
+                        setScanMessage('Terlalu gelap. Pindah ke tempat yang lebih terang.');
+                    } else if (!positionOkay) {
+                        setScanMessage(faceRatio < .08 ? 'Wajah terlalu jauh. Dekatkan kamera.' : 'Wajah terlalu dekat. Mundur sedikit.');
+                    } else if (matchOkay) { // Threshold for matching
                         setScanMessage('Wajah Cocok! Mengambil foto dan lokasi GPS...');
                         setScanning(false);
 
@@ -154,6 +177,8 @@ const Attendance = () => {
                         setScanMessage(`Wajah tidak dikenali (Jarak: ${bestMatch.toFixed(2)}). Pastikan pencahayaan baik.`);
                     }
                 } else {
+                    setScanQuality({ face: false, light: lightOkay, position: false, match: false });
+                    setScanProgress(lightOkay ? 20 : 0);
                     setScanMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
                 }
             } catch (err) {
@@ -365,6 +390,7 @@ const Attendance = () => {
                                         <div className="absolute left-0 right-0 h-[2px] bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,1)] animate-scan-laser" />
                                     )}
                                 </div>
+                                <div className="pointer-events-none absolute inset-[12%] z-10 rounded-[42%] border-2 border-dashed border-white/80 shadow-[0_0_0_999px_rgba(0,0,0,.16)]" />
 
                                 {submitting && (
                                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center text-white">
@@ -378,6 +404,8 @@ const Attendance = () => {
 
                     {!scanError && (
                         <div className="p-6 bg-white border-t border-slate-100 text-center">
+                            <div className="mb-4"><div className="mb-2 flex justify-between text-xs font-bold text-slate-600"><span>Progress verifikasi</span><span>{submitting ? 100 : scanProgress}%</span></div><div className="h-2.5 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full transition-all duration-500 ${scanQuality.light || submitting ? 'bg-emerald-600' : 'bg-rose-500'}`} style={{width:`${submitting ? 100 : scanProgress}%`}} /></div></div>
+                            <div className="mb-4 flex flex-wrap justify-center gap-2">{[['Wajah',scanQuality.face],['Cahaya',scanQuality.light],['Posisi',scanQuality.position],['Identitas',scanQuality.match]].map(([label,valid])=><span key={label} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${valid?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-500'}`}>{valid?'✓':'○'} {label}</span>)}</div>
                             <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-slate-100 text-slate-700 font-medium text-sm">
                                 {submitting ? (
                                     <Loader2 className="animate-spin h-4 w-4 mr-2 text-emerald-600" />
