@@ -24,6 +24,7 @@ const EmployeeLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [menuConfig, setMenuConfig] = useState([]);
     const [openMenus, setOpenMenus] = useState({ Presensi: true });
+    const [profileOpen, setProfileOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -177,15 +178,6 @@ const EmployeeLayout = () => {
                     })}
                 </nav>
 
-                <div className="w-full flex-shrink-0 border-t border-slate-100 bg-white p-4">
-                    <button 
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-3 w-full rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
-                    >
-                        <LogOut className="h-5 w-5 flex-shrink-0 text-slate-400" />
-                        <span className="font-medium text-sm">Keluar</span>
-                    </button>
-                </div>
             </div>
 
             {/* Main Content */}
@@ -199,6 +191,17 @@ const EmployeeLayout = () => {
                         <Link to="/employee/notifications" className="text-slate-400 hover:text-emerald-600 transition-colors p-2">
                             <Bell className="h-5 w-5" />
                         </Link>
+                        <div className="relative">
+                            <button onClick={() => setProfileOpen(value => !value)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-left hover:border-emerald-300">
+                                <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><User className="h-4 w-4" /></span>
+                                <span className="hidden sm:block max-w-40"><span className="block truncate text-sm font-semibold text-slate-800">{user.name || 'Karyawan'}</span><span className="block truncate text-[11px] text-slate-500">Profil saya</span></span>
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                            </button>
+                            {profileOpen && <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                <Link to="/employee/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-emerald-50"><User className="h-4 w-4" />Lihat & edit profil</Link>
+                                <button onClick={handleLogout} className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50"><LogOut className="h-4 w-4" />Keluar</button>
+                            </div>}
+                        </div>
                     </div>
                 </header>
 

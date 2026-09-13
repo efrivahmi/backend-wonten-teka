@@ -22,9 +22,9 @@ const Claims = () => {
     const [formData, setFormData] = useState({
         claim_category_id: '',
         amount: '',
-        date_of_expense: '',
+        expense_date: '',
         description: '',
-        attachment_url: ''
+        receipt: null
     });
 
     useEffect(() => {
@@ -57,10 +57,12 @@ const Claims = () => {
         e.preventDefault();
         try {
             setSubmitLoading(true);
-            await api.post('/claims/submit', formData);
+            const payload = new FormData();
+            Object.entries(formData).forEach(([key, value]) => value !== null && payload.append(key, value));
+            await api.post('/claims/submit', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert("Pengajuan klaim (reimbursement) berhasil dikirim!");
             setShowModal(false);
-            setFormData({ claim_category_id: '', amount: '', date_of_expense: '', description: '', attachment_url: '' });
+            setFormData({ claim_category_id: '', amount: '', expense_date: '', description: '', receipt: null });
             fetchData(); // Refresh history
         } catch (error) {
             console.error("Error submitting claim request:", error);
@@ -210,9 +212,9 @@ const Claims = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Tgl Pengeluaran</label>
                                     <input 
                                         type="date" 
-                                        name="date_of_expense"
+                                    name="expense_date"
                                         required 
-                                        value={formData.date_of_expense}
+                                    value={formData.expense_date}
                                         onChange={handleInputChange}
                                         className="w-full border-slate-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                                     />
@@ -231,16 +233,15 @@ const Claims = () => {
                                 ></textarea>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Lampiran / Bukti (URL/Opsional)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Lampiran / Bukti</label>
                                 <input 
-                                    type="url" 
-                                    name="attachment_url"
-                                    value={formData.attachment_url}
-                                    onChange={handleInputChange}
+                                    type="file" 
+                                    name="receipt"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    onChange={e => setFormData(prev => ({ ...prev, receipt: e.target.files?.[0] || null }))}
                                     className="w-full border-slate-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
-                                    placeholder="https://link-ke-bukti-struk..."
                                 />
-                                <p className="text-xs text-slate-400 mt-1">Untuk MVP, Anda dapat menaruh URL gambar/drive.</p>
+                                <p className="text-xs text-slate-400 mt-1">JPG, PNG, atau PDF maksimal 5 MB. Wajib jika kategori mensyaratkan bukti.</p>
                             </div>
                             
                             <div className="pt-4 flex items-center justify-end space-x-3">

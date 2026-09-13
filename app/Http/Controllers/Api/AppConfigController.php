@@ -38,7 +38,8 @@ class AppConfigController extends Controller
     private function defaults(): array
     {
         return [
-            'branding' => ['portal_name' => 'Wonten Teka', 'hero_image_url' => null],
+            // Nama produk lama: Wonten Teka.
+            'branding' => ['portal_name' => 'e-Absensi Lemdiklat Taruna Nusantara Indonesia', 'hero_image_url' => null],
             'employee_menu' => [
                 ['key' => 'attendance', 'label' => 'Riwayat Absensi', 'enabled' => true],
                 ['key' => 'schedule', 'label' => 'Jadwal Shift Saya', 'enabled' => true],

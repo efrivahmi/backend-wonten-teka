@@ -13,7 +13,7 @@ class Announcement extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
- 'title', 'body', 'target_type', 'target_value',
+ 'title', 'body', 'attachment_url', 'target_type', 'target_value',
         'priority', 'created_by', 'published_at', 'expires_at',
     ];
 

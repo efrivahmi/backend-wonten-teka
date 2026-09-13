@@ -118,10 +118,8 @@ class CompanyController extends Controller
      */
     public function getGeofence(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        
+        // Every authenticated employee needs the active location and radius
+        // to validate attendance. Updating it remains admin-only at the route.
         $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
         $geofence = $geofenceSetting ? $geofenceSetting->value : [
             'latitude' => null,
@@ -181,11 +179,17 @@ class CompanyController extends Controller
             'priority' => 'required|in:low,normal,high,urgent',
             'target_type' => 'required|in:company,department,employee',
             'target_value' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
+
+        $attachmentUrl = $request->hasFile('attachment')
+            ? $request->file('attachment')->store('announcements', 'public')
+            : null;
 
         $announcement = Announcement::create([
             'title' => $validated['title'],
             'body' => $validated['content'],
+            'attachment_url' => $attachmentUrl,
             'priority' => $validated['priority'],
             'target_type' => $validated['target_type'],
             'target_value' => $validated['target_value'] ?? null,
@@ -203,10 +207,8 @@ class CompanyController extends Controller
      */
     public function getWorkingDays(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        
+        // Working-day information is visible to every authenticated employee;
+        // the update endpoint remains protected by the admin middleware.
         $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
         $workingDays = $workingDaysSetting ? $workingDaysSetting->value : [1, 2, 3, 4, 5];
         

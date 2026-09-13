@@ -115,7 +115,7 @@ const Overtime = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center font-bold text-slate-800">
                                                 <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                                                <span>{req.date}</span>
+                                                <span>{req.date ? new Date(`${String(req.date).split('T')[0]}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

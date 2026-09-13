@@ -27,7 +27,8 @@ use App\Http\Controllers\Api\AdminBiometricController;
 Route::get('/', function () {
     return response()->json([
         'status' => 'success',
-        'message' => 'Wonten Teka API is running and ready for connections!',
+        // Nama produk lama: Wonten Teka.
+        'message' => 'e-Absensi Lemdiklat Taruna Nusantara Indonesia API siap digunakan.',
         'version' => '1.0.0',
         'timestamp' => now()->toIso8601String(),
     ]);

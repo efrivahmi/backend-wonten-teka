@@ -27,6 +27,7 @@ import { getDeviceFingerprint } from '../deviceIdentity';
 const AdminLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState({ Presensi: true });
+    const [profileOpen, setProfileOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -96,6 +97,7 @@ const AdminLayout = () => {
             children: [
                 { name: 'Perangkat', href: '/admin/devices', icon: Smartphone },
                 { name: 'Event', href: '/admin/events', icon: CalendarDays },
+                { name: 'Pengumuman', href: '/admin/announcements', icon: Bell },
                 { name: 'Payroll', href: '/admin/payroll', icon: Banknote },
                 { name: 'Biometrik Wajah', href: '/admin/biometrics', icon: Shield },
             ]
@@ -204,15 +206,6 @@ const AdminLayout = () => {
                     })}
                 </nav>
 
-                <div className="w-full flex-shrink-0 border-t border-slate-100 bg-white p-4">
-                    <button 
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                    >
-                        <LogOut className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium text-sm">Keluar</span>
-                    </button>
-                </div>
             </div>
 
             {/* Main Content */}
@@ -226,6 +219,10 @@ const AdminLayout = () => {
                         <button className="text-slate-400 hover:text-emerald-600 transition-colors p-2">
                             <Bell className="h-5 w-5" />
                         </button>
+                        <div className="relative">
+                            <button onClick={() => setProfileOpen(value => !value)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 hover:border-emerald-300"><span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><Shield className="h-4 w-4" /></span><span className="hidden max-w-40 text-left sm:block"><span className="block truncate text-sm font-semibold text-slate-800">{user.name || 'Administrator'}</span><span className="block text-[11px] text-slate-500">Profil admin</span></span><ChevronDown className="h-4 w-4 text-slate-400" /></button>
+                            {profileOpen && <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"><div className="px-4 py-3"><p className="truncate text-sm font-semibold text-slate-800">{user.name}</p><p className="truncate text-xs text-slate-500">{user.email}</p></div><button onClick={handleLogout} className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50"><LogOut className="h-4 w-4" />Keluar</button></div>}
+                        </div>
                     </div>
                 </header>
 

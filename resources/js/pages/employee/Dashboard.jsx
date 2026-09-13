@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, Clock, Bell, Loader2, LogIn, LogOut, CheckCircle2, TrendingUp, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { CalendarCheck, Clock, Bell, Loader2, LogIn, LogOut, CheckCircle2, TrendingUp, CheckCircle, AlertTriangle, XCircle, Briefcase, CalendarDays, FileText, Plane, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../api';
 
 const EmployeeDashboard = () => {
@@ -61,6 +62,12 @@ const EmployeeDashboard = () => {
         }
         window.location.href = `/employee/attendance?${query.toString()}`;
     };
+    const quickLinks = [
+        ['/employee/attendance','Absensi',CalendarCheck], ['/employee/shifts','Jadwal Shift',Clock], ['/employee/leave','Ajukan Cuti',Briefcase],
+        ['/employee/overtime','Lembur',Clock], ['/employee/claims','Reimburse',FileText], ['/employee/business-trips','Perjalanan Dinas',Plane],
+        ['/employee/calendar','Kalender',CalendarDays], ['/employee/profile','Data Pribadi',User],
+    ];
+    const durationText = (start, end) => { const [sh,sm] = String(start).split(':').map(Number); const [eh,em] = String(end).split(':').map(Number); let minutes=(eh*60+em)-(sh*60+sm); if(minutes<=0) minutes+=1440; return `${Math.floor(minutes/60)} jam ${minutes%60 ? `${minutes%60} menit` : ''}`.trim(); };
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -71,6 +78,11 @@ const EmployeeDashboard = () => {
                     <p className="text-stone-300 mt-6 max-w-md">Halo, {user.name}. Kelola kehadiran dan pekerjaan hari ini dalam satu alur yang jelas.</p>
                 </div>
             </div>
+
+            <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="mb-4 text-xl font-bold text-slate-800">Akses Cepat</h2><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{quickLinks.map(([href,label,Icon]) => <Link key={href} to={href} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center hover:border-emerald-300 hover:bg-emerald-50"><Icon className="mx-auto mb-2 h-6 w-6 text-emerald-700"/><span className="text-sm font-semibold text-slate-700">{label}</span></Link>)}</div></div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-bold text-slate-800">Data Akun</h2><div className="mt-4 space-y-3 text-sm"><p><span className="block text-slate-400">Nama</span><strong>{user.name || '—'}</strong></p><p><span className="block text-slate-400">Email</span><strong>{user.email || '—'}</strong></p></div><Link to="/employee/profile" className="mt-5 inline-flex text-sm font-semibold text-emerald-700">Lihat data pribadi →</Link></div>
+            </section>
 
             {/* Monthly Stats Row */}
             {todayInfo?.monthly_stats && (
@@ -178,6 +190,7 @@ const EmployeeDashboard = () => {
                                                     <Clock className="w-3 h-3 mr-1" />
                                                     {shift.start_time} - {shift.end_time}
                                                 </p>
+                                                <div className="mt-2 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">Durasi {durationText(shift.start_time, shift.end_time)}</span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">Status: {shift.attendance?.status ? String(shift.attendance.status).replaceAll('_',' ') : 'Belum absen'}</span></div>
                                                 
                                                 {/* Attendance Times Display */}
                                                 <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm">
@@ -267,6 +280,7 @@ const EmployeeDashboard = () => {
                                     <li key={idx} className="p-6 hover:bg-slate-50/50 transition-colors">
                                         <h4 className="font-bold text-slate-800 mb-1">{ann.title}</h4>
                                         <p className="text-sm text-slate-600 whitespace-pre-line">{ann.body || ann.content}</p>
+                                        {ann.attachment_url && <a href={`/storage/${ann.attachment_url}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-semibold text-emerald-700">Buka lampiran pengumuman →</a>}
                                         <p className="text-xs text-slate-400 mt-3 font-medium">
                                             {new Date(ann.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         </p>
