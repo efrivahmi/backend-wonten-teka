@@ -117,15 +117,15 @@ const AdminLayout = () => {
     return (
         <div className="teka-shell flex h-screen">
             {/* Sidebar */}
-            <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 w-64 shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-                <div className="flex items-center justify-between h-20 px-5 border-b border-slate-100">
+            <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:w-64 md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+                <div className="flex h-20 flex-shrink-0 items-center justify-between px-5 border-b border-slate-100">
                     <img src="/images/lemdiklat-logo.png" alt="Lemdiklat Taruna Nusantara Indonesia" className="h-11 w-auto max-w-[190px] object-contain object-left" />
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-green-700">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
                 
-                <div className="p-4">
+                <div className="flex-shrink-0 p-4 pb-2">
                     <div className="bg-lime-50 rounded-2xl p-4 flex items-center space-x-3 border border-lime-100">
                         <div className="bg-green-100 text-green-700 p-2 rounded-lg">
                             <Shield className="h-5 w-5" />
@@ -137,26 +137,26 @@ const AdminLayout = () => {
                     </div>
                 </div>
 
-                <nav className="px-4 py-4 space-y-1 overflow-y-auto" style={{ height: 'calc(100vh - 180px)' }}>
+                <nav className="scrollbar-hidden min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-4 py-2 pb-6">
                     {navigation.map((item) => {
                         if (item.children) {
                             const isChildActive = item.children.some(child => location.pathname.startsWith(child.href));
-                            const isOpen = openMenus[item.name];
+                            const isOpen = openMenus[item.name] ?? isChildActive;
                             return (
                                 <div key={item.name} className="space-y-1">
                                     <button
                                         onClick={() => toggleMenu(item.name)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                                        className={`w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg transition-colors ${
                                             isChildActive && !isOpen
                                             ? 'bg-green-50 text-green-800'
                                             : 'text-slate-600 hover:bg-lime-50 hover:text-green-800'
                                         }`}
                                     >
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex min-w-0 items-center space-x-3 text-left">
                                             <item.icon className={`h-5 w-5 flex-shrink-0 ${isChildActive ? 'text-green-700' : ''}`} />
-                                            <span className={`font-medium text-sm truncate ${isChildActive ? 'text-green-800' : ''}`}>{item.name}</span>
+                                            <span className={`font-medium text-sm leading-tight ${isChildActive ? 'text-green-800' : ''}`}>{item.name}</span>
                                         </div>
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                                     </button>
                                     
                                     {isOpen && (
@@ -168,14 +168,14 @@ const AdminLayout = () => {
                                                         key={child.name}
                                                         to={child.href}
                                                         onClick={() => setIsMobileMenuOpen(false)}
-                                                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                                                        className={`flex items-start space-x-3 px-3 py-2 rounded-lg transition-colors ${
                                                             isActive 
                                                             ? 'bg-lime-50 text-green-700'
                                                             : 'text-slate-500 hover:text-green-700'
                                                         }`}
                                                     >
-                                                        <child.icon className="h-4 w-4 flex-shrink-0" />
-                                                        <span className="font-medium text-sm truncate">{child.name}</span>
+                                                        <child.icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                                                        <span className="font-medium text-sm leading-snug">{child.name}</span>
                                                     </Link>
                                                 );
                                             })}
@@ -204,7 +204,7 @@ const AdminLayout = () => {
                     })}
                 </nav>
 
-                <div className="absolute bottom-0 w-full p-4 border-t border-slate-100 bg-white">
+                <div className="w-full flex-shrink-0 border-t border-slate-100 bg-white p-4">
                     <button 
                         onClick={handleLogout}
                         className="flex items-center space-x-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"

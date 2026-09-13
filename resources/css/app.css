@@ -30,6 +30,16 @@
     border-color: #e5e7eb;
 }
 
+/* Keep touch, mouse-wheel, and keyboard scrolling without showing a track. */
+.scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
+
 .teka-topbar {
     background: rgb(255 255 255 / 92%);
     border-color: #e5e7eb;
