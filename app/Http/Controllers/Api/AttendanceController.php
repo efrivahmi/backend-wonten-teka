@@ -100,7 +100,7 @@ class AttendanceController extends Controller
             'device_id' => 'required|string',
             'address' => 'nullable|string',
             'flags' => 'nullable|array',
-            'photo' => 'nullable|image|max:10240',
+            'photo' => 'required|image|max:10240',
             'shift_assignment_id' => 'nullable|integer',
             'shift_template_id' => 'nullable|integer',
         ]);
@@ -203,6 +203,7 @@ class AttendanceController extends Controller
 
         if (isset($flags['is_mock_location']) && $flags['is_mock_location'] == true) {
             $status = 'flagged';
+            $flags['review_reason'] = 'Perangkat melaporkan lokasi tiruan/mock location.';
         }
 
         $faceMatchScore = (float) $request->face_match_score;
@@ -257,6 +258,7 @@ class AttendanceController extends Controller
             'check_in_photo_url' => $photoPath,
             'flags' => $flags,
             'status' => $status,
+            'is_flagged' => $status === 'flagged',
         ]);
 
         if ($status === 'flagged') {
@@ -296,7 +298,7 @@ class AttendanceController extends Controller
             'device_id' => 'required|string',
             'address' => 'nullable|string',
             'flags' => 'nullable|array',
-            'photo' => 'nullable|image|max:10240',
+            'photo' => 'required|image|max:10240',
             'shift_assignment_id' => 'nullable|integer',
         ]);
 
@@ -525,13 +527,26 @@ class AttendanceController extends Controller
             });
 
             if ($log) {
+                $displayStatus = $log->status;
+                if ($shift['time_status'] === 'ended' && !$log->check_out_at) {
+                    $displayStatus = 'incomplete';
+                }
                 $shift['attendance'] = [
                     'id' => $log->id,
                     'check_in_time' => $log->check_in_at,
                     'check_out_time' => $log->check_out_at,
                     'check_in_address' => $log->check_in_address,
                     'check_out_address' => $log->check_out_address,
-                    'status' => $log->status,
+                    'status' => $displayStatus,
+                ];
+            } elseif ($shift['time_status'] === 'ended') {
+                $shift['attendance'] = [
+                    'id' => null,
+                    'check_in_time' => null,
+                    'check_out_time' => null,
+                    'check_in_address' => null,
+                    'check_out_address' => null,
+                    'status' => 'absent',
                 ];
             } else {
                 $shift['attendance'] = null;
@@ -568,7 +583,16 @@ class AttendanceController extends Controller
             // Carbon's dayOfWeek returns 0 (Sunday) to 6 (Saturday).
             // Let's use isoFormat('E') which returns 1-7
             $dayOfWeek = (int) $date->isoFormat('E');
-            if (in_array($dayOfWeek, $workingDays)) {
+            $isToday = $date->isSameDay($today);
+            $todayIsFinal = collect($shifts)->isNotEmpty()
+                && collect($shifts)->every(fn ($shift) => $shift['time_status'] === 'ended');
+            $hasAttendanceToday = $monthlyLogs->contains(
+                fn ($log) => $log->check_in_at?->copy()
+                    ->setTimezone(config('app.business_timezone'))
+                    ->isSameDay($today)
+            );
+            if (in_array($dayOfWeek, $workingDays)
+                && (!$isToday || $todayIsFinal || $hasAttendanceToday)) {
                 $passedWorkingDays++;
             }
         }
