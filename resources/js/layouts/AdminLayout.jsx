@@ -89,7 +89,7 @@ const AdminLayout = () => {
             children: [
                 { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
                 { name: 'Penugasan Shift', href: '/admin/shift-assignments', icon: CalendarRange },
-                { name: 'Lokasi Absensi', href: '/admin/settings', icon: MapPin },
+                { name: 'Lokasi Absensi', href: '/admin/attendance-settings', icon: MapPin },
                 { name: 'Kehadiran Harian', href: '/admin/attendance-daily', icon: CalendarCheck },
                 { name: 'Laporan Absensi', href: '/admin/reports', icon: FileBarChart },
                 { name: 'Deteksi Fake GPS', href: '/admin/attendance-security-events', icon: Flag },

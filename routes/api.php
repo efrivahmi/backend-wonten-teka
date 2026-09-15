@@ -136,6 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'getStats']);
+        Route::get('/audit-logs', [AdminDashboardController::class, 'auditLogs']);
         Route::put('/app-config', [AppConfigController::class, 'update']);
         
         Route::get('/employees', [EmployeeController::class, 'index']);

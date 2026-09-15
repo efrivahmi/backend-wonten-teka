@@ -11,11 +11,22 @@ use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Claim;
 use App\Models\Setting;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class AdminDashboardController extends Controller
 {
+    public function auditLogs(Request $request)
+    {
+        $logs = AuditLog::query()
+            ->with('actor:id,name,email')
+            ->latest()
+            ->paginate(50);
+
+        return response()->json($logs);
+    }
+
     public function getStats(Request $request)
     {
         $user = $request->user();

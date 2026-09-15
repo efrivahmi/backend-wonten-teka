@@ -10,21 +10,22 @@ import {
 } from 'lucide-react';
 import api from '../../api';
 
-const Approvals = () => {
+const Approvals = ({ filter = null }) => {
     const [loading, setLoading] = useState(true);
     const [approvals, setApprovals] = useState([]);
     const [actionLoading, setActionLoading] = useState(null);
 
     useEffect(() => {
         fetchApprovals();
-    }, []);
+    }, [filter]);
 
     const fetchApprovals = async () => {
         try {
             setLoading(true);
             const response = await api.get('/approvals/pending');
             // Assuming response is paginated (has .data array)
-            setApprovals(response.data.data || []);
+            const items = response.data.data || [];
+            setApprovals(filter ? items.filter(item => item.approvable_type?.includes(filter)) : items);
         } catch (error) {
             console.error("Error fetching approvals:", error);
         } finally {
@@ -81,8 +82,8 @@ const Approvals = () => {
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Pusat Persetujuan</h1>
-                    <p className="text-slate-500 mt-1">Kelola dan tinjau semua pengajuan karyawan di sini.</p>
+                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{filter === 'Claim' ? 'Klaim & Reimburse' : 'Pusat Persetujuan'}</h1>
+                    <p className="text-slate-500 mt-1">{filter === 'Claim' ? 'Tinjau khusus pengajuan biaya dan reimbursement karyawan.' : 'Kelola dan tinjau semua pengajuan karyawan di sini.'}</p>
                 </div>
                 <div className="flex space-x-2">
                     <button className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-slate-600 font-medium hover:bg-slate-50 transition-colors">

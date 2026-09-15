@@ -38,6 +38,8 @@ export default function EmployeeResources({ type }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [taskName, setTaskName] = useState('');
+    const [savingTask, setSavingTask] = useState(false);
+    const [taskMessage, setTaskMessage] = useState('');
     const [tripOpen, setTripOpen] = useState(false);
     const [trip, setTrip] = useState({ start_date: '', end_date: '', location: '', description: '' });
     const [adjustmentOpen, setAdjustmentOpen] = useState(false);
@@ -57,14 +59,25 @@ export default function EmployeeResources({ type }) {
 
     const createTask = async (event) => {
         event.preventDefault();
-        if (!taskName.trim()) return;
+        setError(''); setTaskMessage('');
+        if (!taskName.trim()) {
+            setError('Nama tugas wajib diisi sebelum menekan tombol Tambah.');
+            return;
+        }
+        setSavingTask(true);
         try {
+            const now = new Date();
+            const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             await api.post('/tasks', {
                 title: taskName.trim(),
-                task_date: new Date().toISOString().slice(0, 10),
+                task_date: localDate,
+                is_habit: false,
             });
-            setTaskName(''); await load();
-        } catch (e) { setError(e.response?.data?.message || 'Tugas gagal ditambahkan.'); }
+            setTaskName(''); setTaskMessage('Tugas berhasil ditambahkan.'); await load();
+        } catch (e) {
+            const validation = Object.values(e.response?.data?.errors || {})?.[0]?.[0];
+            setError(validation || e.response?.data?.message || 'Tugas gagal ditambahkan.');
+        } finally { setSavingTask(false); }
     };
 
     const completeTask = async (item) => {
@@ -111,7 +124,8 @@ export default function EmployeeResources({ type }) {
                 <button onClick={load} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600" aria-label="Muat ulang"><RefreshCw className="h-5 w-5" /></button>
             </div>
         </div>
-        {config.crud && <form onSubmit={createTask} className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-3"><input value={taskName} onChange={e => setTaskName(e.target.value)} placeholder="Tambahkan tugas baru" className="flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-600"/><button className="px-5 rounded-xl bg-emerald-700 text-white font-semibold">Tambah</button></form>}
+        {config.crud && <form onSubmit={createTask} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 sm:flex-row"><input required aria-label="Nama tugas baru" value={taskName} onChange={e => { setTaskName(e.target.value); if (error) setError(''); }} placeholder="Tambahkan tugas baru" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-600"/><button type="submit" disabled={savingTask} className="inline-flex min-h-12 items-center justify-center px-5 rounded-xl bg-emerald-700 text-white font-semibold disabled:cursor-wait disabled:opacity-60">{savingTask ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Menyimpan…</> : 'Tambah'}</button></form>}
+        {taskMessage && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">{taskMessage}</div>}
         {type === 'trips' && tripOpen && <form onSubmit={createTrip} className="grid gap-4 rounded-2xl border border-emerald-200 bg-white p-5 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Mulai<input type="date" required value={trip.start_date} onChange={e => setTrip({...trip,start_date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Selesai<input type="date" required min={trip.start_date} value={trip.end_date} onChange={e => setTrip({...trip,end_date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><input required placeholder="Lokasi tujuan" value={trip.location} onChange={e => setTrip({...trip,location:e.target.value})} className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"/><textarea required placeholder="Tujuan dan keterangan perjalanan" value={trip.description} onChange={e => setTrip({...trip,description:e.target.value})} className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"/><button className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white md:col-span-2">Kirim untuk persetujuan admin</button></form>}
         {type === 'adjustments' && adjustmentOpen && <form onSubmit={createAdjustment} className="grid gap-4 rounded-2xl border border-emerald-200 bg-white p-5 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700 md:col-span-2">Tanggal lupa absen<input type="date" required max={new Date().toISOString().slice(0,10)} value={adjustment.date} onChange={e => setAdjustment({...adjustment,date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Jam masuk yang seharusnya<input type="time" required value={adjustment.check_in} onChange={e => setAdjustment({...adjustment,check_in:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Jam keluar yang seharusnya<input type="time" required value={adjustment.check_out} onChange={e => setAdjustment({...adjustment,check_out:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700 md:col-span-2">Alasan<textarea required maxLength={500} value={adjustment.reason} onChange={e => setAdjustment({...adjustment,reason:e.target.value})} placeholder="Contoh: lupa melakukan check-out setelah menyelesaikan shift" className="mt-1 block min-h-28 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><button className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white md:col-span-2">Kirim pengajuan</button></form>}
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error}</div>}
