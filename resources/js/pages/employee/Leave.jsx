@@ -57,6 +57,14 @@ const Leave = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const requestedDays = formData.start_date && formData.end_date
+            ? Math.floor((new Date(formData.end_date) - new Date(formData.start_date)) / 86400000) + 1
+            : 0;
+        const selectedBalance = balances.find(item => String(item.leave_type_id) === String(formData.leave_type_id));
+        if (selectedBalance && requestedDays > selectedBalance.remaining_days) {
+            alert(`Pengajuan ${requestedDays} hari melebihi sisa kuota ${selectedBalance.remaining_days} hari.`);
+            return;
+        }
         try {
             setSubmitLoading(true);
             const payload = new FormData();
@@ -70,7 +78,7 @@ const Leave = () => {
             fetchData(); // Refresh history
         } catch (error) {
             console.error("Error submitting leave request:", error);
-            alert(error.response?.data?.message || "Gagal mengirim pengajuan cuti.");
+            alert(Object.values(error.response?.data?.errors || {})?.[0]?.[0] || error.response?.data?.message || "Gagal mengirim pengajuan cuti.");
         } finally {
             setSubmitLoading(false);
         }
@@ -116,6 +124,7 @@ const Leave = () => {
                                     <p className="text-3xl font-bold text-slate-800">{balance.remaining_days}</p>
                                     <p className="text-sm text-slate-500">hari</p>
                                 </div>
+                                <p className="mt-2 text-xs text-slate-500">Terpakai {balance.used_days} dari {balance.entitled_days} hari · Tahun {balance.year}</p>
                             </div>
                             <div className="bg-blue-50 p-3 rounded-xl">
                                 <CalendarRange className="h-6 w-6 text-blue-600" />
@@ -216,9 +225,10 @@ const Leave = () => {
                                     className="w-full border-slate-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
                                 >
                                     <option value="">-- Pilih Jenis Cuti --</option>
-                                    {types.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
+                                    {types.map(t => {
+                                        const balance = balances.find(item => item.leave_type_id === t.id);
+                                        return <option key={t.id} value={t.id}>{t.name} · sisa {balance?.remaining_days ?? t.quota_per_year ?? 0} hari</option>;
+                                    })}
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-4">

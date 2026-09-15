@@ -32,8 +32,22 @@ class LeaveController extends Controller
     public function balances(Request $request)
     {
         $employee = $request->user()->employee;
-        
-        $balances = $employee->leaveBalances()->with('leaveType')->get();
+        $year = now()->year;
+        LeaveType::active()->get()->each(function (LeaveType $type) use ($employee, $year) {
+            $used = LeaveRequest::where('employee_id', $employee->id)
+                ->where('leave_type_id', $type->id)->where('status', 'approved')
+                ->whereYear('start_date', $year)->sum('total_days');
+            $balance = LeaveBalance::firstOrNew([
+                'employee_id' => $employee->id, 'leave_type_id' => $type->id, 'year' => $year,
+            ]);
+            $balance->entitled_days = $type->quota_per_year;
+            $balance->used_days = $used;
+            $balance->carried_over_days ??= 0;
+            $balance->remaining_days = max(0, $type->quota_per_year + $balance->carried_over_days - $used);
+            $balance->save();
+        });
+
+        $balances = $employee->leaveBalances()->where('year', $year)->with('leaveType')->get();
         
         return response()->json($balances);
     }
@@ -102,14 +116,23 @@ class LeaveController extends Controller
             ]);
         }
 
-        $balance = LeaveBalance::where('employee_id', $employee->id)
-            ->where('leave_type_id', $leaveType->id)
-            ->where('year', $startDate->year)
-            ->first();
+        $approvedDays = LeaveRequest::where('employee_id', $employee->id)
+            ->where('leave_type_id', $leaveType->id)->where('status', 'approved')
+            ->whereYear('start_date', $startDate->year)->sum('total_days');
+        $balance = LeaveBalance::firstOrCreate([
+            'employee_id' => $employee->id, 'leave_type_id' => $leaveType->id, 'year' => $startDate->year,
+        ], [
+            'entitled_days' => $leaveType->quota_per_year, 'used_days' => $approvedDays,
+            'carried_over_days' => 0, 'remaining_days' => max(0, $leaveType->quota_per_year - $approvedDays),
+        ]);
+        $pendingDays = LeaveRequest::where('employee_id', $employee->id)
+            ->where('leave_type_id', $leaveType->id)->where('status', 'pending')
+            ->whereYear('start_date', $startDate->year)->sum('total_days');
+        $availableDays = max(0, $balance->remaining_days - $pendingDays);
 
-        if ($balance && $totalDays > $balance->remaining_days) {
+        if ($totalDays > $availableDays) {
             throw ValidationException::withMessages([
-                'end_date' => "Sisa cuti hanya {$balance->remaining_days} hari.",
+                'end_date' => "Kuota cuti yang tersedia hanya {$availableDays} hari (termasuk pengajuan yang masih menunggu).",
             ]);
         }
 

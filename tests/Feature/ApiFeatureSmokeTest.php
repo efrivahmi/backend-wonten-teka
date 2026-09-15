@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Employee;
 use App\Models\User;
+use App\Models\LeaveType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -207,6 +208,59 @@ class ApiFeatureSmokeTest extends TestCase
         ])->assertOk()->assertJsonPath('data.title', 'Laporan harian diperbarui');
         $this->deleteJson("/api/admin/tasks/{$taskId}")->assertOk();
         $this->assertDatabaseMissing('personal_tasks', ['id' => $taskId]);
+    }
+
+    public function test_deleted_employee_email_can_be_used_for_a_new_account(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        Sanctum::actingAs($admin);
+        $email = 'dipakai.ulang@example.test';
+
+        $firstId = $this->postJson('/api/admin/employees', [
+            'email' => $email, 'password' => 'rahasia123',
+        ])->assertCreated()->json('data.id');
+        $this->deleteJson("/api/admin/employees/{$firstId}")->assertOk();
+        $this->postJson('/api/admin/employees', [
+            'email' => $email, 'password' => 'rahasia456',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('users', ['email' => $email, 'deleted_at' => null]);
+    }
+
+    public function test_leave_balance_uses_admin_quota_and_rejects_excess_request(): void
+    {
+        [$user] = $this->employeeAccount();
+        $type = LeaveType::create([
+            'name' => 'Cuti Tahunan', 'code' => 'CTH', 'quota_per_year' => 1,
+            'is_paid' => true, 'is_active' => true,
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/leave/balances')->assertOk()
+            ->assertJsonPath('0.leave_type_id', $type->id)
+            ->assertJsonPath('0.entitled_days', 1)
+            ->assertJsonPath('0.remaining_days', 1);
+
+        $this->postJson('/api/leave/request', [
+            'leave_type_id' => $type->id,
+            'start_date' => today()->addDay()->toDateString(),
+            'end_date' => today()->addDays(2)->toDateString(),
+            'reason' => 'Keperluan keluarga',
+        ])->assertUnprocessable()->assertJsonValidationErrors('end_date');
+    }
+
+    public function test_admin_can_set_and_change_leave_quota(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        Sanctum::actingAs($admin);
+
+        $typeId = $this->postJson('/api/admin/leave-types', [
+            'name' => 'Cuti Khusus', 'code' => 'CKH', 'quota_per_year' => 5,
+            'is_paid' => true, 'is_active' => true, 'requires_attachment' => false,
+        ])->assertCreated()->assertJsonPath('data.quota_per_year', 5)->json('data.id');
+
+        $this->putJson("/api/admin/leave-types/{$typeId}", ['quota_per_year' => 7])
+            ->assertOk()->assertJsonPath('data.quota_per_year', 7);
     }
 
     private function employeeAccount(bool $admin = false): array
