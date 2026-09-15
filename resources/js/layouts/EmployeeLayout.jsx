@@ -76,12 +76,10 @@ const EmployeeLayout = () => {
         claims: { name: 'Klaim/Reimburse', href: '/employee/claims', icon: FileText },
         payroll: { name: 'Slip Gaji', href: '/employee/payslip', icon: FileText },
         calendar: { name: 'Kalender', href: '/employee/calendar', icon: CalendarDays },
-        announcements: { name: 'Pengumuman', href: '/employee/announcements', icon: Bell },
         tasks: { name: 'Tugas Pribadi', href: '/employee/tasks', icon: ClipboardList },
         habits: { name: 'Habit Tracker', href: '/employee/habits', icon: CalendarCheck },
         adjustments: { name: 'Ajukan Koreksi Absensi', href: '/employee/attendance-adjustments', icon: SlidersHorizontal },
         business_trips: { name: 'Perjalanan Dinas', href: '/employee/business-trips', icon: Plane },
-        directory: { name: 'Direktori Karyawan', href: '/employee/directory', icon: User },
         notifications: { name: 'Notifikasi', href: '/employee/notifications', icon: Bell },
         biometric: { name: 'Data Wajah Saya', href: '/employee/face-profile', icon: User },
     };
@@ -96,7 +94,7 @@ const EmployeeLayout = () => {
         { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
         { name: 'Presensi', icon: CalendarCheck, children: items(['attendance', 'schedule', 'business_trips']) },
         { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims', 'adjustments']) },
-        { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'announcements', 'directory', 'tasks', 'habits', 'notifications']) },
+        { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'tasks', 'habits', 'notifications']) },
         { name: 'Keuangan', icon: FileText, children: items(['payroll']) },
         configuredItem('profile') ? { name: configuredItem('profile').name, href: '/employee/profile', icon: User } : null,
         {

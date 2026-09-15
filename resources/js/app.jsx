@@ -90,8 +90,8 @@ const App = () => {
                     <Route path="schedule/shifts" element={<EmployeeFeatureGuard feature="schedule"><EmployeeResources type="shifts" /></EmployeeFeatureGuard>} />
                     <Route path="calendar" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
                     <Route path="calendar/event" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
-                    <Route path="announcements" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
-                    <Route path="announcements/detail" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
+                    <Route path="announcements" element={<Navigate to="/employee/dashboard" replace />} />
+                    <Route path="announcements/detail" element={<Navigate to="/employee/dashboard" replace />} />
                     <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
                     <Route path="habits" element={<EmployeeFeatureGuard feature="habits"><HabitTracker /></EmployeeFeatureGuard>} />
                     <Route path="habits/new" element={<Navigate to="/employee/habits" replace />} />
@@ -99,7 +99,7 @@ const App = () => {
                     <Route path="attendance-adjustments" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
                     <Route path="business-trips" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
                     <Route path="notifications" element={<EmployeeFeatureGuard feature="notifications"><EmployeeResources type="notifications" /></EmployeeFeatureGuard>} />
-                    <Route path="directory" element={<EmployeeFeatureGuard feature="directory"><EmployeeResources type="directory" /></EmployeeFeatureGuard>} />
+                    <Route path="directory" element={<Navigate to="/employee/dashboard" replace />} />
                     <Route path="face-enrollment" element={<EmployeeFeatureGuard feature="biometric"><FaceEnrollment returnTo="/employee/face-profile" /></EmployeeFeatureGuard>} />
                     <Route path="face-profile" element={<EmployeeFeatureGuard feature="biometric"><FaceProfile /></EmployeeFeatureGuard>} />
                     <Route path="profile/face-update" element={<EmployeeFeatureGuard feature="biometric"><FaceProfile /></EmployeeFeatureGuard>} />

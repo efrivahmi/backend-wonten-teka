@@ -49,6 +49,7 @@ const Attendance = () => {
     const [submitting, setSubmitting] = useState(false);
     const [scanProgress, setScanProgress] = useState(0);
     const [scanQuality, setScanQuality] = useState({ face: false, light: false, position: false, match: false });
+    const [detectedFace, setDetectedFace] = useState(null);
 
     useEffect(() => {
         if (!action) {
@@ -145,6 +146,13 @@ const Attendance = () => {
 
                 if (detection) {
                     const box = detection.detection.box;
+                    setDetectedFace({
+                        left: ((video.videoWidth - box.x - box.width) / video.videoWidth) * 100,
+                        top: (box.y / video.videoHeight) * 100,
+                        width: (box.width / video.videoWidth) * 100,
+                        height: (box.height / video.videoHeight) * 100,
+                        confidence: Math.round(detection.detection.score * 100),
+                    });
                     const faceRatio = (box.width * box.height) / (video.videoWidth * video.videoHeight);
                     const positionOkay = faceRatio >= .08 && faceRatio <= .65;
                     let bestMatch = 1.0;
@@ -177,6 +185,7 @@ const Attendance = () => {
                         setScanMessage(`Wajah tidak dikenali (Jarak: ${bestMatch.toFixed(2)}). Pastikan pencahayaan baik.`);
                     }
                 } else {
+                    setDetectedFace(null);
                     setScanQuality({ face: false, light: lightOkay, position: false, match: false });
                     setScanProgress(lightOkay ? 20 : 0);
                     setScanMessage('Tidak ada wajah terdeteksi. Posisikan ke tengah kamera.');
@@ -391,6 +400,7 @@ const Attendance = () => {
                                     )}
                                 </div>
                                 <div className="pointer-events-none absolute inset-[12%] z-10 rounded-[42%] border-2 border-dashed border-white/80 shadow-[0_0_0_999px_rgba(0,0,0,.16)]" />
+                                {detectedFace && <div className={`pointer-events-none absolute z-20 border-2 ${scanQuality.position && scanQuality.light ? 'border-emerald-400' : 'border-amber-400'}`} style={{left:`${detectedFace.left}%`,top:`${detectedFace.top}%`,width:`${detectedFace.width}%`,height:`${detectedFace.height}%`}}><span className={`absolute -top-7 left-0 whitespace-nowrap rounded px-2 py-1 text-[10px] font-bold text-white ${scanQuality.position && scanQuality.light ? 'bg-emerald-500' : 'bg-amber-500'}`}>{detectedFace.confidence}% · wajah terdeteksi</span></div>}
 
                                 {submitting && (
                                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center text-white">

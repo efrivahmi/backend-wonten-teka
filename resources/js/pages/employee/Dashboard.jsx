@@ -143,15 +143,15 @@ export default function EmployeeDashboard() {
 
             {/* 1. Latest announcements */}
             <section>
-                <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." action={<Link to="/employee/announcements" className="text-sm font-bold text-emerald-700">Lihat semua</Link>} />
+                <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
                     <div className="mt-4 grid gap-4 md:grid-cols-3">
                         {announcements.slice(0, 3).map(item => (
-                            <Link key={item.id} to="/employee/announcements" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300">
+                            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                 <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
                                 <h3 className="mt-4 font-bold text-slate-900">{item.title}</h3>
                                 <p className="mt-2 line-clamp-2 text-sm text-slate-500">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
-                            </Link>
+                            </article>
                         ))}
                     </div>
                 ) : <EmptyCard text="Belum ada pengumuman terbaru." />}
