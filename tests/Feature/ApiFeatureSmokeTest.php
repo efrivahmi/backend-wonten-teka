@@ -90,6 +90,40 @@ class ApiFeatureSmokeTest extends TestCase
         ])->assertOk()->assertJsonPath('data.reminder_enabled', false);
     }
 
+    public function test_monthly_statistics_use_the_current_calendar_month(): void
+    {
+        [$user] = $this->employeeAccount();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/attendance/today-info')
+            ->assertOk()
+            ->assertJsonPath('monthly_stats.present_days', 0)
+            ->assertJsonPath('monthly_stats.days_in_month', now(config('app.business_timezone'))->daysInMonth)
+            ->assertJsonPath('monthly_stats.month_label', now(config('app.business_timezone'))->locale('id')->translatedFormat('F Y'));
+    }
+
+    public function test_employee_can_only_create_and_read_attendance_adjustments(): void
+    {
+        [$user] = $this->employeeAccount();
+        Sanctum::actingAs($user);
+
+        $id = $this->postJson('/api/attendance/adjustment', [
+            'date' => today()->subDay()->toDateString(),
+            'check_in' => '08:00',
+            'check_out' => '17:00',
+            'reason' => 'Lupa melakukan check-out.',
+        ])->assertOk()->json('data.id');
+
+        $this->getJson('/api/attendance/adjustment')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $id);
+
+        $this->putJson("/api/attendance/adjustment/{$id}", ['reason' => 'Diubah'])
+            ->assertNotFound();
+        $this->deleteJson("/api/attendance/adjustment/{$id}")
+            ->assertNotFound();
+    }
+
     public function test_all_admin_read_features_return_successful_responses(): void
     {
         [$admin] = $this->employeeAccount(true);

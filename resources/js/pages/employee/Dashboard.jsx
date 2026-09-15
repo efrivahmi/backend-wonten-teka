@@ -94,7 +94,7 @@ export default function EmployeeDashboard() {
     const currentStatus = currentAttendance?.status || 'not_started';
     const currentStatusMeta = statusMeta[currentStatus] || { label: 'Belum absen', tone: 'slate' };
     const stats = todayInfo?.monthly_stats || {};
-    const totalPresent = (stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0);
+    const totalPresent = stats.present_days ?? ((stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0));
 
     const quickLinks = [
         ['/employee/attendance', 'Absensi', CalendarCheck],
@@ -200,9 +200,9 @@ export default function EmployeeDashboard() {
 
             {/* 4. Monthly statistics, deliberately without charts */}
             <section>
-                <SectionHeading title="Statistik Kehadiran Bulan Ini" subtitle="Ringkasan angka yang mudah dibaca tanpa grafik." />
+                <SectionHeading title={`Statistik Kehadiran ${stats.month_label || 'Bulan Ini'}`} subtitle={`Perhitungan otomatis dimulai kembali setiap awal bulan. Bulan ini memiliki ${stats.days_in_month || '—'} hari kalender.`} />
                 <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <SummaryCard label="Total hari masuk" value={`${totalPresent} hari`} icon={CalendarCheck} tone="blue" />
+                    <SummaryCard label="Kehadiran bulan ini" value={`${totalPresent} dari ${stats.days_in_month || '—'} hari`} icon={CalendarCheck} tone="blue" />
                     <SummaryCard label="Tepat waktu" value={`${stats.on_time || 0} hari`} icon={CheckCircle2} tone="emerald" />
                     <SummaryCard label="Terlambat" value={`${stats.late || 0} hari`} icon={Clock} tone="amber" />
                     <SummaryCard label="Alpha" value={`${stats.absent || 0} hari`} icon={XCircle} tone="rose" />

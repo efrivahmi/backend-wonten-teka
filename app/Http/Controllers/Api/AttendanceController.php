@@ -636,18 +636,25 @@ class AttendanceController extends Controller
         }
 
         // --- Calculate Monthly Stats ---
-        $currentMonth = $businessNow->month;
-        $currentYear = $businessNow->year;
-
+        $monthStartLocal = $businessNow->copy()->startOfMonth();
+        $monthEndLocal = $businessNow->copy()->endOfMonth();
         $monthlyLogs = \App\Models\AttendanceLog::where('employee_id', $employee->id)
-            ->whereMonth('check_in_at', $currentMonth)
-            ->whereYear('check_in_at', $currentYear)
+            ->whereBetween('check_in_at', [
+                $monthStartLocal->copy()->utc(),
+                $monthEndLocal->copy()->utc(),
+            ])
             ->get();
 
         $onTimeCount = $monthlyLogs->where('status', 'on_time')->count();
         $gracePeriodCount = $monthlyLogs->where('status', 'present')->count();
         $lateCount = $monthlyLogs->where('status', 'late')->count();
-        $totalPresentCount = $onTimeCount + $gracePeriodCount + $lateCount;
+        $totalPresentCount = $monthlyLogs
+            ->whereIn('status', ['on_time', 'present', 'late'])
+            ->map(fn ($log) => $log->check_in_at->copy()
+                ->setTimezone(config('app.business_timezone'))
+                ->toDateString())
+            ->unique()
+            ->count();
 
         // Determine passed working days
         $workingDaysSetting = \App\Models\Setting::where('key', 'working_days')->first();
@@ -657,7 +664,7 @@ class AttendanceController extends Controller
         }
 
         $passedWorkingDays = 0;
-        $startOfMonth = $businessNow->copy()->startOfMonth();
+        $startOfMonth = $monthStartLocal->copy();
         $today = $businessNow->copy()->startOfDay();
 
         for ($date = $startOfMonth; $date->lte($today); $date->addDay()) {
@@ -684,6 +691,9 @@ class AttendanceController extends Controller
         if ($percentage > 100) $percentage = 100;
 
         $monthlyStats = [
+            'month_label' => $businessNow->locale('id')->translatedFormat('F Y'),
+            'days_in_month' => $businessNow->daysInMonth,
+            'present_days' => $totalPresentCount,
             'on_time' => $onTimeCount,
             'grace_period' => $gracePeriodCount,
             'late' => $lateCount,

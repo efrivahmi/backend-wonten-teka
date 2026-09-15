@@ -7,7 +7,7 @@ const resources = {
     calendar: { title: 'Kalender Perusahaan', description: 'Hari libur dan agenda perusahaan.', endpoint: '/calendar', icon: CalendarDays, keys: ['data', 'events'] },
     announcements: { title: 'Pengumuman', description: 'Informasi terbaru dari perusahaan.', endpoint: '/announcements', icon: Bell, keys: ['data', 'announcements'] },
     tasks: { title: 'Tugas Pribadi', description: 'Kelola daftar pekerjaan harian Anda.', endpoint: '/tasks', icon: ClipboardList, keys: ['data', 'tasks'], crud: true },
-    adjustments: { title: 'Koreksi Absensi', description: 'Untuk mengajukan perbaikan jika lupa check-in/check-out, waktu salah, atau status kehadiran tidak sesuai. Admin yang memeriksa dan menyetujuinya.', endpoint: '/attendance/adjustment', icon: CheckCircle2, keys: ['data', 'requests'] },
+    adjustments: { title: 'Pengajuan Lupa Absensi', description: 'Tambahkan pengajuan ketika lupa mengisi check-in atau check-out. Pengajuan yang sudah dikirim hanya dapat dilihat dan tidak bisa diedit atau dihapus.', endpoint: '/attendance/adjustment', icon: CheckCircle2, keys: ['data', 'requests'] },
     trips: { title: 'Perjalanan Dinas', description: 'Riwayat pengajuan perjalanan dinas.', endpoint: '/attendance/business-trip', icon: Plane, keys: ['data', 'requests'] },
     notifications: { title: 'Notifikasi', description: 'Aktivitas terbaru yang memerlukan perhatian Anda.', endpoint: '/notifications', icon: Bell, keys: ['data', 'notifications'], markAll: true },
     directory: { title: 'Direktori Karyawan', description: 'Kontak dan struktur tim aktif.', endpoint: '/employee/directory', icon: ClipboardList, keys: ['data'] },
@@ -40,6 +40,8 @@ export default function EmployeeResources({ type }) {
     const [taskName, setTaskName] = useState('');
     const [tripOpen, setTripOpen] = useState(false);
     const [trip, setTrip] = useState({ start_date: '', end_date: '', location: '', description: '' });
+    const [adjustmentOpen, setAdjustmentOpen] = useState(false);
+    const [adjustment, setAdjustment] = useState({ date: '', check_in: '', check_out: '', reason: '' });
 
     const load = async () => {
         setLoading(true); setError('');
@@ -83,7 +85,17 @@ export default function EmployeeResources({ type }) {
         } catch (e) { setError(e.response?.data?.message || Object.values(e.response?.data?.errors || {})?.[0]?.[0] || 'Pengajuan perjalanan dinas gagal dikirim.'); }
     };
 
-    const visibleFields = useMemo(() => ['title', 'name', 'full_name', 'department', 'position', 'phone', 'description', 'content', 'status', 'date', 'start_date', 'end_date', 'start_time', 'end_time', 'created_at'], []);
+    const createAdjustment = async (event) => {
+        event.preventDefault(); setError('');
+        try {
+            await api.post('/attendance/adjustment', adjustment);
+            setAdjustmentOpen(false);
+            setAdjustment({ date: '', check_in: '', check_out: '', reason: '' });
+            await load();
+        } catch (e) { setError(e.response?.data?.message || Object.values(e.response?.data?.errors || {})?.[0]?.[0] || 'Pengajuan lupa absensi gagal dikirim.'); }
+    };
+
+    const visibleFields = useMemo(() => ['title', 'name', 'full_name', 'department', 'position', 'phone', 'description', 'content', 'status', 'date', 'check_in', 'check_out', 'reason', 'start_date', 'end_date', 'start_time', 'end_time', 'created_at'], []);
     const calendarCells = useMemo(() => {
         const now = new Date(); const first = new Date(now.getFullYear(), now.getMonth(), 1); const count = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         return [...Array((first.getDay() + 6) % 7).fill(null), ...Array.from({length: count}, (_, i) => i + 1)];
@@ -94,12 +106,14 @@ export default function EmployeeResources({ type }) {
             <div><div className="flex items-center gap-3"><div className="p-3 rounded-2xl bg-emerald-100 text-emerald-700"><Icon className="h-6 w-6" /></div><h1 className="text-2xl md:text-3xl font-bold text-slate-900">{config.title}</h1></div><p className="mt-2 text-slate-500">{config.description}</p></div>
             <div className="flex gap-2">
                 {type === 'trips' && <button onClick={() => setTripOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Ajukan perjalanan</button>}
+                {type === 'adjustments' && <button onClick={() => setAdjustmentOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Tambah pengajuan</button>}
                 {config.markAll && <button onClick={async () => { await api.post('/notifications/read-all'); await load(); }} className="px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-sm font-semibold">Tandai sudah dibaca</button>}
                 <button onClick={load} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600" aria-label="Muat ulang"><RefreshCw className="h-5 w-5" /></button>
             </div>
         </div>
         {config.crud && <form onSubmit={createTask} className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-3"><input value={taskName} onChange={e => setTaskName(e.target.value)} placeholder="Tambahkan tugas baru" className="flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-600"/><button className="px-5 rounded-xl bg-emerald-700 text-white font-semibold">Tambah</button></form>}
         {type === 'trips' && tripOpen && <form onSubmit={createTrip} className="grid gap-4 rounded-2xl border border-emerald-200 bg-white p-5 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Mulai<input type="date" required value={trip.start_date} onChange={e => setTrip({...trip,start_date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Selesai<input type="date" required min={trip.start_date} value={trip.end_date} onChange={e => setTrip({...trip,end_date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><input required placeholder="Lokasi tujuan" value={trip.location} onChange={e => setTrip({...trip,location:e.target.value})} className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"/><textarea required placeholder="Tujuan dan keterangan perjalanan" value={trip.description} onChange={e => setTrip({...trip,description:e.target.value})} className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"/><button className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white md:col-span-2">Kirim untuk persetujuan admin</button></form>}
+        {type === 'adjustments' && adjustmentOpen && <form onSubmit={createAdjustment} className="grid gap-4 rounded-2xl border border-emerald-200 bg-white p-5 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700 md:col-span-2">Tanggal lupa absen<input type="date" required max={new Date().toISOString().slice(0,10)} value={adjustment.date} onChange={e => setAdjustment({...adjustment,date:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Jam masuk yang seharusnya<input type="time" required value={adjustment.check_in} onChange={e => setAdjustment({...adjustment,check_in:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700">Jam keluar yang seharusnya<input type="time" required value={adjustment.check_out} onChange={e => setAdjustment({...adjustment,check_out:e.target.value})} className="mt-1 block w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><label className="text-sm font-semibold text-slate-700 md:col-span-2">Alasan<textarea required maxLength={500} value={adjustment.reason} onChange={e => setAdjustment({...adjustment,reason:e.target.value})} placeholder="Contoh: lupa melakukan check-out setelah menyelesaikan shift" className="mt-1 block min-h-28 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal"/></label><button className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white md:col-span-2">Kirim pengajuan</button></form>}
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error}</div>}
         {loading ? <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-700" /></div> : type === 'calendar' ? <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="mb-5 text-xl font-bold text-slate-800">{new Date().toLocaleDateString('id-ID',{month:'long',year:'numeric'})}</h2><div className="grid grid-cols-7 gap-1 text-center">{['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(day=><div key={day} className="py-2 text-xs font-bold text-slate-400">{day}</div>)}{calendarCells.map((day,index)=>{const events=day ? items.filter(item=>new Date(item.start_date).getDate()===day) : []; return <div key={index} className={`min-h-24 rounded-lg border p-2 text-left ${day?'border-slate-100':'border-transparent'}`}>{day&&<><span className="text-sm font-semibold text-slate-700">{day}</span>{events.map(event=><div key={event.id} className="mt-1 rounded bg-emerald-50 px-1.5 py-1 text-[11px] font-semibold text-emerald-800">{event.start_time?.slice(0,5)} {event.title}</div>)}</>}</div>})}</div></div> : items.length === 0 ? <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-16 text-center text-slate-500">Belum ada data.</div> : <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map((item, index) => <article key={item.id ?? index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-slate-900 text-lg">{item.title || item.name || item.full_name || item.type || `Data ${index + 1}`}</h2>

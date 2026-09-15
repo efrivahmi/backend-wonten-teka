@@ -39,9 +39,9 @@ class AttendanceAdjustmentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'check_in' => 'required|date_format:H:i',
-            'check_out' => 'required|date_format:H:i',
+            'check_out' => 'required|date_format:H:i|after:check_in',
             'reason' => 'required|string|max:500',
         ]);
 
@@ -63,7 +63,7 @@ class AttendanceAdjustmentController extends Controller
         $approvalService->submitRequest($adjustmentRequest, $user, 'attendance_adjustment_request');
 
         return response()->json([
-            'message' => 'Attendance adjustment request submitted successfully.',
+            'message' => 'Pengajuan lupa absensi berhasil dikirim.',
             'data' => $adjustmentRequest->load('approvalInstance')
         ]);
     }
