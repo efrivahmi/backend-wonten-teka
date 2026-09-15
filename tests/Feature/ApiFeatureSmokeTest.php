@@ -65,6 +65,31 @@ class ApiFeatureSmokeTest extends TestCase
         $this->deleteJson("/api/tasks/{$taskId}")->assertOk();
     }
 
+    public function test_employee_can_create_habit_and_enable_reminder(): void
+    {
+        [$user] = $this->employeeAccount();
+        Sanctum::actingAs($user);
+
+        $habitId = $this->postJson('/api/tasks', [
+            'title' => 'Olahraga pagi',
+            'is_habit' => true,
+            'recurrence_rule' => 'daily',
+            'reminder_time' => '07:00',
+            'reminder_enabled' => true,
+        ])->assertCreated()
+            ->assertJsonPath('data.is_habit', true)
+            ->assertJsonPath('data.reminder_enabled', true)
+            ->json('data.id');
+
+        $this->getJson('/api/tasks?type=habit')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $habitId);
+
+        $this->putJson("/api/tasks/{$habitId}", [
+            'reminder_enabled' => false,
+        ])->assertOk()->assertJsonPath('data.reminder_enabled', false);
+    }
+
     public function test_all_admin_read_features_return_successful_responses(): void
     {
         [$admin] = $this->employeeAccount(true);

@@ -21,12 +21,16 @@ class EmployeeTaskController extends Controller
         }
 
         $date = $request->query('date', Carbon::today()->toDateString());
+        $isHabit = $request->query('type') === 'habit';
 
         // Get tasks for the specific date, OR tasks without a specific date (recurring habits)
         $tasks = PersonalTask::where('employee_id', $employee->id)
-            ->where(function($query) use ($date) {
-                $query->whereDate('task_date', $date)
-                      ->orWhereNull('task_date'); // Assuming null means everyday or recurring
+            ->where('is_habit', $isHabit)
+            ->when(!$isHabit, function ($query) use ($date) {
+                $query->where(function ($dateQuery) use ($date) {
+                    $dateQuery->whereDate('task_date', $date)
+                        ->orWhereNull('task_date');
+                });
             })
             ->orderBy('reminder_time', 'asc')
             ->get();
@@ -47,8 +51,11 @@ class EmployeeTaskController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'task_date' => 'required|date',
+            'task_date' => 'nullable|date|required_unless:is_habit,true',
+            'is_habit' => 'nullable|boolean',
+            'recurrence_rule' => 'nullable|in:daily,weekdays,weekly',
             'reminder_time' => 'nullable|date_format:H:i',
+            'reminder_enabled' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -60,7 +67,10 @@ class EmployeeTaskController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'task_date' => $request->task_date,
+            'is_habit' => $request->boolean('is_habit'),
+            'recurrence_rule' => $request->input('recurrence_rule'),
             'reminder_time' => $request->reminder_time,
+            'reminder_enabled' => $request->boolean('reminder_enabled') && $request->filled('reminder_time'),
             'is_active' => true,
         ]);
 
@@ -78,10 +88,23 @@ class EmployeeTaskController extends Controller
             ->where('employee_id', $employee->id)
             ->firstOrFail();
 
-        // Toggle completion status
-        $task->is_active = $request->boolean('is_active', !$task->is_active);
+        $validated = $request->validate([
+            'is_active' => 'nullable|boolean',
+            'reminder_time' => 'nullable|date_format:H:i',
+            'reminder_enabled' => 'nullable|boolean',
+        ]);
+
+        if (array_key_exists('is_active', $validated)) {
+            $task->is_active = $validated['is_active'];
+        }
+        if (array_key_exists('reminder_time', $validated)) {
+            $task->reminder_time = $validated['reminder_time'];
+        }
+        if (array_key_exists('reminder_enabled', $validated)) {
+            $task->reminder_enabled = $validated['reminder_enabled'] && filled($task->reminder_time);
+        }
         
-        if (!$task->is_active) {
+        if (array_key_exists('is_active', $validated) && !$task->is_active) {
             $task->last_completed_at = now();
         }
 

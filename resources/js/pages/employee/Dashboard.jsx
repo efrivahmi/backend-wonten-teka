@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Bell, Briefcase, CalendarCheck, CalendarDays, CheckCircle2, Clock,
-    FileText, History, Loader2, LogIn, LogOut, Plane, User, XCircle,
+    FileText, Loader2, LogIn, LogOut, Plane, User, XCircle,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
@@ -98,7 +98,7 @@ export default function EmployeeDashboard() {
 
     const quickLinks = [
         ['/employee/attendance', 'Absensi', CalendarCheck],
-        ['/employee/attendance', 'Riwayat', History],
+        ['/employee/habits', 'Habit Tracker', CheckCircle2],
         ['/employee/shifts', 'Jadwal Shift', Clock],
         ['/employee/leave', 'Ajukan Cuti', Briefcase],
         ['/employee/overtime', 'Lembur', Clock],
@@ -127,7 +127,7 @@ export default function EmployeeDashboard() {
                 <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
                     <div>
                         <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-5 text-4xl sm:text-6xl">Selamat datang, <span className="teka-accent">{user.name || 'Karyawan'}.</span></h1>
+                        <h1 className="teka-display mt-5 text-4xl sm:text-6xl"><span className="teka-accent">{user.name || 'Karyawan'}</span></h1>
                         <p className="mt-4 max-w-xl text-sm text-stone-300">Pantau kehadiran, shift, dan informasi kerja Anda dari satu halaman.</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur-sm md:min-w-72">

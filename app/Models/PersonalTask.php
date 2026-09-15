@@ -12,8 +12,8 @@ class PersonalTask extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'title', 'description', 'task_date', 'recurrence_rule',
-        'reminder_time', 'streak_count', 'longest_streak', 'last_completed_at', 'is_active',
+        'employee_id', 'title', 'description', 'task_date', 'is_habit', 'recurrence_rule',
+        'reminder_time', 'reminder_enabled', 'streak_count', 'longest_streak', 'last_completed_at', 'is_active',
     ];
 
     protected function casts(): array
@@ -21,6 +21,8 @@ class PersonalTask extends Model
         return [
             'last_completed_at' => 'datetime',
             'is_active' => 'boolean',
+            'is_habit' => 'boolean',
+            'reminder_enabled' => 'boolean',
         ];
     }
 

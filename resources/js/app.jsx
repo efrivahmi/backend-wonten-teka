@@ -20,6 +20,7 @@ import EmployeeOvertime from './pages/employee/Overtime';
 import EmployeeClaims from './pages/employee/Claims';
 import EmployeePayslip from './pages/employee/Payslip';
 import EmployeeResources from './pages/employee/Resources';
+import HabitTracker from './pages/employee/HabitTracker';
 import AdminOperations from './pages/admin/Operations';
 import AdminBiometrics from './pages/admin/Biometrics';
 import AdminAnnouncements from './pages/admin/Announcements';
@@ -89,9 +90,9 @@ const App = () => {
                     <Route path="announcements" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
                     <Route path="announcements/detail" element={<EmployeeFeatureGuard feature="announcements"><EmployeeResources type="announcements" /></EmployeeFeatureGuard>} />
                     <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
-                    <Route path="habits" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
-                    <Route path="habits/new" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
-                    <Route path="habits/detail" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="habits" element={<EmployeeFeatureGuard feature="tasks"><HabitTracker /></EmployeeFeatureGuard>} />
+                    <Route path="habits/new" element={<Navigate to="/employee/habits" replace />} />
+                    <Route path="habits/detail" element={<Navigate to="/employee/habits" replace />} />
                     <Route path="attendance-adjustments" element={<EmployeeFeatureGuard feature="adjustments"><EmployeeResources type="adjustments" /></EmployeeFeatureGuard>} />
                     <Route path="business-trips" element={<EmployeeFeatureGuard feature="business_trips"><EmployeeResources type="trips" /></EmployeeFeatureGuard>} />
                     <Route path="notifications" element={<EmployeeFeatureGuard feature="notifications"><EmployeeResources type="notifications" /></EmployeeFeatureGuard>} />
