@@ -180,9 +180,11 @@ class ApiFeatureSmokeTest extends TestCase
             'employment_status' => 'permanent',
         ]);
         $this->assertSame(201, $completionResponse->status(), $completionResponse->getContent());
+        $completionResponse->assertJsonPath('user.name', 'Karyawan Baru Lengkap');
 
         $this->assertSame($generatedNumber, $employee->fresh()->employee_number);
         $this->assertSame('Jakarta', $employee->fresh()->address);
+        $this->assertSame('Karyawan Baru Lengkap', $employee->user->fresh()->name);
     }
 
     public function test_admin_can_manage_daily_tasks_used_by_web_and_mobile(): void

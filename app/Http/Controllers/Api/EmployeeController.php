@@ -175,11 +175,20 @@ class EmployeeController extends Controller
 
             $employee->save();
 
+            // The account is initially named from the email only as a
+            // placeholder. Once onboarding is completed, the employee's full
+            // name becomes the canonical display name everywhere.
+            $user->update([
+                'name' => $validated['full_name'],
+                'email' => $validated['email'],
+            ]);
+
             DB::commit();
 
             return response()->json([
                 'message' => 'Profile completed successfully',
-                'data' => $employee
+                'data' => $employee,
+                'user' => $user->fresh()->load('employee', 'roles'),
             ], 201);
             
         } catch (\Exception $e) {

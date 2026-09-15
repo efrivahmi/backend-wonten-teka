@@ -127,7 +127,7 @@ export default function EmployeeDashboard() {
                 <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
                     <div>
                         <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-5 text-4xl sm:text-6xl"><span className="teka-accent">{user.name || 'Karyawan'}</span></h1>
+                        <h1 className="teka-display mt-5 text-4xl sm:text-6xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
                         <p className="mt-4 max-w-xl text-sm text-stone-300">Pantau kehadiran, shift, dan informasi kerja Anda dari satu halaman.</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur-sm md:min-w-72">

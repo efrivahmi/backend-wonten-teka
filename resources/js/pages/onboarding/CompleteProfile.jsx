@@ -62,7 +62,13 @@ const CompleteProfile = () => {
         });
         
         try {
-            await api.post('/employee/complete-profile', payload);
+            const response = await api.post('/employee/complete-profile', payload);
+            if (response.data.user) {
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+            } else {
+                const me = await api.get('/me');
+                localStorage.setItem('user', JSON.stringify(me.data.user));
+            }
             // Profile complete, proceed to next orchestrator step
             navigate('/onboarding');
         } catch (err) {
