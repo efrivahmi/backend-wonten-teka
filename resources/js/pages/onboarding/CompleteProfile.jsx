@@ -13,7 +13,6 @@ const CompleteProfile = () => {
         full_name: '',
         email: '',
         phone: '',
-        employee_number: '',
         nik: '',
         npwp: '',
         date_of_birth: '',
@@ -35,7 +34,6 @@ const CompleteProfile = () => {
                     ...prev,
                     full_name: user.name || '',
                     email: user.email || '',
-                    employee_number: user.employee?.employee_number || '',
                 }));
             } catch (err) {
                 console.error("Failed to fetch user", err);

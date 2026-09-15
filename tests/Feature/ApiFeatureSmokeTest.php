@@ -149,6 +149,41 @@ class ApiFeatureSmokeTest extends TestCase
         }
     }
 
+    public function test_admin_creates_only_initial_account_and_employee_completes_profile_without_number_collision(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        Sanctum::actingAs($admin);
+
+        $creationResponse = $this->postJson('/api/admin/employees', [
+            'email' => 'karyawan.baru@example.test',
+            'password' => 'rahasia123',
+        ]);
+        $this->assertSame(201, $creationResponse->status(), $creationResponse->getContent());
+        $employeeId = $creationResponse
+            ->assertJsonPath('data.department', null)
+            ->assertJsonPath('data.position', null)
+            ->json('data.id');
+
+        $employee = Employee::findOrFail($employeeId);
+        $generatedNumber = $employee->employee_number;
+        $this->assertNotEmpty($generatedNumber);
+
+        Sanctum::actingAs($employee->user);
+        $completionResponse = $this->postJson('/api/employee/complete-profile', [
+            'full_name' => 'Karyawan Baru Lengkap',
+            'email' => 'karyawan.baru@example.test',
+            'phone' => '081234567890',
+            'nik' => '3201010101010001',
+            'gender' => 'male',
+            'address' => 'Jakarta',
+            'employment_status' => 'permanent',
+        ]);
+        $this->assertSame(201, $completionResponse->status(), $completionResponse->getContent());
+
+        $this->assertSame($generatedNumber, $employee->fresh()->employee_number);
+        $this->assertSame('Jakarta', $employee->fresh()->address);
+    }
+
     private function employeeAccount(bool $admin = false): array
     {
         $user = User::factory()->create([

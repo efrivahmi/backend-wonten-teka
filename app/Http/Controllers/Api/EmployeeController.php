@@ -107,11 +107,8 @@ class EmployeeController extends Controller
     public function completeProfile(Request $request)
     {
         $user = $request->user();
-        $employeeId = $user->employee ? $user->employee->id : 'NULL';
-
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-            'employee_number' => 'nullable|string|max:50|unique:employees,employee_number,' . $employeeId,
             'nik' => 'nullable|string|max:50',
             'npwp' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:20',
@@ -137,7 +134,9 @@ class EmployeeController extends Controller
             $employee = $user->employee ?? new Employee();
             $employee->user_id = $user->id;
             $employee->full_name = $validated['full_name'];
-            $employee->employee_number = $validated['employee_number'] ?? 'EMP-' . date('Ymd') . '-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
+            // Nomor karyawan ditetapkan saat akun dibuat oleh admin dan tidak
+            // boleh diminta atau diganti kembali pada onboarding mandiri.
+            $employee->employee_number ??= $this->generateEmployeeNumber($user->id);
             $employee->phone = $validated['phone'] ?? null;
             $employee->email = $validated['email'];
             $employee->date_of_birth = $validated['date_of_birth'] ?? null;
@@ -147,7 +146,7 @@ class EmployeeController extends Controller
             $employee->position = $validated['position'] ?? null;
             $employee->join_date = $validated['join_date'] ?? null;
             $employee->employment_status = $validated['employment_status'];
-            $employee->ptkp_status = $validated['ptkp_status'] ?? null;
+            $employee->ptkp_status = $validated['ptkp_status'] ?? $employee->ptkp_status ?? 'TK/0';
             $employee->is_active = true;
             $employee->face_enrolled = false;
 
@@ -195,7 +194,6 @@ class EmployeeController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
             'email' => [
                 'required',
                 'string',
@@ -204,31 +202,30 @@ class EmployeeController extends Controller
                 Rule::unique('users', 'email')
             ],
             'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:20',
-            'employee_number' => 'required|string|max:50',
-            'department' => 'nullable|string|max:100',
-            'position' => 'nullable|string|max:100',
-            'gender' => 'nullable|in:male,female',
-            'address' => 'nullable|string|max:1000',
-            'join_date' => 'nullable|date',
-            'employment_status' => 'nullable|string|max:50',
             'role' => 'nullable|string'
         ]);
 
         try {
             DB::beginTransaction();
 
+            $initialName = collect(preg_split('/[._-]+/', strstr($validated['email'], '@', true)))
+                ->filter()
+                ->map(fn ($part) => ucfirst(strtolower($part)))
+                ->join(' ');
+            $initialName = $initialName ?: 'Karyawan Baru';
+
             $newUser = User::create([
-                'name' => $validated['name'],
+                'name' => $initialName,
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 
                 'is_active' => true,
             ]);
 
-            if (!empty($validated['role'])) {
+            $role = $validated['role'] ?? 'employee';
+            if (!empty($role)) {
                 try {
-                    $newUser->assignRole($validated['role']);
+                    $newUser->assignRole($role);
                 } catch (\Exception $e) {
                     // Ignore if role doesn't exist
                 }
@@ -237,16 +234,15 @@ class EmployeeController extends Controller
             $employee = Employee::create([
                 
                 'user_id' => $newUser->id,
-                'full_name' => $validated['name'],
-                'employee_number' => $validated['employee_number'],
-                'phone' => $validated['phone'],
+                'full_name' => $initialName,
+                'employee_number' => $this->generateEmployeeNumber($newUser->id),
+                'phone' => null,
                 'email' => $validated['email'],
-                'department' => $validated['department'],
-                'position' => $validated['position'],
-                'gender' => $validated['gender'] ?? null,
-                'address' => $validated['address'] ?? null,
-                'join_date' => $validated['join_date'] ?? null,
-                'employment_status' => $validated['employment_status'] ?? 'permanent',
+                'department' => null,
+                'position' => null,
+                'gender' => null,
+                'address' => null,
+                'join_date' => null,
                 'is_active' => true,
             ]);
 
@@ -263,6 +259,19 @@ class EmployeeController extends Controller
                 'message' => 'Failed to create employee: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function generateEmployeeNumber(int $userId): string
+    {
+        $base = 'EMP-' . now()->format('Ym') . '-' . str_pad((string) $userId, 5, '0', STR_PAD_LEFT);
+        $candidate = $base;
+        $suffix = 1;
+
+        while (Employee::withTrashed()->where('employee_number', $candidate)->exists()) {
+            $candidate = $base . '-' . $suffix++;
+        }
+
+        return $candidate;
     }
 
     public function update(Request $request, $id)

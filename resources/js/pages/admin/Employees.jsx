@@ -103,7 +103,8 @@ const Employees = () => {
                 }
                 await api.put(`/admin/employees/${editingEmployee.id}`, payload);
             } else {
-                await api.post('/admin/employees', formData);
+                const { email, password } = formData;
+                await api.post('/admin/employees', { email, password });
             }
             setIsModalOpen(false);
             fetchEmployees();
@@ -278,8 +279,9 @@ const Employees = () => {
                         
                         <div className="overflow-y-auto p-6">
                             <form id="employeeForm" onSubmit={saveEmployee} className="space-y-5">
+                                {!editingEmployee && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><strong>Cukup email dan password.</strong> Nama sementara serta nomor karyawan dibuat otomatis. Karyawan akan mengisi nama asli dan seluruh profil saat login pertama.</div>}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    {editingEmployee && <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap <span className="text-rose-500">*</span></label>
                                         <input 
                                             type="text" 
@@ -289,8 +291,8 @@ const Employees = () => {
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                             required
                                         />
-                                    </div>
-                                    <div>
+                                    </div>}
+                                    {editingEmployee && <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Karyawan (NIK) <span className="text-rose-500">*</span></label>
                                         <input 
                                             type="text" 
@@ -300,7 +302,7 @@ const Employees = () => {
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                             required
                                         />
-                                    </div>
+                                    </div>}
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,7 +317,7 @@ const Employees = () => {
                                             required
                                         />
                                     </div>
-                                    <div>
+                                    {editingEmployee && <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Telepon</label>
                                         <input 
                                             type="tel" 
@@ -324,10 +326,10 @@ const Employees = () => {
                                             onChange={handleFormChange}
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                         />
-                                    </div>
+                                    </div>}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {editingEmployee && <><div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Departemen</label>
                                         <input 
@@ -363,7 +365,7 @@ const Employees = () => {
                                 </div>
                                 <label className="block text-sm font-medium text-slate-700">Alamat
                                     <textarea name="address" value={formData.address} onChange={handleFormChange} rows="2" className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg" />
-                                </label>
+                                </label></>}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                                     <div>
@@ -380,7 +382,7 @@ const Employees = () => {
                                             minLength="6"
                                         />
                                     </div>
-                                    <div>
+                                    {editingEmployee && <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Role Akun</label>
                                         <select 
                                             name="role"
@@ -391,7 +393,7 @@ const Employees = () => {
                                             <option value="employee">Employee (Karyawan)</option>
                                             <option value="admin">Admin</option>
                                         </select>
-                                    </div>
+                                    </div>}
                                 </div>
                             </form>
                         </div>
