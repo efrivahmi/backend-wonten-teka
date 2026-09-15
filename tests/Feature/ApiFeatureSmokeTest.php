@@ -79,7 +79,7 @@ class ApiFeatureSmokeTest extends TestCase
             '/api/admin/shift-assignments',
             '/api/admin/leave-types',
             '/api/admin/attendance',
-            '/api/admin/attendance-flags',
+            '/api/admin/attendance-security-events',
             '/api/admin/devices/pending',
             '/api/admin/biometrics',
             '/api/approvals/pending',

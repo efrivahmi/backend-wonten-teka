@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
+use App\Models\AttendanceSecurityEvent;
 use App\Models\EmployeeBiometric;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Services\FaceDescriptorService;
 use App\Services\ShiftTimeService;
+use App\Services\AttendanceAbsenceService;
 
 class AttendanceController extends Controller
 {
@@ -112,6 +114,10 @@ class AttendanceController extends Controller
         $status = 'present';
         $flags = $request->flags ?? [];
 
+        if (($flags['is_mock_location'] ?? false) === true) {
+            return $this->rejectMockLocationAttempt($request, $employee, 'check_in');
+        }
+
         // Geofence Check
         $geofenceSetting = \App\Models\Setting::where('key', 'geofence')->first();
         $geofence = $geofenceSetting ? $geofenceSetting->value : null;
@@ -134,6 +140,7 @@ class AttendanceController extends Controller
         // --- CASCADING SHIFT VALIDATION ---
         $uncompletedPreviousShift = AttendanceLog::where('employee_id', $employee->id)
             ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
+            ->where('status', '!=', 'absent')
             ->whereNull('check_out_at')
             ->first();
 
@@ -148,6 +155,7 @@ class AttendanceController extends Controller
         $shiftAssignmentId = $request->shift_assignment_id;
         $shiftTemplateId = $request->shift_template_id;
         $shiftTemplate = null;
+        $assignment = null;
 
         if ($shiftAssignmentId) {
             $assignment = \App\Models\ShiftAssignment::whereKey($shiftAssignmentId)
@@ -182,28 +190,38 @@ class AttendanceController extends Controller
 
         if ($shiftTemplate) {
             $flags['shift_name'] = $shiftTemplate->name;
+            $flags['shift_template_id'] = $shiftTemplate->id;
             $startTime = $shiftClock->scheduledStart(
                 $shiftTemplate->start_time->format('H:i'),
                 $businessNow,
             );
-            $gracePeriod = $shiftTemplate->grace_period_minutes ?? 0;
+            $endTime = $shiftClock->scheduledEnd(
+                $shiftTemplate->start_time->format('H:i'),
+                $shiftTemplate->end_time->format('H:i'),
+                $businessNow,
+            );
 
-            $lateThreshold = $startTime->copy()->addMinutes($gracePeriod);
+            if ($businessNow->greaterThanOrEqualTo($endTime)) {
+                app(AttendanceAbsenceService::class)->recordAbsence(
+                    $employee->id,
+                    $shiftTemplate,
+                    $shiftAssignmentId,
+                    $businessNow,
+                );
 
-            if ($businessNow->greaterThan($lateThreshold)) {
+                return response()->json([
+                    'message' => 'Jam pulang sudah terlewati. Anda tercatat Alpha untuk shift ini.',
+                    'code' => 'SHIFT_ALREADY_ENDED',
+                ], 422);
+            }
+
+            if ($businessNow->greaterThan($startTime)) {
                 $status = 'late';
-            } elseif ($businessNow->greaterThan($startTime)) {
-                $status = 'present'; // Dalam toleransi
             } else {
-                $status = 'on_time'; // Tepat waktu
+                $status = 'on_time';
             }
         } else {
             $flags['shift_name'] = 'Shift Regular';
-        }
-
-        if (isset($flags['is_mock_location']) && $flags['is_mock_location'] == true) {
-            $status = 'flagged';
-            $flags['review_reason'] = 'Perangkat melaporkan lokasi tiruan/mock location.';
         }
 
         $faceMatchScore = (float) $request->face_match_score;
@@ -230,7 +248,8 @@ class AttendanceController extends Controller
         if ($shiftAssignmentId) {
             $existingLogQuery->where('shift_assignment_id', $shiftAssignmentId);
         } else {
-            $existingLogQuery->whereNull('shift_assignment_id');
+            $existingLogQuery->whereNull('shift_assignment_id')
+                ->where('flags->shift_template_id', $shiftTemplate?->id);
         }
 
         if ($existingLogQuery->exists()) {
@@ -258,16 +277,8 @@ class AttendanceController extends Controller
             'check_in_photo_url' => $photoPath,
             'flags' => $flags,
             'status' => $status,
-            'is_flagged' => $status === 'flagged',
+            'is_flagged' => false,
         ]);
-
-        if ($status === 'flagged') {
-            app(\App\Services\NotificationService::class)->sendToAdmin(
-                1, 
-                'Suspicious Check-in Flagged',
-                "{$employee->full_name} had a suspicious check-in."
-            );
-        }
 
         return response()->json(['message' => 'Check-in successful', 'data' => $attendance]);
     }
@@ -306,6 +317,10 @@ class AttendanceController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        if (($request->input('flags.is_mock_location') ?? false) === true) {
+            return $this->rejectMockLocationAttempt($request, $employee, 'check_out');
+        }
+
         $faceMatchScore = (float) $request->face_match_score;
         if ($request->filled('face_descriptor')) {
             $biometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
@@ -337,12 +352,22 @@ class AttendanceController extends Controller
             $query->where('shift_assignment_id', $shiftAssignmentId);
         } else {
             $query->whereNull('shift_assignment_id');
+            if ($request->filled('flags.shift_template_id')) {
+                $query->where('flags->shift_template_id', $request->input('flags.shift_template_id'));
+            }
         }
 
         $attendance = $query->latest('check_in_at')->first();
 
         if (!$attendance) {
             return response()->json(['message' => 'Data check-in tidak ditemukan untuk shift ini.'], 404);
+        }
+
+        if ($attendance->status === 'absent') {
+            return response()->json([
+                'message' => 'Tidak dapat Check Out karena tidak ada Check In. Status shift ini adalah Alpha.',
+                'code' => 'ABSENT_WITHOUT_CHECK_IN',
+            ], 422);
         }
 
         if ($attendance->check_out_at) {
@@ -442,6 +467,58 @@ class AttendanceController extends Controller
         return response()->json($history);
     }
 
+    public function reportMockLocation(Request $request)
+    {
+        $employee = $request->user()->employee;
+        if (!$employee) {
+            return response()->json(['message' => 'Employee profile not found.'], 403);
+        }
+
+        $validated = $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'device_id' => 'required|string',
+            'address' => 'nullable|string',
+            'is_check_out' => 'nullable|boolean',
+        ]);
+
+        $request->merge($validated + ['face_match_score' => null]);
+
+        return $this->rejectMockLocationAttempt(
+            $request,
+            $employee,
+            $request->boolean('is_check_out') ? 'check_out' : 'check_in',
+        );
+    }
+
+    private function rejectMockLocationAttempt(Request $request, $employee, string $attemptedAction)
+    {
+        $device = \App\Models\Device::where('device_fingerprint', $request->device_id)
+            ->where('employee_id', $employee->id)
+            ->first();
+
+        AttendanceSecurityEvent::create([
+            'employee_id' => $employee->id,
+            'device_id' => $device?->id,
+            'event_type' => 'mock_location',
+            'attempted_action' => $attemptedAction,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'face_match_score' => $request->face_match_score,
+            'address' => $request->address,
+            'metadata' => [
+                'source' => 'mobile_position_is_mocked',
+                'device_fingerprint' => $request->device_id,
+            ],
+            'detected_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Absensi ditolak karena perangkat mendeteksi sumber lokasi tiruan. Matikan aplikasi Fake GPS dan nonaktifkan aplikasi lokasi tiruan pada Opsi Developer, lalu coba lagi dengan lokasi GPS terbaru.',
+            'code' => 'MOCK_LOCATION_DETECTED',
+        ], 422);
+    }
+
     /**
      * Get attendance info for today (Shift, Role, Tasks)
      */
@@ -523,7 +600,12 @@ class AttendanceController extends Controller
                 ? 'Belum dimulai'
                 : ($shift['time_status'] === 'active' ? 'Sedang berlangsung' : 'Jadwal selesai');
             $log = $attendances->first(function($att) use ($shift) {
-                return $att->shift_assignment_id == $shift['assignment_id'];
+                if ($shift['assignment_id'] !== null) {
+                    return $att->shift_assignment_id == $shift['assignment_id'];
+                }
+
+                return $att->shift_assignment_id === null
+                    && (($att->flags ?? [])['shift_template_id'] ?? null) == $shift['template_id'];
             });
 
             if ($log) {

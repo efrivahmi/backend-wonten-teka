@@ -39,7 +39,7 @@ const AdminDashboard = () => {
         );
     }
 
-    const { employees, attendance_today, attendance_month, daily_attendance_trend = [], monthly_attendance_trend = [], department_attendance = [], pending_approvals, recent_flags } = stats;
+    const { employees, attendance_today, attendance_month, daily_attendance_trend = [], monthly_attendance_trend = [], department_attendance = [], pending_approvals, recent_security_events = [] } = stats;
 
     // Calculate percentage for attendance
     const attendancePercentage = employees.total > 0 
@@ -181,37 +181,35 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* Flags / Anomalies */}
+                {/* Rejected mock-location attempts */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            <h3 className="text-lg font-bold text-slate-800">Menunggu Tinjauan</h3>
+                            <h3 className="text-lg font-bold text-slate-800">Deteksi Fake GPS</h3>
                         </div>
                         <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full">
-                            {recent_flags.length} Aktif
+                            {recent_security_events.length} Terbaru
                         </span>
                     </div>
                     <div className="p-0">
-                        {recent_flags.length > 0 ? (
+                        {recent_security_events.length > 0 ? (
                             <ul className="divide-y divide-slate-100">
-                                {recent_flags.map((flag) => (
-                                    <li key={flag.id} className="p-5 flex items-start space-x-4 hover:bg-slate-50 transition-colors">
+                                {recent_security_events.map((event) => (
+                                    <li key={event.id} className="p-5 flex items-start space-x-4 hover:bg-slate-50 transition-colors">
                                         <div className="bg-slate-100 rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0 text-slate-600 font-bold">
-                                            {flag.employee?.user?.name?.charAt(0) || '?'}
+                                            {event.employee?.full_name?.charAt(0) || '?'}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-slate-800 truncate">
-                                                {flag.employee?.user?.name}
+                                                {event.employee?.full_name || 'Karyawan tidak diketahui'}
                                             </p>
-                                            <p className="text-xs text-amber-600 mt-1 font-medium">{flag.notes || 'Terdeteksi anomali pada absensi ini'}</p>
+                                            <p className="text-xs text-rose-600 mt-1 font-medium">Absensi langsung ditolak • {event.device?.device_name || 'Perangkat tidak dikenal'}</p>
                                             <p className="text-xs text-slate-400 mt-1">
-                                                {new Date(flag.created_at).toLocaleString('id-ID')}
+                                                {new Date(event.detected_at).toLocaleString('id-ID')}
                                             </p>
                                         </div>
-                                        <button className="text-xs font-medium bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm">
-                                            Tinjau
-                                        </button>
+                                        <span className="text-xs font-medium bg-rose-50 text-rose-700 px-3 py-1.5 rounded-lg">Ditolak</span>
                                     </li>
                                 ))}
                             </ul>

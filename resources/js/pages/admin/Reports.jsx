@@ -176,10 +176,11 @@ const Reports = () => {
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${
                                                 log.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' : 
-                                                log.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                log.status === 'late' ? 'bg-amber-100 text-amber-700' :
+                                                log.status === 'absent' ? 'bg-rose-100 text-rose-700' :
                                                 'bg-slate-100 text-slate-700'
                                             }`}>
-                                                {log.status === 'on_time' ? 'Tepat Waktu' : log.status === 'late' ? 'Terlambat' : log.status}
+                                                {log.status === 'on_time' ? 'Tepat Waktu' : log.status === 'late' ? 'Terlambat' : log.status === 'absent' ? 'Alpha / Tidak Masuk' : log.status}
                                             </span>
                                             {(log.is_flagged || log.status === 'flagged') && (
                                                 <span className="ml-2 inline-flex items-center text-rose-600 bg-rose-50 p-1 rounded-md" title="Indikasi Kecurangan (Flagged)">

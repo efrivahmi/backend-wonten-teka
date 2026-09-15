@@ -134,7 +134,7 @@ const App = () => {
                     <Route path="leave-types" element={<AdminOperations type="leaveTypes" />} />
                     <Route path="leave-types/form" element={<AdminOperations type="leaveTypes" />} />
                     <Route path="claims" element={<AdminApprovals />} />
-                    <Route path="attendance-flags" element={<AdminOperations type="flags" />} />
+                    <Route path="attendance-security-events" element={<AdminOperations type="securityEvents" />} />
                     <Route path="biometrics" element={<AdminBiometrics />} />
                     <Route path="profile" element={<AdminProfile />} />
                 </Route>

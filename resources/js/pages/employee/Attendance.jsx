@@ -523,12 +523,14 @@ const Attendance = () => {
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
                                                         selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
                                                             selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                                selectedLog.status === 'absent' ? 'bg-rose-100 text-rose-700' :
                                                                 selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
                                                                     'bg-slate-100 text-slate-700'
                                                     }`}>
                                                     {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
                                                         selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
                                                             selectedLog.status === 'late' ? 'Terlambat' :
+                                                                selectedLog.status === 'absent' ? 'Alpha / Tidak Masuk' :
                                                                 selectedLog.status === 'flagged' ? 'Dipertanyakan' :
                                                                     selectedLog.status}
                                                 </span>
@@ -537,7 +539,7 @@ const Attendance = () => {
                                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
                                             <div className="flex">
                                                 <span className="w-24 text-slate-500">Waktu:</span>
-                                                <span className="font-bold text-slate-800">{new Date(selectedLog.check_in_at).toLocaleTimeString('id-ID')}</span>
+                                                <span className="font-bold text-slate-800">{selectedLog.status === 'absent' ? '--:--' : new Date(selectedLog.check_in_at).toLocaleTimeString('id-ID')}</span>
                                             </div>
                                             <div className="flex">
                                                 <span className="w-24 text-slate-500">Alamat:</span>

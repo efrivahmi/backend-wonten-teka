@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
+use App\Models\AttendanceSecurityEvent;
 use Illuminate\Http\Request;
 
 class AttendanceAdminController extends Controller
@@ -29,59 +30,22 @@ class AttendanceAdminController extends Controller
         return response()->json($logs);
     }
 
-    public function flags(Request $request)
+    public function securityEvents(Request $request)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $logs = AttendanceLog::query()
-            ->flagged()
-            ->with(['employee'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $logs = AttendanceSecurityEvent::query()
+            ->with([
+                'employee:id,full_name,employee_number,department,position,email,phone',
+                'device:id,employee_id,device_fingerprint,device_name,device_model,os_version,app_version,status,last_used_at',
+            ])
+            ->latest('detected_at')
+            ->paginate(50);
 
-        return response()->json(['data' => $logs]);
-    }
-
-    /**
-     * Resolve a flagged attendance log (Approve/Reject).
-     */
-    public function resolveFlag(Request $request, $id)
-    {
-        $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $log = AttendanceLog::where('id', $id)
-            
-            ->firstOrFail();
-
-        $validated = $request->validate([
-            'action' => 'required|in:approve,reject',
-            'notes' => 'nullable|string'
-        ]);
-
-        $log->is_flagged = false; // It's no longer flagged, it's resolved.
-        
-        if ($validated['action'] === 'approve') {
-            $log->status = 'approved';
-        } else {
-            $log->status = 'rejected';
-        }
-
-        if (isset($validated['notes'])) {
-            $log->admin_notes = $validated['notes'];
-        }
-
-        $log->save();
-
-        return response()->json([
-            'message' => 'Attendance flag resolved successfully.',
-            'data' => $log
-        ]);
+        return response()->json($logs);
     }
 
     /**

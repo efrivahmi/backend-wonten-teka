@@ -92,7 +92,7 @@ const AdminLayout = () => {
                 { name: 'Lokasi Absensi', href: '/admin/settings', icon: MapPin },
                 { name: 'Kehadiran Harian', href: '/admin/attendance-daily', icon: CalendarCheck },
                 { name: 'Laporan Absensi', href: '/admin/reports', icon: FileBarChart },
-                { name: 'Flag Absensi', href: '/admin/attendance-flags', icon: Flag },
+                { name: 'Deteksi Fake GPS', href: '/admin/attendance-security-events', icon: Flag },
             ],
         },
         {

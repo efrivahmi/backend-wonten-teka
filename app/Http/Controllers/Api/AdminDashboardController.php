@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\AttendanceLog;
+use App\Models\AttendanceSecurityEvent;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Claim;
@@ -58,10 +59,9 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 5. Recent Anomalies/Flags
-        $flags = AttendanceLog::with('employee')
-            ->flagged()
-            ->orderBy('created_at', 'desc')
+        // 5. Recent rejected mock-location attempts (read-only evidence)
+        $securityEvents = AttendanceSecurityEvent::with(['employee', 'device'])
+            ->latest('detected_at')
             ->take(5)
             ->get();
 
@@ -153,7 +153,7 @@ class AdminDashboardController extends Controller
                     'overtimes' => $pendingOvertimes,
                     'claims' => $pendingClaims
                 ],
-                'recent_flags' => $flags,
+                'recent_security_events' => $securityEvents,
                 'department_attendance' => $departments,
                 'attendance_month' => [
                     'label' => $today->translatedFormat('F Y'),
