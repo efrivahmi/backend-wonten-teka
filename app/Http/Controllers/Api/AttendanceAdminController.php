@@ -21,6 +21,23 @@ class AttendanceAdminController extends Controller
 
         $logs = AttendanceLog::query()
             ->with(['employee', 'employee.user'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim((string) $request->query('search'));
+                $query->whereHas('employee', fn ($employee) => $employee
+                    ->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('employee_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"));
+            })
+            ->when($request->filled('employee_ids'), function ($query) use ($request) {
+                $ids = collect(explode(',', (string) $request->query('employee_ids')))
+                    ->filter(fn ($id) => ctype_digit($id))
+                    ->map(fn ($id) => (int) $id);
+                if ($ids->isNotEmpty()) $query->whereIn('employee_id', $ids);
+            })
+            ->when($request->filled('date_from'), fn ($query) => $query->whereDate('check_in_at', '>=', $request->date('date_from')))
+            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('check_in_at', '<=', $request->date('date_to')))
+            ->when($request->filled('month'), fn ($query) => $query->whereMonth('check_in_at', (int) $request->query('month')))
+            ->when($request->filled('year'), fn ($query) => $query->whereYear('check_in_at', (int) $request->query('year')))
             ->when($request->filled('department'), fn ($query) => $query->whereHas(
                 'employee', fn ($employee) => $employee->where('department', $request->string('department'))
             ))
@@ -43,7 +60,7 @@ class AttendanceAdminController extends Controller
                 'device:id,employee_id,device_fingerprint,device_name,device_model,os_version,app_version,status,last_used_at',
             ])
             ->latest('detected_at')
-            ->paginate(50);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 50))));
 
         return response()->json($logs);
     }

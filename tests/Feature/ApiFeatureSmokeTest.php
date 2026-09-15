@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\User;
 use App\Models\LeaveType;
+use App\Models\AttendanceLog;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -99,6 +101,8 @@ class ApiFeatureSmokeTest extends TestCase
         $this->getJson('/api/attendance/today-info')
             ->assertOk()
             ->assertJsonPath('monthly_stats.present_days', 0)
+            ->assertJsonPath('has_double_shift', false)
+            ->assertJsonCount(0, 'overtime_today')
             ->assertJsonPath('monthly_stats.days_in_month', now(config('app.business_timezone'))->daysInMonth)
             ->assertJsonPath('monthly_stats.month_label', now(config('app.business_timezone'))->locale('id')->translatedFormat('F Y'));
     }
@@ -210,6 +214,25 @@ class ApiFeatureSmokeTest extends TestCase
         ])->assertOk()->assertJsonPath('data.title', 'Laporan harian diperbarui');
         $this->deleteJson("/api/admin/tasks/{$taskId}")->assertOk();
         $this->assertDatabaseMissing('personal_tasks', ['id' => $taskId]);
+    }
+
+    public function test_admin_attendance_draft_filters_selected_employee_and_period(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        [, $selected] = $this->employeeAccount();
+        [, $other] = $this->employeeAccount();
+        $inPeriod = Carbon::parse('2026-09-15 08:00', config('app.business_timezone'))->utc();
+        $outsidePeriod = Carbon::parse('2026-08-15 08:00', config('app.business_timezone'))->utc();
+
+        AttendanceLog::create(['employee_id' => $selected->id, 'check_in_at' => $inPeriod, 'status' => 'on_time']);
+        AttendanceLog::create(['employee_id' => $other->id, 'check_in_at' => $inPeriod, 'status' => 'late']);
+        AttendanceLog::create(['employee_id' => $selected->id, 'check_in_at' => $outsidePeriod, 'status' => 'on_time']);
+
+        Sanctum::actingAs($admin);
+        $this->getJson("/api/admin/attendance?employee_ids={$selected->id}&month=9&year=2026&per_page=500")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.employee_id', $selected->id);
     }
 
     public function test_deleted_employee_email_can_be_used_for_a_new_account(): void

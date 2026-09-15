@@ -11,6 +11,7 @@ import {
     Trash2,
     X,
     AlertTriangle
+    , Search, Eye
 } from 'lucide-react';
 import api from '../../api';
 
@@ -28,21 +29,56 @@ const Reports = () => {
     });
     const [saving, setSaving] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const currentMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
+    const [periodMode, setPeriodMode] = useState('month');
+    const [month, setMonth] = useState(currentMonth);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [search, setSearch] = useState('');
+    const [employees, setEmployees] = useState([]);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [draftReady, setDraftReady] = useState(false);
 
     useEffect(() => {
-        fetchLogs();
+        Promise.all([fetchLogs(), api.get('/admin/employees').then(response => setEmployees(response.data.data || []))]);
     }, []);
 
     const fetchLogs = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/attendance');
+            const params = { per_page: 500 };
+            if (search.trim()) params.search = search.trim();
+            if (selectedEmployees.length) params.employee_ids = selectedEmployees.join(',');
+            if (periodMode === 'month' && month) {
+                const [year, monthNumber] = month.split('-');
+                params.year = year; params.month = monthNumber;
+            }
+            if (periodMode === 'range') {
+                if (dateFrom) params.date_from = dateFrom;
+                if (dateTo) params.date_to = dateTo;
+            }
+            const response = await api.get('/admin/attendance', { params });
             setLogs(response.data.data || []);
+            setDraftReady(true);
         } catch (error) {
             console.error("Error fetching logs:", error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleEmployee = (id) => setSelectedEmployees(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+    const selectedAll = employees.length > 0 && selectedEmployees.length === employees.length;
+    const toggleAll = () => setSelectedEmployees(selectedAll ? [] : employees.map(item => item.id));
+    const statusLabel = status => ({ on_time: 'Tepat Waktu', present: 'Hadir', late: 'Terlambat', absent: 'Alpha / Tidak Masuk', leave: 'Cuti / Sakit' }[status] || status || '-');
+    const exportCsv = () => {
+        if (!draftReady) return;
+        const rows = [['Karyawan','Nomor Karyawan','Tanggal','Check In','Check Out','Status'], ...logs.map(log => [log.employee?.full_name || log.employee?.user?.name || `Emp #${log.employee_id}`, log.employee?.employee_number || '', log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID') : '', log.status === 'absent' ? '' : (log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID') : ''), log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID') : '', statusLabel(log.status)])];
+        const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+        link.download = `draft-rekap-absensi-${periodMode === 'month' ? month : `${dateFrom}-${dateTo}`}.csv`;
+        link.click(); URL.revokeObjectURL(link.href);
     };
 
     // --- CRUD Handlers ---
@@ -122,16 +158,24 @@ const Reports = () => {
                     <p className="text-slate-500 mt-1">Unduh dan pantau riwayat absensi secara keseluruhan.</p>
                 </div>
                 <div className="flex space-x-2">
-                    <button className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-slate-600 font-medium hover:bg-slate-50 transition-colors shadow-sm">
-                        <Filter className="h-4 w-4" />
-                        <span>Filter</span>
-                    </button>
-                    <button className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm">
+                    <button disabled={!draftReady || !logs.length} onClick={exportCsv} className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50">
                         <Download className="h-4 w-4" />
-                        <span>Export CSV</span>
+                        <span>Export Draft CSV</span>
                     </button>
                 </div>
             </div>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+                <div className="flex items-center gap-2"><Filter className="h-5 w-5 text-emerald-700"/><h2 className="font-bold text-slate-900">Siapkan Draft Rekap</h2></div>
+                <div className="grid gap-4 lg:grid-cols-4">
+                    <label className="text-sm font-semibold text-slate-700">Cari karyawan<div className="relative mt-2"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={search} onChange={e => {setSearch(e.target.value); setDraftReady(false);}} placeholder="Nama, nomor, atau email" className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3"/></div></label>
+                    <label className="text-sm font-semibold text-slate-700">Jenis periode<select value={periodMode} onChange={e => {setPeriodMode(e.target.value); setDraftReady(false);}} className="mt-2 w-full rounded-xl border border-slate-200 p-2.5"><option value="month">Per bulan</option><option value="range">Rentang tanggal</option></select></label>
+                    {periodMode === 'month' ? <label className="text-sm font-semibold text-slate-700">Bulan<input type="month" value={month} onChange={e => {setMonth(e.target.value);setDraftReady(false);}} className="mt-2 w-full rounded-xl border border-slate-200 p-2.5"/></label> : <><label className="text-sm font-semibold text-slate-700">Dari tanggal<input type="date" value={dateFrom} onChange={e => {setDateFrom(e.target.value);setDraftReady(false);}} className="mt-2 w-full rounded-xl border border-slate-200 p-2.5"/></label><label className="text-sm font-semibold text-slate-700">Sampai tanggal<input type="date" value={dateTo} min={dateFrom} onChange={e => {setDateTo(e.target.value);setDraftReady(false);}} className="mt-2 w-full rounded-xl border border-slate-200 p-2.5"/></label></>}
+                </div>
+                <div><div className="mb-2 flex items-center justify-between"><span className="text-sm font-semibold text-slate-700">Pilih karyawan ({selectedEmployees.length || 'semua'})</span><button onClick={toggleAll} className="text-xs font-bold text-emerald-700">{selectedAll ? 'Hapus semua centang' : 'Centang semua'}</button></div><div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{employees.filter(item => !search.trim() || `${item.full_name} ${item.employee_number || ''} ${item.email || ''}`.toLowerCase().includes(search.toLowerCase())).map(item => <label key={item.id} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50"><input type="checkbox" checked={selectedEmployees.includes(item.id)} onChange={() => {toggleEmployee(item.id);setDraftReady(false);}}/><span className="text-sm"><b className="block text-slate-800">{item.full_name || item.user?.email}</b><small className="text-slate-500">{item.employee_number || item.user?.email || 'Belum lengkap'}</small></span></label>)}</div></div>
+                <button onClick={fetchLogs} disabled={loading || (periodMode === 'range' && (!dateFrom || !dateTo))} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Eye className="h-4 w-4"/>{loading ? 'Menyiapkan…' : 'Tampilkan Draft'}</button>
+                {draftReady && <p className="text-sm text-emerald-700"><b>Draft siap:</b> {logs.length} catatan sesuai karyawan dan periode terpilih. Periksa tabel sebelum mengekspor.</p>}
+            </section>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
@@ -145,7 +189,7 @@ const Reports = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white text-slate-500 text-sm font-semibold uppercase tracking-wider border-b border-slate-200">
-                                <th className="px-6 py-4">Karyawan</th>
+                                <th className="px-6 py-4"><input type="checkbox" checked={selectedAll} onChange={toggleAll} aria-label="Pilih semua karyawan" /></th><th className="px-6 py-4">Karyawan</th>
                                 <th className="px-6 py-4">Tanggal</th>
                                 <th className="px-6 py-4">Check In</th>
                                 <th className="px-6 py-4">Check Out</th>
@@ -157,6 +201,7 @@ const Reports = () => {
                             {logs.length > 0 ? (
                                 logs.map((log) => (
                                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4"><input type="checkbox" checked={selectedEmployees.includes(log.employee_id)} onChange={() => {toggleEmployee(log.employee_id);setDraftReady(false);}} aria-label={`Pilih ${log.employee?.full_name || log.employee_id}`} /></td>
                                         <td className="px-6 py-4">
                                             <p className="font-bold text-slate-800">{log.employee?.user?.name || `Emp #${log.employee_id}`}</p>
                                         </td>
@@ -218,7 +263,7 @@ const Reports = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center">
                                             <FileSpreadsheet className="h-12 w-12 text-slate-300 mb-3" />
                                             <p className="text-lg font-medium text-slate-800">Tidak ada log absensi</p>

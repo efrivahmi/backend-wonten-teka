@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Bell, Briefcase, CalendarCheck, CalendarDays, CheckCircle2, Clock,
-    FileText, Loader2, LogIn, LogOut, Plane, User, XCircle,
+    FileText, Layers3, Loader2, LogIn, LogOut, Plane, Timer, User, XCircle,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
@@ -87,6 +87,8 @@ export default function EmployeeDashboard() {
     }, []);
 
     const shifts = todayInfo?.shifts || [];
+    const hasDoubleShift = todayInfo?.has_double_shift ?? shifts.length > 1;
+    const overtimeToday = todayInfo?.overtime_today || [];
     const currentAttendance = useMemo(
         () => shifts.map(shift => shift.attendance).find(Boolean) || null,
         [shifts],
@@ -167,6 +169,24 @@ export default function EmployeeDashboard() {
                     <SummaryCard label="Durasi kerja" value={durationText(currentAttendance, now)} icon={Clock} tone="blue" />
                 </div>
             </section>
+
+            {(hasDoubleShift || overtimeToday.length > 0) && (
+                <section>
+                    <SectionHeading title="Jadwal Tambahan Hari Ini" subtitle="Penugasan khusus dari admin yang perlu Anda perhatikan sebelum melakukan absensi." />
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {hasDoubleShift && (
+                            <article className="rounded-2xl border border-violet-200 bg-violet-50 p-5 text-violet-900">
+                                <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-600 text-white"><Layers3 className="h-6 w-6" /></span><div><p className="text-xs font-black uppercase tracking-widest text-violet-600">Shift ganda</p><h3 className="mt-1 text-lg font-black">{shifts.length} shift hari ini</h3><p className="mt-2 text-sm text-violet-700">{shifts.map(shift => `${shift.name} ${shift.start_time}–${shift.end_time}`).join(' • ')}</p></div></div>
+                            </article>
+                        )}
+                        {overtimeToday.map(item => (
+                            <article key={item.id} className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-orange-900">
+                                <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500 text-white"><Timer className="h-6 w-6" /></span><div><p className="text-xs font-black uppercase tracking-widest text-orange-600">Lembur disetujui</p><h3 className="mt-1 text-lg font-black">{String(item.start_time).slice(0, 5)}–{String(item.end_time).slice(0, 5)}</h3><p className="mt-2 text-sm text-orange-700">{item.overtime_type || 'Lembur'}{item.reason ? ` • ${item.reason}` : ''}</p></div></div>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* 3. Today's shifts */}
             <section>

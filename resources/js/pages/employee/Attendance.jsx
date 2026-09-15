@@ -27,6 +27,7 @@ const Attendance = () => {
 
     const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState([]);
+    const [todayInfo, setTodayInfo] = useState(null);
 
     // Calendar state
     const today = new Date();
@@ -55,6 +56,7 @@ const Attendance = () => {
         if (!action) {
             fetchWorkingDays();
             fetchHistory();
+            fetchTodayInfo();
         } else {
             setupScanner();
         }
@@ -68,6 +70,15 @@ const Attendance = () => {
             }
         } catch (e) {
             console.error('Failed to fetch working days');
+        }
+    };
+
+    const fetchTodayInfo = async () => {
+        try {
+            const response = await api.get('/attendance/today-info');
+            setTodayInfo(response.data || null);
+        } catch (error) {
+            console.error('Failed to fetch today attendance state', error);
         }
     };
 
@@ -310,6 +321,11 @@ const Attendance = () => {
         });
     };
 
+    const getLogsForDay = (day) => history.filter(log => {
+        const date = new Date(log.check_in_at);
+        return date.getDate() === day && date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
+    });
+
     const getDayStatusColor = (day) => {
         const log = getLogForDay(day);
         const loopDate = new Date(currentYear, currentMonth - 1, day);
@@ -323,9 +339,16 @@ const Attendance = () => {
             return 'bg-blue-100 text-blue-700 border-blue-300';
         }
 
-        // No log
+        // No log. Today becomes alpha as soon as all assigned shifts have ended.
         // Check if date is in the past
         today.setHours(0, 0, 0, 0);
+        const isToday = loopDate.getTime() === today.getTime();
+        const todayShifts = todayInfo?.shifts || [];
+        const todayIsFinal = isToday && todayShifts.length > 0
+            && todayShifts.every(shift => shift.time_status === 'ended');
+        if (todayIsFinal && isWorkingDay) {
+            return 'bg-rose-100 text-rose-700 border-rose-300';
+        }
         if (loopDate < today) {
             if (isWorkingDay) {
                 return 'bg-rose-100 text-rose-700 border-rose-300'; // Missed working day (Alpha)
@@ -440,10 +463,12 @@ const Attendance = () => {
                 </div>
 
                 {/* Legend */}
-                <div className="flex space-x-3 text-xs font-medium text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
+                <div className="flex flex-wrap gap-3 text-xs font-medium text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
                     <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-emerald-400 mr-1.5"></span> Hadir</div>
-                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-amber-400 mr-1.5"></span> Telat</div>
-                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-rose-400 mr-1.5"></span> Alpha</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-amber-400 mr-1.5"></span> Terlambat</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-rose-500 mr-1.5"></span> Tidak hadir / Alpha</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-violet-500 mr-1.5"></span> Shift ganda</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-orange-500 mr-1.5"></span> Lembur</div>
                 </div>
             </div>
 
@@ -482,6 +507,19 @@ const Attendance = () => {
                             {Array.from({ length: daysInMonth }).map((_, i) => {
                                 const day = i + 1;
                                 const statusClass = getDayStatusColor(day);
+                                const dayLogs = getLogsForDay(day);
+                                const dayLog = dayLogs[0];
+                                const hasDoubleShift = dayLogs.some(log => log.has_double_shift);
+                                const hasOvertime = dayLogs.some(log => Array.isArray(log.overtime) && log.overtime.length > 0);
+                                const loopDate = new Date(currentYear, currentMonth - 1, day);
+                                loopDate.setHours(0, 0, 0, 0);
+                                const calendarToday = new Date();
+                                calendarToday.setHours(0, 0, 0, 0);
+                                const todayShifts = todayInfo?.shifts || [];
+                                const isTodayAbsent = !dayLog
+                                    && loopDate.getTime() === calendarToday.getTime()
+                                    && todayShifts.length > 0
+                                    && todayShifts.every(shift => shift.time_status === 'ended');
                                 return (
                                     <button
                                         key={day}
@@ -489,11 +527,16 @@ const Attendance = () => {
                                         className={`h-20 rounded-xl border flex flex-col p-2 hover:opacity-80 transition-opacity relative ${statusClass}`}
                                     >
                                         <span className="text-sm font-bold opacity-75">{day}</span>
-                                        {getLogForDay(day) && (
+                                        <div className="absolute right-1.5 top-1.5 flex gap-1">
+                                            {hasDoubleShift && <span title="Shift ganda" className="h-2.5 w-2.5 rounded-full bg-violet-600 ring-2 ring-white" />}
+                                            {hasOvertime && <span title="Lembur" className="h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />}
+                                        </div>
+                                        {dayLog && (
                                             <div className="mt-auto text-xs font-semibold">
-                                                {new Date(getLogForDay(day).check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                {dayLog.status === 'absent' ? 'Tidak hadir' : new Date(dayLog.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         )}
+                                        {isTodayAbsent && <div className="mt-auto text-xs font-semibold">Tidak hadir</div>}
                                     </button>
                                 );
                             })}

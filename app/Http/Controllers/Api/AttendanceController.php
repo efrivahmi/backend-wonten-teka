@@ -441,11 +441,19 @@ class AttendanceController extends Controller
     public function history(Request $request)
     {
         $user = $request->user();
+        $employee = $user->employee;
+        if (!$employee) {
+            return response()->json(['message' => 'Employee profile not found.'], 403);
+        }
+
+        // Keep the calendar correct even when the scheduler has not run yet.
+        // Once a shift ends, opening history immediately materializes its alpha record.
+        app(AttendanceAbsenceService::class)->recordEndedShifts();
         
         $month = $request->query('month');
         $year = $request->query('year');
         
-        $query = AttendanceLog::where('employee_id', $user->employee->id);
+        $query = AttendanceLog::where('employee_id', $employee->id);
         
         if ($month && $year) {
             $query->whereMonth('check_in_at', $month)
@@ -454,13 +462,27 @@ class AttendanceController extends Controller
         
         $history = $query->orderBy('check_in_at', 'desc')->paginate(31);
         
-        $history->getCollection()->transform(function ($log) {
+        $history->getCollection()->transform(function ($log) use ($employee) {
             if ($log->check_in_photo_url) {
                 $log->check_in_photo_url = asset('storage/' . $log->check_in_photo_url);
             }
             if ($log->check_out_photo_url) {
                 $log->check_out_photo_url = asset('storage/' . $log->check_out_photo_url);
             }
+            $workDate = $log->check_in_at->copy()
+                ->setTimezone(config('app.business_timezone'))
+                ->toDateString();
+            $shiftCount = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+                ->whereDate('date', $workDate)
+                ->count();
+            $overtime = \App\Models\OvertimeRequest::where('employee_id', $employee->id)
+                ->whereDate('date', $workDate)
+                ->where('status', 'approved')
+                ->orderBy('start_time')
+                ->get(['id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'status']);
+            $log->setAttribute('has_double_shift', $shiftCount > 1);
+            $log->setAttribute('shift_count', max(1, $shiftCount));
+            $log->setAttribute('overtime', $overtime);
             return $log;
         });
             
@@ -702,8 +724,16 @@ class AttendanceController extends Controller
         ];
         // -------------------------------
 
+        $overtimeToday = \App\Models\OvertimeRequest::where('employee_id', $employee->id)
+            ->whereDate('date', $businessNow->toDateString())
+            ->where('status', 'approved')
+            ->orderBy('start_time')
+            ->get(['id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'status']);
+
         return response()->json([
             'shifts' => $shifts,
+            'has_double_shift' => count($shifts) > 1,
+            'overtime_today' => $overtimeToday,
             'role' => $role,
             'monthly_stats' => $monthlyStats,
         ]);
