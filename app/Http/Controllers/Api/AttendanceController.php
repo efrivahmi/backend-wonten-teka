@@ -460,7 +460,7 @@ class AttendanceController extends Controller
                   ->whereYear('check_in_at', $year);
         }
         
-        $history = $query->orderBy('check_in_at', 'desc')->paginate(31);
+        $history = $query->orderBy('check_in_at', 'desc')->paginate($month && $year ? 100 : 31);
         
         $history->getCollection()->transform(function ($log) use ($employee) {
             if ($log->check_in_photo_url) {
