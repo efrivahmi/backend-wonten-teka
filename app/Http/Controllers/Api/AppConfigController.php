@@ -50,6 +50,7 @@ class AppConfigController extends Controller
                 ['key' => 'calendar', 'label' => 'Kalender Perusahaan', 'enabled' => true],
                 ['key' => 'announcements', 'label' => 'Pengumuman', 'enabled' => true],
                 ['key' => 'tasks', 'label' => 'Tugas Pribadi', 'enabled' => true],
+                ['key' => 'habits', 'label' => 'Habit Tracker', 'enabled' => true],
                 ['key' => 'adjustments', 'label' => 'Koreksi Absensi', 'enabled' => true],
                 ['key' => 'business_trips', 'label' => 'Perjalanan Dinas', 'enabled' => true],
                 ['key' => 'directory', 'label' => 'Direktori Karyawan', 'enabled' => true],

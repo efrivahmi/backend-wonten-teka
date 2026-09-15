@@ -102,6 +102,7 @@ const AdminLayout = () => {
                 { name: 'Perangkat', href: '/admin/devices', icon: Smartphone },
                 { name: 'Event', href: '/admin/events', icon: CalendarDays },
                 { name: 'Pengumuman', href: '/admin/announcements', icon: Bell },
+                { name: 'Daily Task & Habit', href: '/admin/tasks', icon: ListChecks },
                 { name: 'Payroll', href: '/admin/payroll', icon: Banknote },
                 { name: 'Konfigurasi Payroll', href: '/admin/payroll-config', icon: Banknote },
                 { name: 'Biometrik Wajah', href: '/admin/biometrics', icon: Shield },

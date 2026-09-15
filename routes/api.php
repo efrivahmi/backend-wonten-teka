@@ -142,7 +142,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/employees', [EmployeeController::class, 'store']);
         Route::put('/employees/{id}', [EmployeeController::class, 'update']);
         Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+        Route::get('/tasks', [\App\Http\Controllers\Api\AdminTaskController::class, 'index']);
+        Route::post('/tasks', [\App\Http\Controllers\Api\AdminTaskController::class, 'store']);
+        Route::put('/tasks/{task}', [\App\Http\Controllers\Api\AdminTaskController::class, 'update']);
+        Route::delete('/tasks/{task}', [\App\Http\Controllers\Api\AdminTaskController::class, 'destroy']);
+        Route::get('/announcements', [CompanyController::class, 'adminAnnouncements']);
         Route::post('/announcements', [CompanyController::class, 'storeAnnouncement']);
+        Route::put('/announcements/{announcement}', [CompanyController::class, 'updateAnnouncement']);
+        Route::delete('/announcements/{announcement}', [CompanyController::class, 'destroyAnnouncement']);
         
         // Events
         Route::get('/events', [\App\Http\Controllers\Api\EventController::class, 'index']);

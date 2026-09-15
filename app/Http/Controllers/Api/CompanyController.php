@@ -202,6 +202,42 @@ class CompanyController extends Controller
         ], 201);
     }
 
+    public function adminAnnouncements()
+    {
+        return response()->json(Announcement::latest()->paginate(30));
+    }
+
+    public function updateAnnouncement(Request $request, Announcement $announcement)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'target_type' => 'required|in:company,department,employee',
+            'target_value' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ]);
+        $data = [
+            'title' => $validated['title'],
+            'body' => $validated['content'],
+            'priority' => $validated['priority'],
+            'target_type' => $validated['target_type'],
+            'target_value' => $validated['target_value'] ?? null,
+        ];
+        if ($request->hasFile('attachment')) {
+            $data['attachment_url'] = $request->file('attachment')->store('announcements', 'public');
+        }
+        $announcement->update($data);
+
+        return response()->json(['message' => 'Pengumuman diperbarui.', 'data' => $announcement->fresh()]);
+    }
+
+    public function destroyAnnouncement(Announcement $announcement)
+    {
+        $announcement->delete();
+        return response()->json(['message' => 'Pengumuman dihapus.']);
+    }
+
     /**
      * Get the current working days settings for the company (Admin only).
      */

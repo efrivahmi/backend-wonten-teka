@@ -184,6 +184,31 @@ class ApiFeatureSmokeTest extends TestCase
         $this->assertSame('Jakarta', $employee->fresh()->address);
     }
 
+    public function test_admin_can_manage_daily_tasks_used_by_web_and_mobile(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        [, $employee] = $this->employeeAccount();
+        Sanctum::actingAs($admin);
+
+        $taskId = $this->postJson('/api/admin/tasks', [
+            'employee_id' => $employee->id,
+            'title' => 'Laporan harian',
+            'task_date' => today()->toDateString(),
+            'is_habit' => false,
+            'reminder_time' => '16:00',
+            'reminder_enabled' => true,
+        ])->assertCreated()->json('data.id');
+
+        $this->getJson('/api/admin/tasks')->assertOk()
+            ->assertJsonPath('data.0.id', $taskId);
+        $this->putJson("/api/admin/tasks/{$taskId}", [
+            'title' => 'Laporan harian diperbarui',
+            'is_habit' => false,
+        ])->assertOk()->assertJsonPath('data.title', 'Laporan harian diperbarui');
+        $this->deleteJson("/api/admin/tasks/{$taskId}")->assertOk();
+        $this->assertDatabaseMissing('personal_tasks', ['id' => $taskId]);
+    }
+
     private function employeeAccount(bool $admin = false): array
     {
         $user = User::factory()->create([
