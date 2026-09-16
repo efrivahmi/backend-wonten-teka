@@ -173,6 +173,7 @@ class ApiFeatureSmokeTest extends TestCase
         $employee = Employee::findOrFail($employeeId);
         $generatedNumber = $employee->employee_number;
         $this->assertNotEmpty($generatedNumber);
+        $this->assertMatchesRegularExpression('/^EMP-\d{4}-\d{4}(?:-\d+)?$/', $generatedNumber);
         $this->assertTrue($employee->user->hasRole('employee'));
 
         Sanctum::actingAs($employee->user);
@@ -191,6 +192,22 @@ class ApiFeatureSmokeTest extends TestCase
         $this->assertSame($generatedNumber, $employee->fresh()->employee_number);
         $this->assertSame('Jakarta', $employee->fresh()->address);
         $this->assertSame('Karyawan Baru Lengkap', $employee->user->fresh()->name);
+    }
+
+    public function test_admin_can_create_an_admin_account_with_role_based_identifier(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        Sanctum::actingAs($admin);
+
+        $employeeId = $this->postJson('/api/admin/employees', [
+            'email' => 'admin.baru@example.test',
+            'password' => 'rahasia123',
+            'role' => 'admin',
+        ])->assertCreated()->json('data.id');
+
+        $employee = Employee::findOrFail($employeeId);
+        $this->assertMatchesRegularExpression('/^ADM-\d{4}-\d{4}(?:-\d+)?$/', $employee->employee_number);
+        $this->assertTrue($employee->user->hasRole('admin'));
     }
 
     public function test_admin_can_manage_daily_tasks_used_by_web_and_mobile(): void

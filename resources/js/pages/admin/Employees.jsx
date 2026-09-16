@@ -103,8 +103,8 @@ const Employees = () => {
                 }
                 await api.put(`/admin/employees/${editingEmployee.id}`, payload);
             } else {
-                const { email, password } = formData;
-                await api.post('/admin/employees', { email, password });
+                const { email, password, role } = formData;
+                await api.post('/admin/employees', { email, password, role });
             }
             setIsModalOpen(false);
             fetchEmployees();
@@ -170,7 +170,7 @@ const Employees = () => {
                         <input
                             type="text"
                             className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
-                            placeholder="Cari nama, email, NIK, atau posisi..."
+                            placeholder="Cari nama, email, ID pegawai, atau posisi..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -279,7 +279,7 @@ const Employees = () => {
                         
                         <div className="overflow-y-auto p-6">
                             <form id="employeeForm" onSubmit={saveEmployee} className="space-y-5">
-                                {!editingEmployee && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><strong>Cukup email dan password.</strong> Nama sementara serta nomor karyawan dibuat otomatis. Karyawan akan mengisi nama asli dan seluruh profil saat login pertama.</div>}
+                                {!editingEmployee && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><strong>Cukup email, password, dan role.</strong> ID akun khusus dibuat otomatis sesuai role. Pengguna melengkapi profil saat login pertama.</div>}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {editingEmployee && <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap <span className="text-rose-500">*</span></label>
@@ -293,7 +293,7 @@ const Employees = () => {
                                         />
                                     </div>}
                                     {editingEmployee && <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Karyawan (NIK) <span className="text-rose-500">*</span></label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">ID Pegawai <span className="text-rose-500">*</span></label>
                                         <input 
                                             type="text" 
                                             name="employee_number"
@@ -302,6 +302,7 @@ const Employees = () => {
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                             required
                                         />
+                                        <p className="mt-1 text-xs text-slate-500">Nomor khusus internal. Contoh: EMP-2026-0007 atau ADM-2026-0007.</p>
                                     </div>}
                                 </div>
                                 
@@ -382,7 +383,7 @@ const Employees = () => {
                                             minLength="6"
                                         />
                                     </div>
-                                    {editingEmployee && <div>
+                                    <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Role Akun</label>
                                         <select 
                                             name="role"
@@ -393,7 +394,7 @@ const Employees = () => {
                                             <option value="employee">Employee (Karyawan)</option>
                                             <option value="admin">Admin</option>
                                         </select>
-                                    </div>}
+                                    </div>
                                 </div>
                             </form>
                         </div>

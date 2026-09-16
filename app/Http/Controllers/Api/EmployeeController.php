@@ -64,7 +64,7 @@ class EmployeeController extends Controller
         $user = $request->user();
         
         $employees = Employee::query()
-            ->with('user:id,email')
+            ->with(['user:id,email', 'user.roles:id,name'])
             ->orderBy('full_name', 'asc')
             ->get();
             
@@ -138,7 +138,12 @@ class EmployeeController extends Controller
             $employee->full_name = $validated['full_name'];
             // Nomor karyawan ditetapkan saat akun dibuat oleh admin dan tidak
             // boleh diminta atau diganti kembali pada onboarding mandiri.
-            $employee->employee_number ??= $this->generateEmployeeNumber($user->id);
+            if (!$employee->employee_number || preg_match('/^\d{19,}$/', $employee->employee_number)) {
+                $employee->employee_number = $this->generateEmployeeNumber(
+                    $user->id,
+                    $user->hasRole('admin') ? 'admin' : 'employee'
+                );
+            }
             $employee->phone = $validated['phone'] ?? null;
             $employee->email = $validated['email'];
             $employee->date_of_birth = $validated['date_of_birth'] ?? null;
@@ -245,7 +250,7 @@ class EmployeeController extends Controller
                 
                 'user_id' => $newUser->id,
                 'full_name' => $initialName,
-                'employee_number' => $this->generateEmployeeNumber($newUser->id),
+                'employee_number' => $this->generateEmployeeNumber($newUser->id, $role),
                 'phone' => null,
                 'email' => $validated['email'],
                 'department' => null,
@@ -274,9 +279,10 @@ class EmployeeController extends Controller
         }
     }
 
-    private function generateEmployeeNumber(int $userId): string
+    private function generateEmployeeNumber(int $userId, string $role = 'employee'): string
     {
-        $base = 'EMP-' . now()->format('Ym') . '-' . str_pad((string) $userId, 5, '0', STR_PAD_LEFT);
+        $prefix = $role === 'admin' ? 'ADM' : 'EMP';
+        $base = $prefix . '-' . now()->format('Y') . '-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
         $candidate = $base;
         $suffix = 1;
 
@@ -303,7 +309,11 @@ class EmployeeController extends Controller
                 $employee->user_id ? Rule::unique('users', 'email')->ignore($employee->user_id) : '',
             ],
             'phone' => 'nullable|string|max:20',
-            'employee_number' => 'sometimes|required|string|max:50',
+            'employee_number' => [
+                'sometimes', 'required', 'string', 'max:50',
+                'not_regex:/^\d{19,}$/',
+                Rule::unique('employees', 'employee_number')->ignore($employee->id),
+            ],
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
             'gender' => 'nullable|in:male,female',
@@ -311,6 +321,8 @@ class EmployeeController extends Controller
             'join_date' => 'nullable|date',
             'employment_status' => 'nullable|string|max:50',
             'is_active' => 'nullable|boolean',
+            'role' => ['sometimes', 'required', 'string', Rule::in(['employee', 'admin'])],
+            'password' => 'nullable|string|min:6',
         ]);
 
         try {
