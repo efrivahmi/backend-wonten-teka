@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- Nama produk lama: Wonten Teka. --}}
     <title>e-Absensi Lemdiklat Taruna Nusantara Indonesia</title>
-    <link rel="icon" type="image/png" sizes="any" href="/images/lemdiklat-logo.png?v=20260916-1">
-    <link rel="shortcut icon" type="image/png" href="/images/lemdiklat-logo.png?v=20260916-1">
-    <link rel="apple-touch-icon" href="/images/lemdiklat-logo.png?v=20260916-1">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260916-3">
+    <link rel="alternate icon" type="image/png" href="/images/lemdiklat-logo.png">
+    <link rel="apple-touch-icon" href="/images/lemdiklat-logo.png">
     
     <!-- Meta tag for Vite React Fast Refresh -->
     @viteReactRefresh
