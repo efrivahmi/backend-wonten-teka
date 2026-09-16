@@ -632,7 +632,12 @@ class AttendanceController extends Controller
 
             if ($log) {
                 $displayStatus = $log->status;
-                if ($shift['time_status'] === 'ended' && !$log->check_out_at) {
+                // An automatically-created alpha log uses the scheduled start
+                // only as its work-date anchor. It is not a real check-in and
+                // must never be presented as an incomplete/checkout-able log.
+                if ($log->status !== 'absent'
+                    && $shift['time_status'] === 'ended'
+                    && !$log->check_out_at) {
                     $displayStatus = 'incomplete';
                 }
                 $shift['attendance'] = [
@@ -642,6 +647,8 @@ class AttendanceController extends Controller
                     'check_in_address' => $log->check_in_address,
                     'check_out_address' => $log->check_out_address,
                     'status' => $displayStatus,
+                    'is_auto_absent' => $log->status === 'absent'
+                        || (($log->flags ?? [])['auto_absent'] ?? false) === true,
                 ];
             } elseif ($shift['time_status'] === 'ended') {
                 $shift['attendance'] = [
@@ -651,6 +658,7 @@ class AttendanceController extends Controller
                     'check_in_address' => null,
                     'check_out_address' => null,
                     'status' => 'absent',
+                    'is_auto_absent' => true,
                 ];
             } else {
                 $shift['attendance'] = null;

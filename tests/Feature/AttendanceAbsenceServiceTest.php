@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AttendanceAbsenceService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AttendanceAbsenceServiceTest extends TestCase
@@ -87,6 +88,31 @@ class AttendanceAbsenceServiceTest extends TestCase
             'employee_id' => $employee->id,
             'status' => 'absent',
         ]);
+    }
+
+    public function test_today_info_keeps_alpha_status_and_never_enables_checkout(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-16 18:00:00', 'Asia/Jakarta'));
+
+        try {
+            $employee = $this->employee();
+            $shift = $this->shift('08:00', '17:00');
+            ShiftAssignment::create([
+                'employee_id' => $employee->id,
+                'shift_template_id' => $shift->id,
+                'date' => '2026-09-16',
+            ]);
+            app(AttendanceAbsenceService::class)->recordEndedShifts();
+
+            Sanctum::actingAs($employee->user);
+            $this->getJson('/api/attendance/today-info')
+                ->assertOk()
+                ->assertJsonPath('shifts.0.attendance.status', 'absent')
+                ->assertJsonPath('shifts.0.attendance.is_auto_absent', true)
+                ->assertJsonPath('shifts.0.attendance.check_out_time', null);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     private function employee(): Employee

@@ -12,7 +12,7 @@ class AdminSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => 'admin@wontenteka.com'],
             [
-                'name' => 'Super Admin',
+                'name' => 'Admin',
                 'password' => bcrypt('password'),
                 'is_super_admin' => true,
                 'is_active' => true,
