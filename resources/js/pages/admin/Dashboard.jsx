@@ -10,6 +10,7 @@ import {
     Loader2
 } from 'lucide-react';
 import api from '../../api';
+import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -224,6 +225,8 @@ const AdminDashboard = () => {
                 </div>
             </div>
             
+            <MobileAppDownloadCard audience="admin" />
+
             {/* Rincian Persetujuan & Karyawan Baru */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
 
 const statusMeta = {
     on_time: { label: 'Tepat waktu', tone: 'emerald' },
@@ -228,6 +229,8 @@ export default function EmployeeDashboard() {
                     <SummaryCard label="Alpha" value={`${stats.absent || 0} hari`} icon={XCircle} tone="rose" />
                 </div>
             </section>
+
+            <MobileAppDownloadCard audience="karyawan" />
 
             {/* 5. Quick access stays last */}
             <section>

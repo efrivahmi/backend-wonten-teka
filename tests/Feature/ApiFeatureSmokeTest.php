@@ -226,7 +226,13 @@ class ApiFeatureSmokeTest extends TestCase
         $inPeriod = Carbon::parse('2026-09-15 08:00', config('app.business_timezone'))->utc();
         $outsidePeriod = Carbon::parse('2026-08-15 08:00', config('app.business_timezone'))->utc();
 
-        AttendanceLog::create(['employee_id' => $selected->id, 'check_in_at' => $inPeriod, 'status' => 'on_time']);
+        $selectedLog = AttendanceLog::create([
+            'employee_id' => $selected->id,
+            'check_in_at' => $inPeriod,
+            'status' => 'on_time',
+            'check_in_address' => 'Kantor pusat',
+            'check_in_face_score' => .98,
+        ]);
         AttendanceLog::create(['employee_id' => $other->id, 'check_in_at' => $inPeriod, 'status' => 'late']);
         AttendanceLog::create(['employee_id' => $selected->id, 'check_in_at' => $outsidePeriod, 'status' => 'on_time']);
 
@@ -235,6 +241,37 @@ class ApiFeatureSmokeTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.employee_id', $selected->id);
+
+        $this->getJson("/api/admin/attendance/{$selectedLog->id}")
+            ->assertOk()
+            ->assertJsonPath('data.employee.id', $selected->id)
+            ->assertJsonPath('data.employee.full_name', $selected->full_name)
+            ->assertJsonPath('data.check_in_address', 'Kantor pusat')
+            ->assertJsonPath('data.check_in_face_score', '0.9800');
+    }
+
+    public function test_admin_attendance_period_uses_business_timezone_boundaries(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        [, $employee] = $this->employeeAccount();
+        $timezone = config('app.business_timezone', 'Asia/Jakarta');
+
+        $firstLocalHour = AttendanceLog::create([
+            'employee_id' => $employee->id,
+            'check_in_at' => Carbon::parse('2026-09-01 00:30', $timezone)->utc(),
+            'status' => 'on_time',
+        ]);
+        AttendanceLog::create([
+            'employee_id' => $employee->id,
+            'check_in_at' => Carbon::parse('2026-10-01 00:00', $timezone)->utc(),
+            'status' => 'on_time',
+        ]);
+
+        Sanctum::actingAs($admin);
+        $this->getJson('/api/admin/attendance?month=9&year=2026&per_page=500')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $firstLocalHour->id);
     }
 
     public function test_deleted_employee_email_can_be_used_for_a_new_account(): void

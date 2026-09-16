@@ -14,6 +14,7 @@ import {
     , Search, Eye
 } from 'lucide-react';
 import api from '../../api';
+import AttendanceDetailModal from './AttendanceDetailModal';
 
 const Reports = () => {
     const [loading, setLoading] = useState(true);
@@ -38,6 +39,8 @@ const Reports = () => {
     const [employees, setEmployees] = useState([]);
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [draftReady, setDraftReady] = useState(false);
+    const [detailId, setDetailId] = useState(null);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         Promise.all([fetchLogs(), api.get('/admin/employees').then(response => setEmployees(response.data.data || []))]);
@@ -46,6 +49,7 @@ const Reports = () => {
     const fetchLogs = async () => {
         try {
             setLoading(true);
+            setError('');
             const params = { per_page: 500 };
             if (search.trim()) params.search = search.trim();
             if (selectedEmployees.length) params.employee_ids = selectedEmployees.join(',');
@@ -62,6 +66,8 @@ const Reports = () => {
             setDraftReady(true);
         } catch (error) {
             console.error("Error fetching logs:", error);
+            setError(error?.response?.data?.message || 'Rekap absensi belum dapat dimuat. Periksa koneksi lalu coba lagi.');
+            setDraftReady(false);
         } finally {
             setLoading(false);
         }
@@ -175,6 +181,7 @@ const Reports = () => {
                 <div><div className="mb-2 flex items-center justify-between"><span className="text-sm font-semibold text-slate-700">Pilih karyawan ({selectedEmployees.length || 'semua'})</span><button onClick={toggleAll} className="text-xs font-bold text-emerald-700">{selectedAll ? 'Hapus semua centang' : 'Centang semua'}</button></div><div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{employees.filter(item => !search.trim() || `${item.full_name} ${item.employee_number || ''} ${item.email || ''}`.toLowerCase().includes(search.toLowerCase())).map(item => <label key={item.id} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50"><input type="checkbox" checked={selectedEmployees.includes(item.id)} onChange={() => {toggleEmployee(item.id);setDraftReady(false);}}/><span className="text-sm"><b className="block text-slate-800">{item.full_name || item.user?.email}</b><small className="text-slate-500">{item.employee_number || item.user?.email || 'Belum lengkap'}</small></span></label>)}</div></div>
                 <button onClick={fetchLogs} disabled={loading || (periodMode === 'range' && (!dateFrom || !dateTo))} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Eye className="h-4 w-4"/>{loading ? 'Menyiapkan…' : 'Tampilkan Draft'}</button>
                 {draftReady && <p className="text-sm text-emerald-700"><b>Draft siap:</b> {logs.length} catatan sesuai karyawan dan periode terpilih. Periksa tabel sebelum mengekspor.</p>}
+                {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"><span>{error}</span><button onClick={fetchLogs} className="font-bold underline">Coba lagi</button></div>}
             </section>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -203,7 +210,7 @@ const Reports = () => {
                                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4"><input type="checkbox" checked={selectedEmployees.includes(log.employee_id)} onChange={() => {toggleEmployee(log.employee_id);setDraftReady(false);}} aria-label={`Pilih ${log.employee?.full_name || log.employee_id}`} /></td>
                                         <td className="px-6 py-4">
-                                            <p className="font-bold text-slate-800">{log.employee?.user?.name || `Emp #${log.employee_id}`}</p>
+                                            <p className="font-bold text-slate-800">{log.employee?.full_name || log.employee?.user?.name || `Emp #${log.employee_id}`}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm text-slate-800 font-medium">
@@ -212,7 +219,7 @@ const Reports = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm text-slate-800 font-medium">
-                                                {log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                {log.status === 'absent' ? '-' : (log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-')}
                                             </p>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-800 font-medium">
@@ -243,6 +250,12 @@ const Reports = () => {
                                                 </button>
                                                 {activeDropdown === log.id && (
                                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
+                                                        <button
+                                                            onClick={() => {setDetailId(log.id);setActiveDropdown(null);}}
+                                                            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
+                                                        >
+                                                            <Eye className="h-4 w-4 mr-2 text-emerald-600" /> Lihat Detail
+                                                        </button>
                                                         <button 
                                                             onClick={() => openEditModal(log)}
                                                             className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
@@ -356,6 +369,7 @@ const Reports = () => {
                     </div>
                 </div>
             )}
+            {detailId && <AttendanceDetailModal attendanceId={detailId} onClose={() => setDetailId(null)} />}
         </div>
     );
 };

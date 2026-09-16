@@ -181,6 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Attendance security events are read-only evidence, not an approval queue.
         Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);
+        Route::get('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'show']);
         Route::put('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'update']);
         Route::delete('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'destroy']);
         Route::get('/attendance-security-events', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'securityEvents']);
