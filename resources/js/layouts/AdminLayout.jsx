@@ -80,6 +80,7 @@ const AdminLayout = () => {
                 { name: 'Karyawan', href: '/admin/employees', icon: Users },
                 { name: 'Persetujuan', href: '/admin/approvals', icon: CheckSquare },
                 { name: 'Klaim / Reimburse', href: '/admin/claims', icon: FileBarChart },
+                { name: 'Jenis Klaim', href: '/admin/claim-categories', icon: Banknote },
                 { name: 'Jenis Cuti', href: '/admin/leave-types', icon: Briefcase },
             ],
         },

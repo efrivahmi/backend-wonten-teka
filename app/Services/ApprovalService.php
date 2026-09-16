@@ -7,6 +7,8 @@ use App\Models\ApprovalInstance;
 use App\Models\ApprovalAction;
 use App\Models\LeaveBalance;
 use App\Models\LeaveRequest;
+use App\Models\AttendanceAdjustmentRequest;
+use App\Models\AttendanceLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +108,21 @@ class ApprovalService
                         $balance->increment('used_days', $leave->total_days);
                         $balance->decrement('remaining_days', $leave->total_days);
                     }
+                }
+                } elseif ($instance->approvable instanceof AttendanceAdjustmentRequest) {
+                    $adjustment = $instance->approvable;
+                    $log = AttendanceLog::firstOrNew([
+                        'employee_id' => $adjustment->employee_id,
+                        'date' => $adjustment->date,
+                    ]);
+                    
+                    $log->check_in = $adjustment->check_in;
+                    $log->check_out = $adjustment->check_out;
+                    // You might want to update status depending on your company logic. 
+                    // For now, if we adjust it, we consider it 'present' (or 'late' based on logic).
+                    // We'll set it to 'present' if they have both check_in and check_out.
+                    $log->status = 'present';
+                    $log->save();
                 }
             }
 

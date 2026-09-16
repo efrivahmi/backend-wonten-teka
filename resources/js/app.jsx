@@ -21,11 +21,13 @@ import EmployeeClaims from './pages/employee/Claims';
 import EmployeePayslip from './pages/employee/Payslip';
 import EmployeeResources from './pages/employee/Resources';
 import HabitTracker from './pages/employee/HabitTracker';
+import TasksAndHabits from './pages/employee/TasksAndHabits';
 import AdminOperations from './pages/admin/Operations';
 import AdminBiometrics from './pages/admin/Biometrics';
 import AdminAnnouncements from './pages/admin/Announcements';
 import AdminTasks from './pages/admin/Tasks';
 import AdminLeaveTypes from './pages/admin/LeaveTypes';
+import AdminClaimCategories from './pages/admin/ClaimCategories';
 import AdminProfile from './pages/admin/Profile';
 import FaceProfile from './pages/employee/FaceProfile';
 import EmployeeProfile from './pages/employee/Profile';
@@ -92,7 +94,7 @@ const App = () => {
                     <Route path="calendar/event" element={<EmployeeFeatureGuard feature="calendar"><EmployeeResources type="calendar" /></EmployeeFeatureGuard>} />
                     <Route path="announcements" element={<Navigate to="/employee/dashboard" replace />} />
                     <Route path="announcements/detail" element={<Navigate to="/employee/dashboard" replace />} />
-                    <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><EmployeeResources type="tasks" /></EmployeeFeatureGuard>} />
+                    <Route path="tasks" element={<EmployeeFeatureGuard feature="tasks"><TasksAndHabits /></EmployeeFeatureGuard>} />
                     <Route path="habits" element={<EmployeeFeatureGuard feature="habits"><HabitTracker /></EmployeeFeatureGuard>} />
                     <Route path="habits/new" element={<Navigate to="/employee/habits" replace />} />
                     <Route path="habits/detail" element={<Navigate to="/employee/habits" replace />} />
@@ -139,6 +141,7 @@ const App = () => {
                     <Route path="payroll-config" element={<PayrollConfigPage />} />
                     <Route path="leave-types" element={<AdminLeaveTypes />} />
                     <Route path="leave-types/form" element={<Navigate to="/admin/leave-types" replace />} />
+                    <Route path="claim-categories" element={<AdminClaimCategories />} />
                     <Route path="claims" element={<AdminApprovals filter="Claim" />} />
                     <Route path="attendance-security-events" element={<AdminOperations type="securityEvents" />} />
                     <Route path="biometrics" element={<AdminBiometrics />} />

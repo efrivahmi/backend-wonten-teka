@@ -179,6 +179,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'update']);
         Route::delete('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'destroy']);
         
+        // Claim Categories (Admin)
+        Route::get('/claim-categories', [\App\Http\Controllers\Api\ClaimCategoryController::class, 'index']);
+        Route::post('/claim-categories', [\App\Http\Controllers\Api\ClaimCategoryController::class, 'store']);
+        Route::put('/claim-categories/{category}', [\App\Http\Controllers\Api\ClaimCategoryController::class, 'update']);
+        Route::delete('/claim-categories/{category}', [\App\Http\Controllers\Api\ClaimCategoryController::class, 'destroy']);
+        
         // Attendance security events are read-only evidence, not an approval queue.
         Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);
         Route::get('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'show']);

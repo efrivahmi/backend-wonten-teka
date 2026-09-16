@@ -170,7 +170,10 @@ const Leave = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center text-sm text-slate-800 font-medium">
                                                 <Clock className="h-4 w-4 mr-2 text-slate-400" />
-                                                <span>{req.start_date} s/d {req.end_date}</span>
+                                                <span>
+                                                    {new Date(req.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                                                    {req.end_date !== req.start_date && ` - ${new Date(req.end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
