@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
 {
@@ -206,7 +207,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => 'required|string|min:6',
-            'role' => 'nullable|string'
+            'role' => ['nullable', 'string', Rule::in(['employee', 'admin'])],
         ]);
 
         try {
@@ -238,13 +239,7 @@ class EmployeeController extends Controller
             ]);
 
             $role = $validated['role'] ?? 'employee';
-            if (!empty($role)) {
-                try {
-                    $newUser->assignRole($role);
-                } catch (\Exception $e) {
-                    // Ignore if role doesn't exist
-                }
-            }
+            $newUser->assignRole(Role::findOrCreate($role, 'web'));
 
             $employee = Employee::create([
                 

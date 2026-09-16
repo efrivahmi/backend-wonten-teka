@@ -335,6 +335,7 @@ const Attendance = () => {
         if (log) {
             if (log.status === 'present' || log.status === 'on_time') return 'bg-emerald-100 text-emerald-700 border-emerald-300';
             if (log.status === 'late') return 'bg-amber-100 text-amber-700 border-amber-300';
+            if (log.status === 'absent') return 'bg-rose-100 text-rose-700 border-rose-300';
             if (log.status === 'flagged') return 'bg-orange-100 text-orange-700 border-orange-300';
             return 'bg-blue-100 text-blue-700 border-blue-300';
         }

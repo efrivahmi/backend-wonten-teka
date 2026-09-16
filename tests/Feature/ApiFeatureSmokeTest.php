@@ -172,6 +172,7 @@ class ApiFeatureSmokeTest extends TestCase
         $employee = Employee::findOrFail($employeeId);
         $generatedNumber = $employee->employee_number;
         $this->assertNotEmpty($generatedNumber);
+        $this->assertTrue($employee->user->hasRole('employee'));
 
         Sanctum::actingAs($employee->user);
         $completionResponse = $this->postJson('/api/employee/complete-profile', [
