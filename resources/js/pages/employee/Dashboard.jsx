@@ -149,13 +149,30 @@ export default function EmployeeDashboard() {
                 <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
                     <div className="mt-4 grid gap-4 md:grid-cols-3">
-                        {announcements.slice(0, 3).map(item => (
-                            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
-                                <h3 className="mt-4 font-bold text-slate-900">{item.title}</h3>
-                                <p className="mt-2 line-clamp-2 text-sm text-slate-500">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
-                            </article>
-                        ))}
+                        {announcements.slice(0, 3).map(item => {
+                            const attachUrl = item.attachment_full_url || item.attachment_url;
+                            const isImage = attachUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(attachUrl);
+                            const isPdf = attachUrl && /\.pdf(\?|$)/i.test(attachUrl);
+                            return (
+                                <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
+                                    <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
+                                    <h3 className="font-bold text-slate-900">{item.title}</h3>
+                                    <p className="line-clamp-2 text-sm text-slate-500">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
+                                    {isImage && (
+                                        <a href={attachUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
+                                            <img src={attachUrl} alt="Lampiran pengumuman" className="w-full rounded-xl object-cover max-h-40 border border-slate-100" />
+                                        </a>
+                                    )}
+                                    {!isImage && attachUrl && (
+                                        <a href={attachUrl} target="_blank" rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition">
+                                            <FileText className="h-4 w-4" />
+                                            {isPdf ? 'Unduh PDF' : 'Unduh Lampiran'}
+                                        </a>
+                                    )}
+                                </article>
+                            );
+                        })}
                     </div>
                 ) : <EmptyCard text="Belum ada pengumuman terbaru." />}
             </section>

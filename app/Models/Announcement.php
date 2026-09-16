@@ -7,15 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Announcement extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
- 'title', 'body', 'attachment_url', 'target_type', 'target_value',
+        'title', 'body', 'attachment_url', 'target_type', 'target_value',
         'priority', 'created_by', 'published_at', 'expires_at',
     ];
+
+    protected $appends = ['attachment_full_url'];
 
     protected function casts(): array
     {
@@ -23,6 +26,22 @@ class Announcement extends Model
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Return a fully-qualified public URL for the attachment.
+     * Returns null when no attachment has been uploaded.
+     */
+    public function getAttachmentFullUrlAttribute(): ?string
+    {
+        if (empty($this->attachment_url)) {
+            return null;
+        }
+        // Already a full URL (e.g. http/https)
+        if (str_starts_with($this->attachment_url, 'http')) {
+            return $this->attachment_url;
+        }
+        return Storage::disk('public')->url($this->attachment_url);
     }
 
     public function creator(): BelongsTo

@@ -22,11 +22,30 @@ const collectItems = (payload, keys) => {
     return [];
 };
 
-const valueText = (value) => {
+const DATE_FIELDS = new Set(['start_date', 'end_date', 'date', 'original_date', 'proposed_date', 'created_at', 'updated_at']);
+const DATETIME_FIELDS = new Set(['created_at', 'updated_at', 'check_in', 'check_out']);
+
+const fmtDate = (raw, key) => {
+    if (raw === null || raw === undefined || raw === '') return '—';
+    const s = String(raw);
+    // Deteksi ISO datetime atau date string
+    const isDateLike = DATE_FIELDS.has(key) || /^\d{4}-\d{2}-\d{2}/.test(s);
+    if (!isDateLike) return s.replaceAll('_', ' ');
+    const dt = new Date(s);
+    if (isNaN(dt.getTime())) return s;
+    // Jika berisi jam (punya T dan bukan 00:00), tampilkan juga jam
+    const hasTime = s.includes('T') && !/T00:00:00/.test(s);
+    return dt.toLocaleDateString('id-ID', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+    });
+};
+
+const valueText = (value, key = '') => {
     if (value === null || value === undefined || value === '') return '—';
     if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
     if (typeof value === 'object') return Array.isArray(value) ? value.join(', ') : '';
-    return String(value).replaceAll('_', ' ');
+    return fmtDate(value, key);
 };
 
 export default function EmployeeResources({ type }) {
@@ -129,7 +148,7 @@ export default function EmployeeResources({ type }) {
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error}</div>}
         {loading ? <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-700" /></div> : type === 'calendar' ? <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="mb-5 text-xl font-bold text-slate-800">{new Date().toLocaleDateString('id-ID',{month:'long',year:'numeric'})}</h2><div className="grid grid-cols-7 gap-1 text-center">{['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(day=><div key={day} className="py-2 text-xs font-bold text-slate-400">{day}</div>)}{calendarCells.map((day,index)=>{const events=day ? items.filter(item=>new Date(item.start_date).getDate()===day) : []; return <div key={index} className={`min-h-24 rounded-lg border p-2 text-left ${day?'border-slate-100':'border-transparent'}`}>{day&&<><span className="text-sm font-semibold text-slate-700">{day}</span>{events.map(event=><div key={event.id} className="mt-1 rounded bg-emerald-50 px-1.5 py-1 text-[11px] font-semibold text-emerald-800">{event.start_time?.slice(0,5)} {event.title}</div>)}</>}</div>})}</div></div> : type === 'shifts' ? <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map((item,index)=>{const shift=item.shift_template||{};const isToday=new Date(item.date).toLocaleDateString('en-CA')===new Date().toLocaleDateString('en-CA');return <article key={item.id??index} className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${isToday?'border-emerald-400 ring-2 ring-emerald-100':'border-slate-200'}`}><div className="flex items-start justify-between border-b border-slate-100 p-5"><div><h2 className="text-lg font-bold text-slate-900">{shift.name||'Shift Kerja'}</h2><div className="mt-2 flex flex-wrap gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${shift.category==='Piket'?'bg-orange-100 text-orange-700':shift.category==='Lembur'?'bg-purple-100 text-purple-700':'bg-slate-100 text-slate-700'}`}>{shift.category||'Reguler'}</span>{isToday&&<span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">Aktif Hari Ini</span>}{item.is_recurring_schedule&&<span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">Mingguan</span>}{item.is_default_schedule&&<span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">Shift Utama</span>}</div></div><CalendarDays className="text-emerald-600"/></div><div className="p-5"><p className="mb-4 text-sm font-semibold text-slate-600">{new Date(`${item.date}T00:00:00`).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p><div className="flex items-center justify-between"><div><small className="uppercase text-slate-400">Jam Masuk</small><p className="font-bold text-slate-900">{shift.start_time?.slice(0,5)||'—'}</p></div><div className="mx-4 h-px flex-1 border-t border-dashed border-slate-300"/><div className="text-right"><small className="uppercase text-slate-400">Jam Keluar</small><p className="font-bold text-slate-900">{shift.end_time?.slice(0,5)||'—'}</p></div></div><div className="mt-4 flex justify-between border-t border-slate-100 pt-4 text-sm"><span className="text-slate-500">Toleransi terlambat</span><b>{shift.grace_period_minutes??0} menit</b></div></div></article>})}{items.length===0&&<div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center text-slate-500 md:col-span-2 xl:col-span-3">Belum ada shift aktif yang ditugaskan.</div>}</div> : items.length === 0 ? <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-16 text-center text-slate-500">Belum ada data.</div> : <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map((item, index) => <article key={item.id ?? index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-slate-900 text-lg">{item.title || item.name || item.full_name || item.type || `Data ${index + 1}`}</h2>
-            <div className="mt-3 space-y-2">{visibleFields.filter(field => item[field] !== undefined && field !== 'title' && field !== 'name').slice(0, 5).map(field => <div key={field} className="flex justify-between gap-4 text-sm"><span className="capitalize text-slate-400">{field.replaceAll('_', ' ')}</span><span className="text-right text-slate-700 font-medium line-clamp-2">{valueText(item[field])}</span></div>)}</div>
+            <div className="mt-3 space-y-2">{visibleFields.filter(field => item[field] !== undefined && field !== 'title' && field !== 'name').slice(0, 5).map(field => <div key={field} className="flex justify-between gap-4 text-sm"><span className="capitalize text-slate-400">{field.replaceAll('_', ' ')}</span><span className="text-right text-slate-700 font-medium line-clamp-2">{valueText(item[field], field)}</span></div>)}</div>
             {config.crud && <div className="mt-4 pt-4 border-t flex justify-end gap-2"><button onClick={() => completeTask(item)} className="p-2 rounded-lg bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-4 w-4"/></button><button onClick={() => deleteTask(item)} className="p-2 rounded-lg bg-rose-50 text-rose-700"><Trash2 className="h-4 w-4"/></button></div>}
         </article>)}</div>}
     </div>;
