@@ -3,7 +3,7 @@ import { Download, ShieldCheck, Smartphone } from 'lucide-react';
 
 const fallbackRelease = {
     version: '1.0.0+1',
-    file: 'e-Absensi Lemdiklat Taruna Nusantara Indonesia.apk',
+    file: 'e-Absensi_Mobile.apk',
 };
 
 export default function MobileAppDownloadCard({ audience = 'karyawan' }) {
