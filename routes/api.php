@@ -187,7 +187,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Device Approvals
         Route::get('/devices/pending', [DeviceAdminController::class, 'getPendingDevices']);
+        Route::get('/devices/active', [DeviceAdminController::class, 'getActiveDevices']);
         Route::post('/devices/{deviceId}/review', [DeviceAdminController::class, 'reviewDevice']);
+        Route::post('/devices/{deviceId}/revoke', [DeviceAdminController::class, 'revokeDevice']);
         Route::get('/biometrics', [AdminBiometricController::class, 'index']);
         Route::delete('/biometrics/{employee}/reset', [AdminBiometricController::class, 'reset']);
     });

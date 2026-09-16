@@ -145,6 +145,7 @@ class ApiFeatureSmokeTest extends TestCase
             '/api/admin/attendance',
             '/api/admin/attendance-security-events',
             '/api/admin/devices/pending',
+            '/api/admin/devices/active',
             '/api/admin/biometrics',
             '/api/approvals/pending',
         ];

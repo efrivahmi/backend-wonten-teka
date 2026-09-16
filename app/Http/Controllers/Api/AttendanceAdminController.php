@@ -15,7 +15,7 @@ class AttendanceAdminController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+        if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -42,7 +42,7 @@ class AttendanceAdminController extends Controller
                 'employee', fn ($employee) => $employee->where('department', $request->string('department'))
             ))
             ->orderBy('created_at', 'desc')
-            ->paginate(50);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 50))));
 
         return response()->json($logs);
     }
@@ -50,7 +50,7 @@ class AttendanceAdminController extends Controller
     public function securityEvents(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+        if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -71,7 +71,7 @@ class AttendanceAdminController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+        if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -107,7 +107,7 @@ class AttendanceAdminController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+        if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

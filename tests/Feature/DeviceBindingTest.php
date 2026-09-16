@@ -80,6 +80,36 @@ class DeviceBindingTest extends TestCase
         $this->assertNotNull($device->approved_at);
     }
 
+    public function test_admin_can_list_and_revoke_an_active_device(): void
+    {
+        [, $employee] = $this->employeeAccount('Employee One');
+        $admin = User::factory()->create(['is_super_admin' => true, 'is_active' => true]);
+        $device = Device::create([
+            'employee_id' => $employee->id,
+            'device_fingerprint' => 'phone-active',
+            'device_name' => 'Active Phone',
+            'status' => 'active',
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/admin/devices/active')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $device->id)
+            ->assertJsonPath('data.0.employee.full_name', 'Employee One');
+
+        $this->postJson("/api/admin/devices/{$device->id}/revoke")
+            ->assertOk()
+            ->assertJsonPath('device.status', 'revoked');
+
+        $this->assertDatabaseHas('devices', [
+            'id' => $device->id,
+            'status' => 'revoked',
+        ]);
+    }
+
     private function employeeAccount(string $name): array
     {
         $user = User::factory()->create(['name' => $name, 'is_active' => true]);
