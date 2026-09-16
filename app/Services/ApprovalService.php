@@ -95,6 +95,7 @@ class ApprovalService
                     $balance = LeaveBalance::where('employee_id', $leave->employee_id)
                         ->where('leave_type_id', $leave->leave_type_id)
                         ->where('year', $leave->start_date->year)
+                        ->where('month', $leave->start_date->month)
                         ->lockForUpdate()
                         ->first();
 

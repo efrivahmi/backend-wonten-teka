@@ -16,20 +16,17 @@ class LeaveTypeForm
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('code'),
-                TextInput::make('quota_per_year')
+                TextInput::make('quota_per_month')
+                    ->label('Kuota per bulan')
                     ->required()
                     ->numeric()
-                    ->default(12),
+                    ->minValue(0)
+                    ->maxValue(31)
+                    ->default(1),
                 Toggle::make('is_paid')
                     ->required(),
                 Toggle::make('requires_attachment')
                     ->required(),
-                Toggle::make('is_carry_over_allowed')
-                    ->required(),
-                TextInput::make('max_carry_over_days')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Toggle::make('is_active')
                     ->required(),
             ]);

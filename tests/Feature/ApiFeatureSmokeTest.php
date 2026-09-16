@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\User;
 use App\Models\LeaveType;
+use App\Models\LeaveRequest;
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -312,7 +313,7 @@ class ApiFeatureSmokeTest extends TestCase
     {
         [$user] = $this->employeeAccount();
         $type = LeaveType::create([
-            'name' => 'Cuti Tahunan', 'code' => 'CTH', 'quota_per_year' => 1,
+            'name' => 'Cuti Bulanan', 'code' => 'CBL', 'quota_per_month' => 1,
             'is_paid' => true, 'is_active' => true,
         ]);
         Sanctum::actingAs($user);
@@ -336,12 +337,46 @@ class ApiFeatureSmokeTest extends TestCase
         Sanctum::actingAs($admin);
 
         $typeId = $this->postJson('/api/admin/leave-types', [
-            'name' => 'Cuti Khusus', 'code' => 'CKH', 'quota_per_year' => 5,
+            'name' => 'Cuti Khusus', 'code' => 'CKH', 'quota_per_month' => 5,
             'is_paid' => true, 'is_active' => true, 'requires_attachment' => false,
-        ])->assertCreated()->assertJsonPath('data.quota_per_year', 5)->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.quota_per_month', 5)->json('data.id');
 
-        $this->putJson("/api/admin/leave-types/{$typeId}", ['quota_per_year' => 7])
-            ->assertOk()->assertJsonPath('data.quota_per_year', 7);
+        $this->putJson("/api/admin/leave-types/{$typeId}", ['quota_per_month' => 7])
+            ->assertOk()->assertJsonPath('data.quota_per_month', 7);
+    }
+
+    public function test_leave_quota_resets_when_calendar_month_changes(): void
+    {
+        [$user, $employee] = $this->employeeAccount();
+        $type = LeaveType::create([
+            'name' => 'Cuti Bulanan', 'code' => 'BLN', 'quota_per_month' => 1,
+            'is_paid' => true, 'is_active' => true,
+        ]);
+        $september = Carbon::parse('2026-09-10 08:00', config('app.business_timezone'));
+        Carbon::setTestNow($september);
+
+        try {
+            LeaveRequest::create([
+                'employee_id' => $employee->id,
+                'leave_type_id' => $type->id,
+                'start_date' => '2026-09-15',
+                'end_date' => '2026-09-15',
+                'total_days' => 1,
+                'reason' => 'Keperluan keluarga',
+                'status' => 'approved',
+            ]);
+            Sanctum::actingAs($user);
+            $this->getJson('/api/leave/balances')->assertOk()
+                ->assertJsonPath('0.month', 9)
+                ->assertJsonPath('0.remaining_days', 0);
+
+            Carbon::setTestNow(Carbon::parse('2026-10-01 08:00', config('app.business_timezone')));
+            $this->getJson('/api/leave/balances')->assertOk()
+                ->assertJsonPath('0.month', 10)
+                ->assertJsonPath('0.remaining_days', 1);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     private function employeeAccount(bool $admin = false): array

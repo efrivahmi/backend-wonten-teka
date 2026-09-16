@@ -11,7 +11,7 @@ class LeaveType extends Model
     use HasFactory;
 
     protected $fillable = [
- 'name', 'code', 'quota_per_year', 'is_paid',
+ 'name', 'code', 'quota_per_year', 'quota_per_month', 'is_paid',
         'requires_attachment', 'is_carry_over_allowed', 'max_carry_over_days', 'is_active',
     ];
 

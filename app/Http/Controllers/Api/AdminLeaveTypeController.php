@@ -31,7 +31,7 @@ class AdminLeaveTypeController extends Controller
             'name' => 'required|string|max:100',
             'description' => 'nullable|string',
             'code' => 'nullable|string|max:30',
-            'quota_per_year' => 'required|integer|min:0|max:366',
+            'quota_per_month' => 'required|integer|min:0|max:31',
             'is_paid' => 'boolean',
             'is_active' => 'boolean',
             'requires_attachment' => 'boolean',
@@ -67,7 +67,7 @@ class AdminLeaveTypeController extends Controller
             'name' => 'sometimes|string|max:100',
             'description' => 'nullable|string',
             'code' => 'nullable|string|max:30',
-            'quota_per_year' => 'sometimes|integer|min:0|max:366',
+            'quota_per_month' => 'sometimes|integer|min:0|max:31',
             'is_paid' => 'boolean',
             'is_active' => 'boolean',
             'requires_attachment' => 'boolean',
@@ -80,14 +80,15 @@ class AdminLeaveTypeController extends Controller
         }
 
         $type->update($validator->validated());
-        if (array_key_exists('quota_per_year', $validator->validated())) {
+        if (array_key_exists('quota_per_month', $validator->validated())) {
             LeaveBalance::where('leave_type_id', $type->id)
                 ->where('year', now()->year)
+                ->where('month', now()->month)
                 ->get()
                 ->each(function (LeaveBalance $balance) use ($type) {
                     $balance->update([
-                        'entitled_days' => $type->quota_per_year,
-                        'remaining_days' => max(0, $type->quota_per_year + $balance->carried_over_days - $balance->used_days),
+                        'entitled_days' => $type->quota_per_month,
+                        'remaining_days' => max(0, $type->quota_per_month - $balance->used_days),
                     ]);
                 });
         }

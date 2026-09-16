@@ -60,7 +60,9 @@ const Leave = () => {
         const requestedDays = formData.start_date && formData.end_date
             ? Math.floor((new Date(formData.end_date) - new Date(formData.start_date)) / 86400000) + 1
             : 0;
-        const selectedBalance = balances.find(item => String(item.leave_type_id) === String(formData.leave_type_id));
+        const requestedStart = formData.start_date ? new Date(`${formData.start_date}T00:00:00`) : null;
+        const selectedBalance = balances.find(item => String(item.leave_type_id) === String(formData.leave_type_id)
+            && requestedStart && item.year === requestedStart.getFullYear() && item.month === requestedStart.getMonth() + 1);
         if (selectedBalance && requestedDays > selectedBalance.remaining_days) {
             alert(`Pengajuan ${requestedDays} hari melebihi sisa kuota ${selectedBalance.remaining_days} hari.`);
             return;
@@ -124,7 +126,7 @@ const Leave = () => {
                                     <p className="text-3xl font-bold text-slate-800">{balance.remaining_days}</p>
                                     <p className="text-sm text-slate-500">hari</p>
                                 </div>
-                                <p className="mt-2 text-xs text-slate-500">Terpakai {balance.used_days} dari {balance.entitled_days} hari · Tahun {balance.year}</p>
+                                <p className="mt-2 text-xs text-slate-500">Terpakai {balance.used_days} dari {balance.entitled_days} hari · {new Date(balance.year, (balance.month || 1) - 1).toLocaleDateString('id-ID', { month:'long', year:'numeric' })}</p>
                             </div>
                             <div className="bg-blue-50 p-3 rounded-xl">
                                 <CalendarRange className="h-6 w-6 text-blue-600" />
@@ -227,7 +229,7 @@ const Leave = () => {
                                     <option value="">-- Pilih Jenis Cuti --</option>
                                     {types.map(t => {
                                         const balance = balances.find(item => item.leave_type_id === t.id);
-                                        return <option key={t.id} value={t.id}>{t.name} · sisa {balance?.remaining_days ?? t.quota_per_year ?? 0} hari</option>;
+                                        return <option key={t.id} value={t.id}>{t.name} · sisa {balance?.remaining_days ?? t.quota_per_month ?? 0} hari bulan ini</option>;
                                     })}
                                 </select>
                             </div>

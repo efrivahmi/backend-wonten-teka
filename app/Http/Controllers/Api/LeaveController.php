@@ -32,22 +32,25 @@ class LeaveController extends Controller
     public function balances(Request $request)
     {
         $employee = $request->user()->employee;
-        $year = now()->year;
-        LeaveType::active()->get()->each(function (LeaveType $type) use ($employee, $year) {
+        $period = now(config('app.business_timezone', 'Asia/Jakarta'));
+        $year = $period->year;
+        $month = $period->month;
+        LeaveType::active()->get()->each(function (LeaveType $type) use ($employee, $year, $month) {
             $used = LeaveRequest::where('employee_id', $employee->id)
                 ->where('leave_type_id', $type->id)->where('status', 'approved')
-                ->whereYear('start_date', $year)->sum('total_days');
+                ->whereYear('start_date', $year)->whereMonth('start_date', $month)->sum('total_days');
             $balance = LeaveBalance::firstOrNew([
-                'employee_id' => $employee->id, 'leave_type_id' => $type->id, 'year' => $year,
+                'employee_id' => $employee->id, 'leave_type_id' => $type->id,
+                'year' => $year, 'month' => $month,
             ]);
-            $balance->entitled_days = $type->quota_per_year;
+            $balance->entitled_days = $type->quota_per_month;
             $balance->used_days = $used;
-            $balance->carried_over_days ??= 0;
-            $balance->remaining_days = max(0, $type->quota_per_year + $balance->carried_over_days - $used);
+            $balance->carried_over_days = 0;
+            $balance->remaining_days = max(0, $type->quota_per_month - $used);
             $balance->save();
         });
 
-        $balances = $employee->leaveBalances()->where('year', $year)->with('leaveType')->get();
+        $balances = $employee->leaveBalances()->where('year', $year)->where('month', $month)->with('leaveType')->get();
         
         return response()->json($balances);
     }
@@ -96,6 +99,12 @@ class LeaveController extends Controller
         $endDate = Carbon::parse($request->end_date);
         $totalDays = $startDate->diffInDays($endDate) + 1; // Simplistic day calculation (doesn't skip weekends/holidays yet)
 
+        if (!$startDate->isSameMonth($endDate)) {
+            throw ValidationException::withMessages([
+                'end_date' => 'Pengajuan cuti tidak boleh melewati pergantian bulan. Buat pengajuan terpisah untuk setiap bulan.',
+            ]);
+        }
+
         $leaveType = LeaveType::active()->findOrFail($request->leave_type_id);
 
         if ($leaveType->requires_attachment && !$request->filled('attachment_url') && !$request->hasFile('attachment')) {
@@ -118,16 +127,19 @@ class LeaveController extends Controller
 
         $approvedDays = LeaveRequest::where('employee_id', $employee->id)
             ->where('leave_type_id', $leaveType->id)->where('status', 'approved')
-            ->whereYear('start_date', $startDate->year)->sum('total_days');
+            ->whereYear('start_date', $startDate->year)
+            ->whereMonth('start_date', $startDate->month)->sum('total_days');
         $balance = LeaveBalance::firstOrCreate([
-            'employee_id' => $employee->id, 'leave_type_id' => $leaveType->id, 'year' => $startDate->year,
+            'employee_id' => $employee->id, 'leave_type_id' => $leaveType->id,
+            'year' => $startDate->year, 'month' => $startDate->month,
         ], [
-            'entitled_days' => $leaveType->quota_per_year, 'used_days' => $approvedDays,
-            'carried_over_days' => 0, 'remaining_days' => max(0, $leaveType->quota_per_year - $approvedDays),
+            'entitled_days' => $leaveType->quota_per_month, 'used_days' => $approvedDays,
+            'carried_over_days' => 0, 'remaining_days' => max(0, $leaveType->quota_per_month - $approvedDays),
         ]);
         $pendingDays = LeaveRequest::where('employee_id', $employee->id)
             ->where('leave_type_id', $leaveType->id)->where('status', 'pending')
-            ->whereYear('start_date', $startDate->year)->sum('total_days');
+            ->whereYear('start_date', $startDate->year)
+            ->whereMonth('start_date', $startDate->month)->sum('total_days');
         $availableDays = max(0, $balance->remaining_days - $pendingDays);
 
         if ($totalDays > $availableDays) {

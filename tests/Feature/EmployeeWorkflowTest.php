@@ -53,8 +53,9 @@ class EmployeeWorkflowTest extends TestCase
         [$user] = $this->employeeAccount();
         Sanctum::actingAs($user);
         $type = LeaveType::create([
-            'name' => 'Cuti Tahunan',
-            'code' => 'ANNUAL',
+            'name' => 'Cuti Bulanan',
+            'code' => 'MONTHLY',
+            'quota_per_month' => 3,
             'is_active' => true,
         ]);
 

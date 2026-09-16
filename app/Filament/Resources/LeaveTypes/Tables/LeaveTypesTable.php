@@ -19,18 +19,14 @@ class LeaveTypesTable
                     ->searchable(),
                 TextColumn::make('code')
                     ->searchable(),
-                TextColumn::make('quota_per_year')
+                TextColumn::make('quota_per_month')
+                    ->label('Kuota/bulan')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_paid')
                     ->boolean(),
                 IconColumn::make('requires_attachment')
                     ->boolean(),
-                IconColumn::make('is_carry_over_allowed')
-                    ->boolean(),
-                TextColumn::make('max_carry_over_days')
-                    ->numeric()
-                    ->sortable(),
                 IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('created_at')
