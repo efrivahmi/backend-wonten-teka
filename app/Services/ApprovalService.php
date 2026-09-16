@@ -108,7 +108,6 @@ class ApprovalService
                         $balance->increment('used_days', $leave->total_days);
                         $balance->decrement('remaining_days', $leave->total_days);
                     }
-                }
                 } elseif ($instance->approvable instanceof AttendanceAdjustmentRequest) {
                     $adjustment = $instance->approvable;
                     $log = AttendanceLog::firstOrNew([
