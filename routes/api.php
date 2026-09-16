@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Personal Tasks
     Route::prefix('tasks')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'index']);
+        Route::get('/tracking', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'tracking']);
         Route::post('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'store']);
         Route::put('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'update']);
         Route::delete('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'destroy']);

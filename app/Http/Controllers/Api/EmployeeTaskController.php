@@ -39,6 +39,43 @@ class EmployeeTaskController extends Controller
     }
 
     /**
+     * Get monthly tracking for completed tasks and habits
+     */
+    public function tracking(Request $request)
+    {
+        $employee = $request->user()->employee;
+        if (!$employee) {
+            return response()->json(['message' => 'Employee profile not found.'], 403);
+        }
+
+        $month = $request->query('month', Carbon::today()->month);
+        $year = $request->query('year', Carbon::today()->year);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $completedTasks = PersonalTask::where('employee_id', $employee->id)
+            ->where('is_habit', false)
+            ->where('is_active', false)
+            ->whereBetween('last_completed_at', [$startDate, $endDate])
+            ->orderBy('last_completed_at', 'desc')
+            ->get();
+
+        $completedHabits = \App\Models\PersonalTaskCompletion::with('personalTask')
+            ->whereHas('personalTask', function ($q) use ($employee) {
+                $q->where('employee_id', $employee->id);
+            })
+            ->whereBetween('completed_date', [$startDate, $endDate])
+            ->orderBy('completed_date', 'desc')
+            ->get();
+
+        return response()->json([
+            'completed_tasks' => $completedTasks,
+            'completed_habits' => $completedHabits,
+        ]);
+    }
+
+    /**
      * Create a new task.
      */
     public function store(Request $request)

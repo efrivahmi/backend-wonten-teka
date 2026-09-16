@@ -12,6 +12,10 @@ export default function TasksAndHabits() {
     const [description, setDescription] = useState('');
     const [saving, setSaving] = useState(false);
 
+    const [activeTab, setActiveTab] = useState('today'); // 'today' | 'tracking'
+    const [trackingData, setTrackingData] = useState(null);
+    const [loadingTracking, setLoadingTracking] = useState(false);
+
     const loadTasks = async () => {
         setLoading(true);
         setError('');
@@ -26,7 +30,23 @@ export default function TasksAndHabits() {
         }
     };
 
-    useEffect(() => { loadTasks(); }, []);
+    const loadTracking = async () => {
+        setLoadingTracking(true);
+        setError('');
+        try {
+            const response = await api.get('/tasks/tracking');
+            setTrackingData(response.data);
+        } catch (e) {
+            setError('Gagal memuat riwayat bulan ini.');
+        } finally {
+            setLoadingTracking(false);
+        }
+    };
+
+    useEffect(() => { 
+        if (activeTab === 'today') loadTasks(); 
+        else loadTracking();
+    }, [activeTab]);
 
     const addTask = async (e) => {
         e.preventDefault();
@@ -59,21 +79,16 @@ export default function TasksAndHabits() {
     };
 
     const toggleComplete = async (task) => {
-        // Optimistic UI update
-        const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, is_completed: !t.is_completed } : t);
+        const isCompleting = task.is_active;
+        const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, is_active: !isCompleting } : t);
         setTasks(updatedTasks);
         
         try {
-            if (!task.is_completed) {
-                await api.post(`/tasks/${task.id}/complete`);
-            } else {
-                // Assuming there's a way to uncomplete, but if not, we shouldn't allow toggling back.
-                // Since the API only has `/complete`, we'll just reload if it fails.
-                await loadTasks(); 
-            }
+            await api.put(`/tasks/${task.id}`, { is_active: !isCompleting });
+            if (!isCompleting) await loadTasks();
         } catch (e) {
             setError(e.response?.data?.message || 'Gagal mengubah status tugas.');
-            await loadTasks(); // Revert on failure
+            await loadTasks();
         }
     };
 
@@ -88,8 +103,8 @@ export default function TasksAndHabits() {
         }
     };
 
-    const pendingTasks = tasks.filter(t => !t.is_completed);
-    const completedTasks = tasks.filter(t => t.is_completed);
+    const pendingTasks = tasks.filter(t => t.is_active);
+    const completedTasks = tasks.filter(t => !t.is_active);
 
     return (
         <div className="mx-auto max-w-4xl p-6 md:p-8 space-y-8">
@@ -103,12 +118,61 @@ export default function TasksAndHabits() {
                 </div>
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-4 border-b border-slate-200">
+                <button onClick={() => setActiveTab('today')} className={`pb-3 font-semibold px-2 border-b-2 transition-colors ${activeTab === 'today' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Tugas Hari Ini</button>
+                <button onClick={() => setActiveTab('tracking')} className={`pb-3 font-semibold px-2 border-b-2 transition-colors ${activeTab === 'tracking' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Laporan Bulan Ini</button>
+            </div>
+
             {error && (
                 <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
                     {error}
                 </div>
             )}
 
+            {activeTab === 'tracking' ? (
+                loadingTracking ? <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-700" /></div> : (
+                    <div className="space-y-6">
+                        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                            <h3 className="text-lg font-bold text-slate-800">Tugas yang Diselesaikan Bulan Ini</h3>
+                            {trackingData?.completed_tasks?.length === 0 ? (
+                                <p className="text-sm text-slate-500 py-4">Belum ada tugas biasa yang diselesaikan.</p>
+                            ) : (
+                                <div className="divide-y">
+                                    {trackingData?.completed_tasks?.map(task => (
+                                        <div key={task.id} className="py-3 flex justify-between items-start">
+                                            <div>
+                                                <h4 className="font-semibold text-slate-900">{task.title}</h4>
+                                                <p className="text-sm text-slate-500">{new Date(task.last_completed_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+                                            </div>
+                                            <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-bold border border-emerald-200">Selesai</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                            <h3 className="text-lg font-bold text-slate-800">Riwayat Habit Bulan Ini</h3>
+                            {trackingData?.completed_habits?.length === 0 ? (
+                                <p className="text-sm text-slate-500 py-4">Belum ada riwayat habit bulan ini.</p>
+                            ) : (
+                                <div className="divide-y">
+                                    {trackingData?.completed_habits?.map(record => (
+                                        <div key={record.id} className="py-3 flex justify-between items-start">
+                                            <div>
+                                                <h4 className="font-semibold text-slate-900">{record.personal_task?.title}</h4>
+                                                <p className="text-sm text-slate-500">{new Date(record.completed_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+                                            </div>
+                                            <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200">Streak: {record.personal_task?.streak_count || 1}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )
+            ) : (
+                <div className="space-y-8">
             {/* Task Form */}
             <form onSubmit={addTask} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <h2 className="text-lg font-bold text-slate-800">Tambah Tugas Baru</h2>
@@ -224,6 +288,8 @@ export default function TasksAndHabits() {
                     )}
                 </div>
             )}
+        </div>
+        )}
         </div>
     );
 }

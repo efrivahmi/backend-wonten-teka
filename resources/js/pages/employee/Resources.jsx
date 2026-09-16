@@ -134,7 +134,36 @@ export default function EmployeeResources({ type }) {
     return <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div><div className="flex items-center gap-3"><div className="p-3 rounded-2xl bg-emerald-100 text-emerald-700"><Icon className="h-6 w-6" /></div><h1 className="text-2xl md:text-3xl font-bold text-slate-900">{config.title}</h1></div><p className="mt-2 text-slate-500">{config.description}</p></div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+                {type === 'calendar' && items.length > 0 && <button onClick={() => {
+                    let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Lemdiklat//NONSGML v1.0//EN\n";
+                    items.forEach(event => {
+                        const uid = `${event.id}@lemdiklat-${Date.now()}`;
+                        const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                        const startDT = new Date(event.start_date + (event.start_time ? 'T'+event.start_time : 'T00:00:00'));
+                        const startStr = startDT.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                        
+                        let endStr = startStr;
+                        if (event.end_date) {
+                            const endDT = new Date(event.end_date + (event.end_time ? 'T'+event.end_time : 'T23:59:59'));
+                            endStr = endDT.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                        }
+                        
+                        ics += "BEGIN:VEVENT\n";
+                        ics += `UID:${uid}\nDTSTAMP:${stamp}\nDTSTART:${startStr}\nDTEND:${endStr}\n`;
+                        ics += `SUMMARY:${event.title}\n`;
+                        if (event.description) ics += `DESCRIPTION:${event.description.replace(/\n/g, '\\n')}\n`;
+                        ics += "END:VEVENT\n";
+                    });
+                    ics += "END:VCALENDAR";
+                    const blob = new Blob([ics], { type: 'text/calendar' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Kalender_Perusahaan_${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }).replace(' ', '_')}.ics`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }} className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 bg-white transition">Ekspor ke Kalender (Alarm)</button>}
                 {type === 'trips' && <button onClick={() => setTripOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Ajukan perjalanan</button>}
                 {type === 'adjustments' && <button onClick={() => setAdjustmentOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Tambah pengajuan</button>}
                 {config.markAll && <button onClick={async () => { await api.post('/notifications/read-all'); await load(); }} className="px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-sm font-semibold">Tandai sudah dibaca</button>}
