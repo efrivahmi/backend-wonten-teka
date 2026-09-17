@@ -13,6 +13,13 @@ const OnboardingFlow = () => {
                 const user = response.data.user;
                 const employee = user.employee;
 
+                const isAdmin = user.is_super_admin || user.roles?.some(r => r.name === 'admin' || r.name === 'super_admin');
+
+                if (isAdmin) {
+                    navigate('/admin/dashboard');
+                    return;
+                }
+
                 if (!employee) {
                     navigate('/admin/dashboard');
                     return;

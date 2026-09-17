@@ -21,7 +21,8 @@ const DevicePending = () => {
                     clearInterval(intervalId);
                     const userStr = localStorage.getItem('user');
                     const userObj = userStr ? JSON.parse(userStr) : null;
-                    if (userObj && userObj.is_super_admin) {
+                    const isAdmin = userObj && (userObj.is_super_admin || (userObj.roles && userObj.roles.some(r => r.name === 'admin' || r.name === 'super_admin')));
+                    if (isAdmin) {
                         navigate('/admin/dashboard');
                     } else {
                         navigate('/employee/dashboard');
