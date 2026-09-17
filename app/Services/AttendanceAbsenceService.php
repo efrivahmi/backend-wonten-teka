@@ -54,19 +54,25 @@ class AttendanceAbsenceService
         Carbon $workDate,
     ): bool {
         [$dayStartUtc, $dayEndUtc] = $this->shiftClock->utcDayBounds($workDate);
-        $query = AttendanceLog::where('employee_id', $employeeId)
+        $logsForDay = AttendanceLog::where('employee_id', $employeeId)
             ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
-            ->where(function ($q) use ($assignmentId, $template) {
-                if ($assignmentId !== null) {
-                    $q->where('shift_assignment_id', $assignmentId);
-                }
-                $q->orWhere('flags->shift_template_id', $template->id);
-                $q->orWhereHas('shiftAssignment', function ($sq) use ($template) {
-                    $sq->where('shift_template_id', $template->id);
-                });
-            });
+            ->with('shiftAssignment')
+            ->get();
 
-        if ($query->exists()) {
+        $exists = $logsForDay->contains(function ($log) use ($assignmentId, $template) {
+            if ($assignmentId !== null && $log->shift_assignment_id === $assignmentId) {
+                return true;
+            }
+            if (isset($log->flags['shift_template_id']) && $log->flags['shift_template_id'] == $template->id) {
+                return true;
+            }
+            if ($log->shiftAssignment && $log->shiftAssignment->shift_template_id == $template->id) {
+                return true;
+            }
+            return false;
+        });
+
+        if ($exists) {
             return false;
         }
 
