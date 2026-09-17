@@ -11,6 +11,26 @@ Route::get('/setup-database', function () {
     }
 });
 
+Route::get('/clean-duplicates', function () {
+    $logs = \App\Models\AttendanceLog::all();
+    $seen = [];
+    $deleted = 0;
+    foreach ($logs as $log) {
+        if ($log->status === 'absent' && isset($log->flags['auto_absent'])) {
+            $tempId = $log->flags['shift_template_id'] ?? null;
+            $date = \Carbon\Carbon::parse($log->check_in_at)->toDateString();
+            $key = $log->employee_id . '-' . $date . '-' . $tempId;
+            if (isset($seen[$key])) {
+                $log->delete();
+                $deleted++;
+            } else {
+                $seen[$key] = true;
+            }
+        }
+    }
+    return "Berhasil menghapus {$deleted} data absensi ganda.";
+});
+
 // Fallback to React SPA for all other web routes
 Route::get('/{any?}', function () {
     return view('app');
