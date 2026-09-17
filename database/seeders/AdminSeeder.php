@@ -25,7 +25,7 @@ class AdminSeeder extends Seeder
                 'employee_number' => 'EMP-001',
                 'full_name' => 'Super Admin',
                 'department' => 'Management',
-                'position' => 'CEO',
+                'position' => 'Super Admin',
                 'phone' => '081234567890',
                 'join_date' => now(),
                 'employment_status' => 'permanent',

@@ -199,7 +199,6 @@ const Employees = () => {
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-800">{emp.user?.name || emp.full_name}</p>
-                                                    <p className="text-xs text-slate-500">NIK: {emp.employee_number}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -291,18 +290,6 @@ const Employees = () => {
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                                             required
                                         />
-                                    </div>}
-                                    {editingEmployee && <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">ID Pegawai <span className="text-rose-500">*</span></label>
-                                        <input 
-                                            type="text" 
-                                            name="employee_number"
-                                            value={formData.employee_number}
-                                            onChange={handleFormChange}
-                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                                            required
-                                        />
-                                        <p className="mt-1 text-xs text-slate-500">Nomor khusus internal. Contoh: EMP-2026-0007 atau ADM-2026-0007.</p>
                                     </div>}
                                 </div>
                                 

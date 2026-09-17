@@ -310,7 +310,7 @@ class EmployeeController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'employee_number' => [
-                'sometimes', 'required', 'string', 'max:50',
+                'nullable', 'string', 'max:50',
                 'not_regex:/^\d{19,}$/',
                 Rule::unique('employees', 'employee_number')->ignore($employee->id),
             ],

@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import api from '../../api';
 
 export default function AdminProfile() {
-  const stored=JSON.parse(localStorage.getItem('user')||'{}');
-  const [form,setForm]=useState({name:stored.name||'',email:stored.email||'',password:'',password_confirmation:''});
+  const [form,setForm]=useState({name:'',email:'',password:'',password_confirmation:''});
   const [saving,setSaving]=useState(false); const [message,setMessage]=useState('');
+  const [loading,setLoading]=useState(true);
+
+  useEffect(() => {
+      api.get('/me').then(({ data }) => {
+          const user = data.user || data;
+          setForm(f => ({ ...f, name: user.name || '', email: user.email || '' }));
+          localStorage.setItem('user', JSON.stringify(user));
+      }).finally(() => setLoading(false));
+  }, []);
+
   const submit=async e=>{e.preventDefault();setSaving(true);setMessage('');try{const {data}=await api.put('/profile',form);localStorage.setItem('user',JSON.stringify(data.user));setForm(v=>({...v,password:'',password_confirmation:''}));setMessage('Profil admin berhasil diperbarui.');}catch(error){setMessage(error.response?.data?.message||Object.values(error.response?.data?.errors||{})?.[0]?.[0]||'Gagal memperbarui profil.');}finally{setSaving(false);}};
   return <div className="mx-auto max-w-3xl p-6 md:p-8"><h1 className="text-3xl font-bold text-slate-900">Profil Administrator</h1><p className="mt-1 text-slate-500">Ubah nama, email, atau kata sandi akun.</p><form onSubmit={submit} className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-6 flex items-center gap-4"><img src="/images/e-absensi-logo-generated.png" className="h-20 w-20 object-contain" alt="Logo"/><strong>Administrator e-Absensi</strong></div><div className="grid gap-5 md:grid-cols-2"><Field label="Nama" value={form.name} onChange={v=>setForm({...form,name:v})} required/><Field label="Email" type="email" value={form.email} onChange={v=>setForm({...form,email:v})} required/><Field label="Kata sandi baru" type="password" value={form.password} onChange={v=>setForm({...form,password:v})} hint="Kosongkan jika tidak diubah"/><Field label="Konfirmasi kata sandi" type="password" value={form.password_confirmation} onChange={v=>setForm({...form,password_confirmation:v})}/></div>{message&&<p className="mt-4 text-sm text-emerald-700">{message}</p>}<button disabled={saving} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white">{saving?<Loader2 className="h-4 w-4 animate-spin"/>:<Save className="h-4 w-4"/>}Simpan profil</button></form></div>;
 }

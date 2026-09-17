@@ -156,6 +156,7 @@ export default function EmployeeResources({ type }) {
                         ics += `UID:${uid}\nDTSTAMP:${stamp}\nDTSTART:${startStr}\nDTEND:${endStr}\n`;
                         ics += `SUMMARY:${event.title}\n`;
                         if (event.description) ics += `DESCRIPTION:${event.description.replace(/\n/g, '\\n')}\n`;
+                        ics += "BEGIN:VALARM\nTRIGGER:-PT15M\nACTION:DISPLAY\nDESCRIPTION:Pengingat Acara\nEND:VALARM\n";
                         ics += "END:VEVENT\n";
                     });
                     ics += "END:VCALENDAR";
