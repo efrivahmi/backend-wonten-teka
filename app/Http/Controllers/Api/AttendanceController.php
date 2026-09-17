@@ -453,7 +453,7 @@ class AttendanceController extends Controller
         $month = $request->query('month');
         $year = $request->query('year');
         
-        $query = AttendanceLog::where('employee_id', $employee->id);
+        $query = AttendanceLog::with('shiftAssignment.shiftTemplate')->where('employee_id', $employee->id);
         
         if ($month && $year) {
             $query->whereMonth('check_in_at', $month)
@@ -480,6 +480,22 @@ class AttendanceController extends Controller
                 ->whereIn('status', ['pending', 'approved'])
                 ->orderBy('start_time')
                 ->get(['id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'status']);
+            
+            $isMainShift = false;
+            if ($log->shiftAssignment && $log->shiftAssignment->shiftTemplate) {
+                $template = $log->shiftAssignment->shiftTemplate;
+                $isMainShift = strcasecmp($template->category, 'Reguler') === 0 || $template->is_default;
+            } elseif (isset($log->flags['shift_template_id'])) {
+                $template = \App\Models\ShiftTemplate::find($log->flags['shift_template_id']);
+                if ($template) {
+                    $isMainShift = strcasecmp($template->category, 'Reguler') === 0 || $template->is_default;
+                }
+            } else {
+                // If no template information is found, we assume it's the main default shift
+                $isMainShift = true;
+            }
+            
+            $log->setAttribute('is_main_shift', $isMainShift);
             $log->setAttribute('has_double_shift', $shiftCount > 1);
             $log->setAttribute('shift_count', max(1, $shiftCount));
             $log->setAttribute('overtime', $overtime);

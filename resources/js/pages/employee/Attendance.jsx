@@ -36,7 +36,7 @@ const Attendance = () => {
     const [workingDays, setWorkingDays] = useState([1, 2, 3, 4, 5]); // default Mon-Fri (1-5)
 
     // Modal state
-    const [selectedLog, setSelectedLog] = useState(null);
+    const [selectedLogs, setSelectedLogs] = useState(null);
     const [modalDate, setModalDate] = useState(null);
 
     // Scanner states
@@ -314,17 +314,16 @@ const Attendance = () => {
         }
     };
 
-    const getLogForDay = (day) => {
-        return history.find(log => {
-            const date = new Date(log.check_in_at);
-            return date.getDate() === day && date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
-        });
-    };
-
     const getLogsForDay = (day) => history.filter(log => {
         const date = new Date(log.check_in_at);
         return date.getDate() === day && date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
     });
+
+    const getLogForDay = (day) => {
+        const logs = getLogsForDay(day);
+        if (logs.length === 0) return undefined;
+        return logs.find(log => log.is_main_shift) || logs[0];
+    };
 
     const getDayStatusColor = (day) => {
         const log = getLogForDay(day);
@@ -361,10 +360,10 @@ const Attendance = () => {
     };
 
     const openModal = (day) => {
-        const log = getLogForDay(day);
+        const logs = getLogsForDay(day);
         const loopDate = new Date(currentYear, currentMonth - 1, day);
         setModalDate(loopDate);
-        setSelectedLog(log || 'none');
+        setSelectedLogs(logs.length > 0 ? logs : 'none');
     };
 
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -547,92 +546,98 @@ const Attendance = () => {
             </div>
 
             {/* MODAL */}
-            {selectedLog && (
+            {selectedLogs && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200">
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50">
+                    <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
                             <h3 className="font-bold text-slate-800 text-lg">
                                 Detail Absensi - {modalDate?.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                             </h3>
-                            <button onClick={() => setSelectedLog(null)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setSelectedLogs(null)} className="text-slate-400 hover:text-slate-600">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-                            {selectedLog === 'none' ? (
+                        <div className="p-6 space-y-8 overflow-y-auto flex-1">
+                            {selectedLogs === 'none' ? (
                                 <div className="text-center py-8 text-slate-500">
                                     <AlertCircle className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                                     <p>Tidak ada rekaman absen pada tanggal ini.</p>
                                 </div>
                             ) : (
-                                <>
-                                    {/* Check IN */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center text-emerald-600 font-bold">
-                                                <LogIn className="h-5 w-5 mr-2" /> Check In
-                                            </div>
-                                            {selectedLog.status && (
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
-                                                        selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
-                                                            selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
-                                                                selectedLog.status === 'absent' ? 'bg-rose-100 text-rose-700' :
-                                                                selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
-                                                                    'bg-slate-100 text-slate-700'
-                                                    }`}>
-                                                    {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
-                                                        selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
-                                                            selectedLog.status === 'late' ? 'Terlambat' :
-                                                                selectedLog.status === 'absent' ? 'Alpha / Tidak Masuk' :
-                                                                selectedLog.status === 'flagged' ? 'Dipertanyakan' :
-                                                                    selectedLog.status}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
-                                            <div className="flex">
-                                                <span className="w-24 text-slate-500">Waktu:</span>
-                                                <span className="font-bold text-slate-800">{selectedLog.status === 'absent' ? '--:--' : new Date(selectedLog.check_in_at).toLocaleTimeString('id-ID')}</span>
-                                            </div>
-                                            <div className="flex">
-                                                <span className="w-24 text-slate-500">Alamat:</span>
-                                                <span className="font-medium text-slate-700">{selectedLog.check_in_address || 'Tidak ditemukan'}</span>
-                                            </div>
-                                            {selectedLog.check_in_photo_url && (
-                                                <div className="mt-3">
-                                                    <span className="block text-slate-500 mb-2">Foto Bukti:</span>
-                                                    <img src={selectedLog.check_in_photo_url} alt="Check in" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Check OUT */}
-                                    {selectedLog.check_out_at && (
+                                selectedLogs.map((selectedLog, index) => (
+                                    <div key={selectedLog.id || index} className="space-y-4 pb-6 border-b border-slate-100 last:border-0 last:pb-0">
+                                        <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                                            {selectedLog.is_main_shift ? <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> : <span className="w-2.5 h-2.5 rounded-full bg-violet-500"></span>}
+                                            {selectedLog.flags?.shift_name || (selectedLog.is_main_shift ? 'Shift Utama (Reguler)' : 'Shift Tambahan')}
+                                        </h4>
+                                        {/* Check IN */}
                                         <div className="space-y-3">
-                                            <div className="flex items-center text-rose-600 font-bold">
-                                                <LogOut className="h-5 w-5 mr-2" /> Check Out
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center text-emerald-600 font-bold">
+                                                    <LogIn className="h-5 w-5 mr-2" /> Check In
+                                                </div>
+                                                {selectedLog.status && (
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
+                                                            selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
+                                                                selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                                    selectedLog.status === 'absent' ? 'bg-rose-100 text-rose-700' :
+                                                                    selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-slate-100 text-slate-700'
+                                                        }`}>
+                                                        {selectedLog.status === 'on_time' ? 'Tepat Waktu' :
+                                                            selectedLog.status === 'present' ? 'Hadir (Batas Toleransi)' :
+                                                                selectedLog.status === 'late' ? 'Terlambat' :
+                                                                    selectedLog.status === 'absent' ? 'Alpha / Tidak Masuk' :
+                                                                    selectedLog.status === 'flagged' ? 'Dipertanyakan' :
+                                                                        selectedLog.status}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
                                                 <div className="flex">
                                                     <span className="w-24 text-slate-500">Waktu:</span>
-                                                    <span className="font-bold text-slate-800">{new Date(selectedLog.check_out_at).toLocaleTimeString('id-ID')}</span>
+                                                    <span className="font-bold text-slate-800">{selectedLog.status === 'absent' ? '--:--' : new Date(selectedLog.check_in_at).toLocaleTimeString('id-ID')}</span>
                                                 </div>
                                                 <div className="flex">
                                                     <span className="w-24 text-slate-500">Alamat:</span>
-                                                    <span className="font-medium text-slate-700">{selectedLog.check_out_address || 'Tidak ditemukan'}</span>
+                                                    <span className="font-medium text-slate-700">{selectedLog.check_in_address || 'Tidak ditemukan'}</span>
                                                 </div>
-                                                {selectedLog.check_out_photo_url && (
+                                                {selectedLog.check_in_photo_url && (
                                                     <div className="mt-3">
                                                         <span className="block text-slate-500 mb-2">Foto Bukti:</span>
-                                                        <img src={selectedLog.check_out_photo_url} alt="Check out" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
+                                                        <img src={selectedLog.check_in_photo_url} alt="Check in" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                    )}
-                                </>
+
+                                        {/* Check OUT */}
+                                        {selectedLog.check_out_at && (
+                                            <div className="space-y-3 mt-4">
+                                                <div className="flex items-center text-rose-600 font-bold">
+                                                    <LogOut className="h-5 w-5 mr-2" /> Check Out
+                                                </div>
+                                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-sm space-y-2">
+                                                    <div className="flex">
+                                                        <span className="w-24 text-slate-500">Waktu:</span>
+                                                        <span className="font-bold text-slate-800">{new Date(selectedLog.check_out_at).toLocaleTimeString('id-ID')}</span>
+                                                    </div>
+                                                    <div className="flex">
+                                                        <span className="w-24 text-slate-500">Alamat:</span>
+                                                        <span className="font-medium text-slate-700">{selectedLog.check_out_address || 'Tidak ditemukan'}</span>
+                                                    </div>
+                                                    {selectedLog.check_out_photo_url && (
+                                                        <div className="mt-3">
+                                                            <span className="block text-slate-500 mb-2">Foto Bukti:</span>
+                                                            <img src={selectedLog.check_out_photo_url} alt="Check out" className="w-full max-w-[200px] h-auto rounded-lg border border-slate-200 shadow-sm" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
                             )}
                         </div>
                     </div>
