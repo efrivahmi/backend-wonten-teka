@@ -254,7 +254,7 @@ class EmployeeController extends Controller
                 'phone' => null,
                 'email' => $validated['email'],
                 'department' => null,
-                'position' => null,
+                'position' => $role === 'admin' ? 'Administrator' : null,
                 'gender' => null,
                 'address' => null,
                 'join_date' => null,
@@ -333,7 +333,12 @@ class EmployeeController extends Controller
             if (array_key_exists('phone', $validated)) $employee->phone = $validated['phone'];
             if (array_key_exists('email', $validated)) $employee->email = $validated['email'];
             if (array_key_exists('department', $validated)) $employee->department = $validated['department'];
-            if (array_key_exists('position', $validated)) $employee->position = $validated['position'];
+            if (array_key_exists('position', $validated)) {
+                $employee->position = $validated['position'];
+            }
+            if ($request->filled('role') && empty($employee->position)) {
+                $employee->position = $request->role === 'admin' ? 'Administrator' : null;
+            }
             if (array_key_exists('gender', $validated)) $employee->gender = $validated['gender'];
             if (array_key_exists('address', $validated)) $employee->address = $validated['address'];
             if (array_key_exists('join_date', $validated)) $employee->join_date = $validated['join_date'];

@@ -188,4 +188,14 @@ class Employee extends Model
     {
         return $query->where('department', $department);
     }
+
+    public function scopeRequiresAttendance($query)
+    {
+        return $query->whereDoesntHave('user', function ($q) {
+            $q->where('is_super_admin', true)
+              ->orWhereHas('roles', function ($r) {
+                  $r->whereIn('name', ['admin', 'super_admin']);
+              });
+        });
+    }
 }

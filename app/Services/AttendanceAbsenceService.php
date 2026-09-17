@@ -22,7 +22,7 @@ class AttendanceAbsenceService
         $now ??= $this->shiftClock->now();
         $created = 0;
 
-        Employee::active()->select('id')->chunkById(100, function ($employees) use ($now, &$created) {
+        Employee::active()->requiresAttendance()->select('id')->chunkById(100, function ($employees) use ($now, &$created) {
             foreach ($employees as $employee) {
                 foreach ([$now->copy()->subDay(), $now] as $workDate) {
                     foreach ($this->shiftsFor($employee->id, $workDate) as $shift) {

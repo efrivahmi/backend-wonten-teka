@@ -37,7 +37,7 @@ class AdminDashboardController extends Controller
         $today = Carbon::today();
 
         // 1. Total Employees
-        $totalEmployees = Employee::where('is_active', true)->count();
+        $totalEmployees = Employee::where('is_active', true)->requiresAttendance()->count();
 
         // 2. Attendance Stats for Today
         $presentCount = AttendanceLog::whereDate('check_in_at', $today)
@@ -78,6 +78,7 @@ class AdminDashboardController extends Controller
 
         $departments = Employee::query()
             ->where('is_active', true)
+            ->requiresAttendance()
             ->whereNotNull('department')
             ->selectRaw('department, COUNT(*) as total_employees')
             ->groupBy('department')

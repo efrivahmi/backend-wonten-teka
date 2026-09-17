@@ -204,7 +204,7 @@ const Employees = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-sm font-medium text-slate-800 bg-slate-100 px-3 py-1 rounded-full">
-                                                {emp.position || 'Staff'}
+                                                {emp.position || (emp.user?.roles?.some(r => r.name === 'admin' || r.name === 'super_admin') ? 'Administrator' : 'Staff')}
                                             </span>
                                             {emp.department && (
                                                 <p className="text-xs text-slate-500 mt-1">{emp.department}</p>
