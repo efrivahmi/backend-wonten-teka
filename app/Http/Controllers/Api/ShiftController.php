@@ -50,6 +50,29 @@ class ShiftController extends Controller
             $date = $businessToday->copy()->addDays($offset);
             $hasDefault = false;
 
+            if ($offset === 0) {
+                $yesterday = $businessToday->copy()->subDay();
+                $yesterdayShifts = app(\App\Services\AttendanceAbsenceService::class)->shiftsFor($employee->id, $yesterday);
+                foreach ($yesterdayShifts as $shiftData) {
+                    $template = $shiftData['template'];
+                    $start = Carbon::parse($template->start_time);
+                    $end = Carbon::parse($template->end_time);
+                    if ($end->lessThanOrEqualTo($start)) {
+                        $schedule->push([
+                            'id' => -999 - $template->id,
+                            'employee_id' => $employee->id,
+                            'shift_template_id' => $template->id,
+                            'date' => $businessToday->toDateString(), // Show it on today's UI card
+                            'is_recurring_schedule' => $shiftData['assignment_id'] === null,
+                            'is_default_schedule' => $template->is_default,
+                            'shift_template' => (object) array_merge($template->toArray(), [
+                                'name' => $template->name . ' (Lanjutan Kemarin)',
+                            ]),
+                        ]);
+                    }
+                }
+            }
+
             if ($explicit->has($date->toDateString())) {
                 $explicit->get($date->toDateString())->each(function ($item) use ($schedule, &$hasDefault) {
                     if ($item->shiftTemplate && $item->shiftTemplate->is_default) {

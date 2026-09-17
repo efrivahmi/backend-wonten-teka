@@ -679,8 +679,9 @@ class AttendanceController extends Controller
             'employee_name' => $employee->full_name,
         ];
 
+        $yesterdayStartUtc = $shiftClock->utcDayBounds($businessNow->copy()->subDay())[0];
         $attendances = \App\Models\AttendanceLog::where('employee_id', $employee->id)
-            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
+            ->whereBetween('check_in_at', [$yesterdayStartUtc, $dayEndUtc])
             ->with('shiftAssignment')
             ->get();
 
@@ -692,7 +693,13 @@ class AttendanceController extends Controller
             $shift['time_status_label'] = $shift['time_status'] === 'upcoming'
                 ? 'Belum dimulai'
                 : ($shift['time_status'] === 'active' ? 'Sedang berlangsung' : 'Jadwal selesai');
-            $log = $attendances->first(function($att) use ($shift) {
+            $log = $attendances->first(function($att) use ($shift, $workDate) {
+                // Ensure we only match logs for the correct work date
+                $attWorkDate = $att->check_in_at->copy()->setTimezone(config('app.business_timezone'))->toDateString();
+                if ($attWorkDate !== $workDate->toDateString()) {
+                    return false;
+                }
+
                 if ($shift['assignment_id'] !== null && $att->shift_assignment_id == $shift['assignment_id']) {
                     return true;
                 }
