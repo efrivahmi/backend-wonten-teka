@@ -154,13 +154,24 @@ class ApprovalService
 
                 } elseif ($instance->approvable instanceof AttendanceAdjustmentRequest) {
                     $adjustment = $instance->approvable;
-                    $log = AttendanceLog::firstOrNew([
-                        'employee_id' => $adjustment->employee_id,
-                        'date' => $adjustment->date,
-                    ]);
+                    $dateStr = \Carbon\Carbon::parse($adjustment->date)->format('Y-m-d');
                     
-                    $log->check_in = $adjustment->check_in;
-                    $log->check_out = $adjustment->check_out;
+                    $log = AttendanceLog::where('employee_id', $adjustment->employee_id)
+                        ->whereDate('check_in_at', $dateStr)
+                        ->first();
+                        
+                    if (!$log) {
+                        $log = new AttendanceLog();
+                        $log->employee_id = $adjustment->employee_id;
+                    }
+                    
+                    if ($adjustment->check_in) {
+                        $log->check_in_at = \Carbon\Carbon::parse($dateStr . ' ' . $adjustment->check_in);
+                    }
+                    if ($adjustment->check_out) {
+                        $log->check_out_at = \Carbon\Carbon::parse($dateStr . ' ' . $adjustment->check_out);
+                    }
+                    
                     // You might want to update status depending on your company logic. 
                     // For now, if we adjust it, we consider it 'present' (or 'late' based on logic).
                     // We'll set it to 'present' if they have both check_in and check_out.
