@@ -22,9 +22,13 @@ class ShiftController extends Controller
             return response()->json(['message' => 'Employee profile not found.'], 403);
         }
         
+        $shiftClock = app(\App\Services\ShiftTimeService::class);
+        $businessNow = $shiftClock->now();
+        $businessToday = $businessNow->copy()->startOfDay();
+
         $shifts = ShiftAssignment::where('employee_id', $employee->id)
             ->with('shiftTemplate')
-            ->whereDate('date', '>=', today())
+            ->whereDate('date', '>=', $businessToday->toDateString())
             ->orderBy('date', 'asc')
             ->paginate(15);
 
@@ -43,7 +47,7 @@ class ShiftController extends Controller
         }
 
         foreach (range(0, 6) as $offset) {
-            $date = Carbon::today()->addDays($offset);
+            $date = $businessToday->copy()->addDays($offset);
             $hasDefault = false;
 
             if ($explicit->has($date->toDateString())) {

@@ -591,6 +591,7 @@ class AttendanceController extends Controller
                     'end_time' => Carbon::parse($template->end_time)->format('H:i'),
                     'is_recurring_schedule' => false,
                     'is_default_schedule' => false,
+                    'work_date' => $businessNow->toDateString(),
                 ];
             }
         }
@@ -617,7 +618,36 @@ class AttendanceController extends Controller
                     'end_time' => Carbon::parse($template->end_time)->format('H:i'),
                     'is_recurring_schedule' => true,
                     'is_default_schedule' => false,
+                    'work_date' => $businessNow->toDateString(),
                 ];
+            }
+        }
+        
+        // --- Include shifts from YESTERDAY that span into today ---
+        $yesterday = $businessNow->copy()->subDay();
+        $yesterdayShifts = app(\App\Services\AttendanceAbsenceService::class)->shiftsFor($employee->id, $yesterday);
+        
+        foreach ($yesterdayShifts as $shiftData) {
+            $template = $shiftData['template'];
+            $start = Carbon::parse($template->start_time);
+            $end = Carbon::parse($template->end_time);
+            
+            // If end is less than or equal to start, it means it spans into the next day (today).
+            if ($end->lessThanOrEqualTo($start)) {
+                // Avoid duplicating if somehow it's already in the list
+                if (!collect($shifts)->contains('template_id', $template->id)) {
+                    $shifts[] = [
+                        'assignment_id' => $shiftData['assignment_id'],
+                        'template_id' => $template->id,
+                        'name' => $template->name . ' (Lanjutan Kemarin)',
+                        'category' => $template->category ?? 'Reguler',
+                        'start_time' => $start->format('H:i'),
+                        'end_time' => $end->format('H:i'),
+                        'is_recurring_schedule' => $shiftData['assignment_id'] === null,
+                        'is_default_schedule' => $template->is_default,
+                        'work_date' => $yesterday->toDateString(),
+                    ];
+                }
             }
         }
         
@@ -633,6 +663,7 @@ class AttendanceController extends Controller
                     'end_time' => Carbon::parse($defaultTemplate->end_time)->format('H:i'),
                     'is_recurring_schedule' => false,
                     'is_default_schedule' => true,
+                    'work_date' => $businessNow->toDateString(),
                 ];
             }
         }
@@ -654,8 +685,9 @@ class AttendanceController extends Controller
             ->get();
 
         foreach ($shifts as &$shift) {
-            $startAt = $shiftClock->scheduledStart($shift['start_time'], $businessNow);
-            $endAt = $shiftClock->scheduledEnd($shift['start_time'], $shift['end_time'], $businessNow);
+            $workDate = isset($shift['work_date']) ? Carbon::parse($shift['work_date']) : $businessNow;
+            $startAt = $shiftClock->scheduledStart($shift['start_time'], $workDate);
+            $endAt = $shiftClock->scheduledEnd($shift['start_time'], $shift['end_time'], $workDate);
             $shift['time_status'] = $businessNow->lt($startAt) ? 'upcoming' : ($businessNow->lte($endAt) ? 'active' : 'ended');
             $shift['time_status_label'] = $shift['time_status'] === 'upcoming'
                 ? 'Belum dimulai'
