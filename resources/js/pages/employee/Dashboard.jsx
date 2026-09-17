@@ -189,6 +189,24 @@ export default function EmployeeDashboard() {
                     <SummaryCard label="Jam keluar" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
                     <SummaryCard label="Durasi kerja" value={durationText(currentAttendance, now)} icon={Clock} tone="blue" />
                 </div>
+                
+                {shifts.filter(s => (!s.category || s.category !== 'Reguler') && s.attendance && s.attendance.check_in_time && !s.attendance.check_out_time && s.attendance.status !== 'absent').map(shift => {
+                    const att = shift.attendance;
+                    const meta = statusMeta[att.status] || { label: 'Belum absen', tone: 'slate' };
+                    return (
+                        <div key={shift.template_id} className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 lg:p-5">
+                            <h4 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-violet-700">
+                                <Layers3 className="h-4 w-4" /> Informasi Tambahan: {shift.name}
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                <SummaryCard label="Status" value={meta.label} icon={CheckCircle2} tone={meta.tone} />
+                                <SummaryCard label="Jam masuk" value={formatTime(att.check_in_time, att.status)} icon={LogIn} tone="emerald" />
+                                <SummaryCard label="Jam keluar" value={formatTime(att.check_out_time, att.status)} icon={LogOut} tone="rose" />
+                                <SummaryCard label="Durasi kerja" value={durationText(att, now)} icon={Clock} tone="blue" />
+                            </div>
+                        </div>
+                    );
+                })}
             </section>
 
             {(hasDoubleShift || overtimeToday.length > 0) && (
