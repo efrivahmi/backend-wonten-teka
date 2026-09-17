@@ -141,12 +141,14 @@ export default function EmployeeResources({ type }) {
                     items.forEach(event => {
                         const uid = `${event.id}@lemdiklat-${Date.now()}`;
                         const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-                        const startDT = new Date(event.start_date + (event.start_time ? 'T'+event.start_time : 'T00:00:00'));
+                        const sDateStr = event.start_date.substring(0, 10);
+                        const startDT = new Date(sDateStr + (event.start_time ? 'T'+event.start_time.substring(0,5)+':00' : 'T00:00:00'));
                         const startStr = startDT.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                         
                         let endStr = startStr;
                         if (event.end_date) {
-                            const endDT = new Date(event.end_date + (event.end_time ? 'T'+event.end_time : 'T23:59:59'));
+                            const eDateStr = event.end_date.substring(0, 10);
+                            const endDT = new Date(eDateStr + (event.end_time ? 'T'+event.end_time.substring(0,5)+':00' : 'T23:59:59'));
                             endStr = endDT.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                         }
                         
@@ -162,11 +164,14 @@ export default function EmployeeResources({ type }) {
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `Kalender_Perusahaan_${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }).replace(' ', '_')}.ics`;
+                    a.target = '_blank';
                     document.body.appendChild(a);
                     a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }} className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 bg-white transition">Ekspor ke Kalender (Alarm)</button>}
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                }} type="button" className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 bg-white transition">Ekspor ke Kalender (Alarm)</button>}
                 {type === 'trips' && <button onClick={() => setTripOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Ajukan perjalanan</button>}
                 {type === 'adjustments' && <button onClick={() => setAdjustmentOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Tambah pengajuan</button>}
                 {config.markAll && <button onClick={async () => { await api.post('/notifications/read-all'); await load(); }} className="px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-sm font-semibold">Tandai sudah dibaca</button>}

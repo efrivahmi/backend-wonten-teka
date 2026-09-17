@@ -116,10 +116,16 @@ class ApprovalService
                     $endDate = Carbon::parse($leave->end_date);
                     
                     for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                        $log = AttendanceLog::firstOrNew([
-                            'employee_id' => $leave->employee_id,
-                            'date' => $date->format('Y-m-d'),
-                        ]);
+                        $log = AttendanceLog::where('employee_id', $leave->employee_id)
+                            ->whereDate('check_in_at', $date->format('Y-m-d'))
+                            ->first();
+                            
+                        if (!$log) {
+                            $log = new AttendanceLog();
+                            $log->employee_id = $leave->employee_id;
+                            $log->check_in_at = $date->copy()->startOfDay();
+                        }
+                        
                         $log->status = 'cuti';
                         // Do not clear check_in/check_out if they already exist, 
                         // just set status to cuti. If new, they default to null.
@@ -132,10 +138,16 @@ class ApprovalService
                     $endDate = Carbon::parse($trip->end_date);
 
                     for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                        $log = AttendanceLog::firstOrNew([
-                            'employee_id' => $trip->employee_id,
-                            'date' => $date->format('Y-m-d'),
-                        ]);
+                        $log = AttendanceLog::where('employee_id', $trip->employee_id)
+                            ->whereDate('check_in_at', $date->format('Y-m-d'))
+                            ->first();
+                            
+                        if (!$log) {
+                            $log = new AttendanceLog();
+                            $log->employee_id = $trip->employee_id;
+                            $log->check_in_at = $date->copy()->startOfDay();
+                        }
+                        
                         $log->status = 'dinas';
                         $log->save();
                     }
