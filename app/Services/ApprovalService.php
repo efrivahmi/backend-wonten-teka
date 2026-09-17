@@ -120,6 +120,10 @@ class ApprovalService
                             ->whereDate('check_in_at', $date->format('Y-m-d'))
                             ->first();
                             
+                        if ($log && $log->status !== 'absent') {
+                            throw new \RuntimeException('Terdapat data absensi pada tanggal ' . $date->format('d/m/Y') . '. Cuti tidak dapat membatalkan absensi yang sudah tercatat.');
+                        }
+                            
                         if (!$log) {
                             $log = new AttendanceLog();
                             $log->employee_id = $leave->employee_id;
@@ -142,6 +146,10 @@ class ApprovalService
                             ->whereDate('check_in_at', $date->format('Y-m-d'))
                             ->first();
                             
+                        if ($log && $log->status !== 'absent') {
+                            throw new \RuntimeException('Terdapat data absensi pada tanggal ' . $date->format('d/m/Y') . '. Perjalanan dinas tidak dapat menimpa absensi yang sudah tercatat.');
+                        }
+                            
                         if (!$log) {
                             $log = new AttendanceLog();
                             $log->employee_id = $trip->employee_id;
@@ -160,6 +168,10 @@ class ApprovalService
                         ->whereDate('check_in_at', $dateStr)
                         ->first();
                         
+                    if ($log && $log->status !== 'absent') {
+                        throw new \RuntimeException('Karyawan sudah memiliki rekaman absensi pada tanggal ' . \Carbon\Carbon::parse($dateStr)->format('d/m/Y') . '. Pengajuan lupa absen hanya bisa dilakukan jika sama sekali tidak ada data.');
+                    }
+                        
                     if (!$log) {
                         $log = new AttendanceLog();
                         $log->employee_id = $adjustment->employee_id;
@@ -176,6 +188,7 @@ class ApprovalService
                     // For now, if we adjust it, we consider it 'present' (or 'late' based on logic).
                     // We'll set it to 'present' if they have both check_in and check_out.
                     $log->status = 'present';
+                    $log->notes = 'Lupa melakukan absensi';
                     $log->save();
                 }
             }

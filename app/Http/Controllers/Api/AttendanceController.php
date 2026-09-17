@@ -477,7 +477,7 @@ class AttendanceController extends Controller
                 ->count();
             $overtime = \App\Models\OvertimeRequest::where('employee_id', $employee->id)
                 ->whereDate('date', $workDate)
-                ->where('status', 'approved')
+                ->whereIn('status', ['pending', 'approved'])
                 ->orderBy('start_time')
                 ->get(['id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'status']);
             $log->setAttribute('has_double_shift', $shiftCount > 1);
@@ -734,7 +734,7 @@ class AttendanceController extends Controller
 
         $overtimeToday = \App\Models\OvertimeRequest::where('employee_id', $employee->id)
             ->whereDate('date', $businessNow->toDateString())
-            ->where('status', 'approved')
+            ->whereIn('status', ['pending', 'approved'])
             ->orderBy('start_time')
             ->get(['id', 'date', 'start_time', 'end_time', 'overtime_type', 'reason', 'status']);
 
