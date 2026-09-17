@@ -51,7 +51,10 @@ class ShiftController extends Controller
                     if ($item->shiftTemplate && $item->shiftTemplate->is_default) {
                         $hasDefault = true;
                     }
-                    $schedule->push($item);
+                    $arrayItem = $item->toArray();
+                    $arrayItem['date'] = $item->date->toDateString();
+                    $arrayItem['shift_template'] = $item->shiftTemplate;
+                    $schedule->push($arrayItem);
                 });
             }
 
