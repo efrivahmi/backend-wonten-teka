@@ -162,7 +162,9 @@ export default function EmployeeResources({ type }) {
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `Kalender_Perusahaan_${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }).replace(' ', '_')}.ics`;
+                    document.body.appendChild(a);
                     a.click();
+                    document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 }} className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 bg-white transition">Ekspor ke Kalender (Alarm)</button>}
                 {type === 'trips' && <button onClick={() => setTripOpen(value => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4"/>Ajukan perjalanan</button>}

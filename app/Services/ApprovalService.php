@@ -7,11 +7,13 @@ use App\Models\ApprovalInstance;
 use App\Models\ApprovalAction;
 use App\Models\LeaveBalance;
 use App\Models\LeaveRequest;
+use App\Models\BusinessTripRequest;
 use App\Models\AttendanceAdjustmentRequest;
 use App\Models\AttendanceLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ApprovalService
 {
@@ -108,6 +110,36 @@ class ApprovalService
                         $balance->increment('used_days', $leave->total_days);
                         $balance->decrement('remaining_days', $leave->total_days);
                     }
+
+                    // Create attendance logs for leave duration
+                    $startDate = Carbon::parse($leave->start_date);
+                    $endDate = Carbon::parse($leave->end_date);
+                    
+                    for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                        $log = AttendanceLog::firstOrNew([
+                            'employee_id' => $leave->employee_id,
+                            'date' => $date->format('Y-m-d'),
+                        ]);
+                        $log->status = 'cuti';
+                        // Do not clear check_in/check_out if they already exist, 
+                        // just set status to cuti. If new, they default to null.
+                        $log->save();
+                    }
+
+                } elseif ($instance->approvable instanceof BusinessTripRequest) {
+                    $trip = $instance->approvable;
+                    $startDate = Carbon::parse($trip->start_date);
+                    $endDate = Carbon::parse($trip->end_date);
+
+                    for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                        $log = AttendanceLog::firstOrNew([
+                            'employee_id' => $trip->employee_id,
+                            'date' => $date->format('Y-m-d'),
+                        ]);
+                        $log->status = 'dinas';
+                        $log->save();
+                    }
+
                 } elseif ($instance->approvable instanceof AttendanceAdjustmentRequest) {
                     $adjustment = $instance->approvable;
                     $log = AttendanceLog::firstOrNew([
