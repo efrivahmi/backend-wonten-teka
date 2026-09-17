@@ -167,7 +167,21 @@ class AttendanceController extends Controller
             }
             $shiftTemplate = $assignment->shiftTemplate;
         } else if ($shiftTemplateId) {
-            $shiftTemplate = \App\Models\ShiftTemplate::find($shiftTemplateId);
+            $hasAssignedShift = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
+                ->whereDate('date', $businessNow->toDateString())->exists();
+            $hasRecurringShift = \App\Models\RecurringShiftAssignment::where('employee_id', $employee->id)
+                ->where('shift_template_id', $shiftTemplateId)
+                ->where('day_of_week', $businessNow->dayOfWeekIso)
+                ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', $businessNow))
+                ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', $businessNow))
+                ->exists();
+            $shiftTemplate = $hasAssignedShift
+                ? null
+                : \App\Models\ShiftTemplate::whereKey($shiftTemplateId)
+                    ->where(fn ($query) => $hasRecurringShift
+                        ? $query->where('is_active', true)
+                        : $query->where('is_default', true))
+                    ->first();
         }
 
         if (!$shiftTemplate) {
@@ -594,18 +608,32 @@ class AttendanceController extends Controller
             // Avoid duplicates if already explicitly assigned
             if (!collect($shifts)->contains('template_id', $template->id)) {
                 if ($template->is_default) $hasDefault = true;
-                $shiftInfo = $this->formatShiftInfo($template, null, $businessNow, $todaysLogs);
-                $shiftInfo['is_recurring_schedule'] = true;
-                $shifts[] = $shiftInfo;
+                $shifts[] = [
+                    'assignment_id' => null,
+                    'template_id' => $template->id,
+                    'name' => $template->name,
+                    'category' => $template->category ?? 'Reguler',
+                    'start_time' => Carbon::parse($template->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($template->end_time)->format('H:i'),
+                    'is_recurring_schedule' => true,
+                    'is_default_schedule' => false,
+                ];
             }
         }
         
         if (!$hasDefault) {
             $defaultTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
             if ($defaultTemplate && !collect($shifts)->contains('template_id', $defaultTemplate->id)) {
-                $shiftInfo = $this->formatShiftInfo($defaultTemplate, null, $businessNow, $todaysLogs);
-                $shiftInfo['is_default_schedule'] = true;
-                $shifts[] = $shiftInfo;
+                $shifts[] = [
+                    'assignment_id' => null,
+                    'template_id' => $defaultTemplate->id,
+                    'name' => $defaultTemplate->name,
+                    'category' => $defaultTemplate->category ?? 'Reguler',
+                    'start_time' => Carbon::parse($defaultTemplate->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($defaultTemplate->end_time)->format('H:i'),
+                    'is_recurring_schedule' => false,
+                    'is_default_schedule' => true,
+                ];
             }
         }
 
