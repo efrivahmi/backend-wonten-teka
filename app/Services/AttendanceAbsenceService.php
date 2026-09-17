@@ -107,7 +107,7 @@ class AttendanceAbsenceService
     }
 
     /** @return Collection<int, array{template: ShiftTemplate, assignment_id: ?int}> */
-    private function shiftsFor(int $employeeId, Carbon $date): Collection
+    public function shiftsFor(int $employeeId, Carbon $date): Collection
     {
         $shifts = collect();
         $hasDefault = false;

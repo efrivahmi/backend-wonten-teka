@@ -472,8 +472,8 @@ class AttendanceController extends Controller
             $workDate = $log->check_in_at->copy()
                 ->setTimezone(config('app.business_timezone'))
                 ->toDateString();
-            $shiftCount = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-                ->whereDate('date', $workDate)
+            $shiftCount = app(\App\Services\AttendanceAbsenceService::class)
+                ->shiftsFor($employee->id, \Carbon\Carbon::parse($workDate))
                 ->count();
             $overtime = \App\Models\OvertimeRequest::where('employee_id', $employee->id)
                 ->whereDate('date', $workDate)
