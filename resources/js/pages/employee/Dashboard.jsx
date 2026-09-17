@@ -91,7 +91,10 @@ export default function EmployeeDashboard() {
     const hasDoubleShift = todayInfo?.has_double_shift ?? shifts.length > 1;
     const overtimeToday = todayInfo?.overtime_today || [];
     const currentAttendance = useMemo(
-        () => shifts.map(shift => shift.attendance).find(Boolean) || null,
+        () => {
+            const mainShift = shifts.find(s => s.category === 'Reguler' || !s.category) || shifts[0];
+            return mainShift?.attendance || null;
+        },
         [shifts],
     );
     const currentStatus = currentAttendance?.status || 'not_started';

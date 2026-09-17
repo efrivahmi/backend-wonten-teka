@@ -167,21 +167,7 @@ class AttendanceController extends Controller
             }
             $shiftTemplate = $assignment->shiftTemplate;
         } else if ($shiftTemplateId) {
-            $hasAssignedShift = \App\Models\ShiftAssignment::where('employee_id', $employee->id)
-                ->whereDate('date', $businessNow->toDateString())->exists();
-            $hasRecurringShift = \App\Models\RecurringShiftAssignment::where('employee_id', $employee->id)
-                ->where('shift_template_id', $shiftTemplateId)
-                ->where('day_of_week', $businessNow->dayOfWeekIso)
-                ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', $businessNow))
-                ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', $businessNow))
-                ->exists();
-            $shiftTemplate = $hasAssignedShift
-                ? null
-                : \App\Models\ShiftTemplate::whereKey($shiftTemplateId)
-                    ->where(fn ($query) => $hasRecurringShift
-                        ? $query->where('is_active', true)
-                        : $query->where('is_default', true))
-                    ->first();
+            $shiftTemplate = \App\Models\ShiftTemplate::find($shiftTemplateId);
         }
 
         if (!$shiftTemplate) {
@@ -576,9 +562,12 @@ class AttendanceController extends Controller
             ->get();
 
         $shifts = [];
+        $hasDefault = false;
+
         foreach ($shiftAssignments as $assignment) {
             $template = $assignment->shiftTemplate;
             if ($template) {
+                if ($template->is_default) $hasDefault = true;
                 $shifts[] = [
                     'assignment_id' => $assignment->id,
                     'template_id' => $template->id,
@@ -586,22 +575,25 @@ class AttendanceController extends Controller
                     'category' => $template->category,
                     'start_time' => Carbon::parse($template->start_time)->format('H:i'),
                     'end_time' => Carbon::parse($template->end_time)->format('H:i'),
+                    'is_recurring_schedule' => false,
+                    'is_default_schedule' => false,
                 ];
             }
         }
 
-        if ($shiftAssignments->isEmpty()) {
-            $recurringAssignments = \App\Models\RecurringShiftAssignment::where('employee_id', $employee->id)
-                ->where('day_of_week', $businessNow->dayOfWeekIso)
-                ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', $businessNow))
-                ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', $businessNow))
-                ->with('shiftTemplate')
-                ->get();
-            $templates = $recurringAssignments->pluck('shiftTemplate')->filter();
-            if ($templates->isEmpty()) {
-                $templates = collect([\App\Models\ShiftTemplate::where('is_default', true)->first()])->filter();
-            }
-            foreach ($templates as $template) {
+        $recurringAssignments = \App\Models\RecurringShiftAssignment::where('employee_id', $employee->id)
+            ->where('day_of_week', $businessNow->dayOfWeekIso)
+            ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', $businessNow))
+            ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', $businessNow))
+            ->with('shiftTemplate')
+            ->get();
+            
+        $templates = $recurringAssignments->pluck('shiftTemplate')->filter();
+        
+        foreach ($templates as $template) {
+            // Avoid duplicates if already explicitly assigned
+            if (!collect($shifts)->contains('template_id', $template->id)) {
+                if ($template->is_default) $hasDefault = true;
                 $shifts[] = [
                     'assignment_id' => null,
                     'template_id' => $template->id,
@@ -609,8 +601,24 @@ class AttendanceController extends Controller
                     'category' => $template->category ?? 'Reguler',
                     'start_time' => Carbon::parse($template->start_time)->format('H:i'),
                     'end_time' => Carbon::parse($template->end_time)->format('H:i'),
-                    'is_recurring_schedule' => $recurringAssignments->isNotEmpty(),
-                    'is_default_schedule' => $recurringAssignments->isEmpty(),
+                    'is_recurring_schedule' => true,
+                    'is_default_schedule' => false,
+                ];
+            }
+        }
+        
+        if (!$hasDefault) {
+            $defaultTemplate = \App\Models\ShiftTemplate::where('is_default', true)->first();
+            if ($defaultTemplate && !collect($shifts)->contains('template_id', $defaultTemplate->id)) {
+                $shifts[] = [
+                    'assignment_id' => null,
+                    'template_id' => $defaultTemplate->id,
+                    'name' => $defaultTemplate->name,
+                    'category' => $defaultTemplate->category ?? 'Reguler',
+                    'start_time' => Carbon::parse($defaultTemplate->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($defaultTemplate->end_time)->format('H:i'),
+                    'is_recurring_schedule' => false,
+                    'is_default_schedule' => true,
                 ];
             }
         }
@@ -628,6 +636,7 @@ class AttendanceController extends Controller
 
         $attendances = \App\Models\AttendanceLog::where('employee_id', $employee->id)
             ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
+            ->with('shiftAssignment')
             ->get();
 
         foreach ($shifts as &$shift) {
@@ -638,12 +647,12 @@ class AttendanceController extends Controller
                 ? 'Belum dimulai'
                 : ($shift['time_status'] === 'active' ? 'Sedang berlangsung' : 'Jadwal selesai');
             $log = $attendances->first(function($att) use ($shift) {
-                if ($shift['assignment_id'] !== null) {
-                    return $att->shift_assignment_id == $shift['assignment_id'];
+                if ($shift['assignment_id'] !== null && $att->shift_assignment_id == $shift['assignment_id']) {
+                    return true;
                 }
 
-                return $att->shift_assignment_id === null
-                    && (($att->flags ?? [])['shift_template_id'] ?? null) == $shift['template_id'];
+                $attTemplateId = $att->shiftAssignment?->shift_template_id ?? (($att->flags ?? [])['shift_template_id'] ?? null);
+                return $attTemplateId == $shift['template_id'];
             });
 
             if ($log) {
@@ -689,7 +698,20 @@ class AttendanceController extends Controller
                 $monthStartLocal->copy()->utc(),
                 $monthEndLocal->copy()->utc(),
             ])
-            ->get();
+            ->with('shiftAssignment.shiftTemplate')
+            ->get()
+            ->filter(function ($log) {
+                if ($log->shiftAssignment && $log->shiftAssignment->shiftTemplate) {
+                    $template = $log->shiftAssignment->shiftTemplate;
+                    return strcasecmp($template->category, 'Reguler') === 0 || $template->is_default;
+                } elseif (isset($log->flags['shift_template_id'])) {
+                    $template = \App\Models\ShiftTemplate::find($log->flags['shift_template_id']);
+                    if ($template) {
+                        return strcasecmp($template->category, 'Reguler') === 0 || $template->is_default;
+                    }
+                }
+                return true;
+            });
 
         $onTimeCount = $monthlyLogs->where('status', 'on_time')->count();
         $gracePeriodCount = $monthlyLogs->where('status', 'present')->count();

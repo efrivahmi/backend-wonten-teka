@@ -580,7 +580,7 @@ const Attendance = () => {
                                                 {selectedLog.status && (
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedLog.status === 'on_time' ? 'bg-emerald-100 text-emerald-700' :
                                                             selectedLog.status === 'present' ? 'bg-amber-100 text-amber-700' :
-                                                                selectedLog.status === 'late' ? 'bg-rose-100 text-rose-700' :
+                                                                selectedLog.status === 'late' ? 'bg-amber-100 text-amber-700' :
                                                                     selectedLog.status === 'absent' ? 'bg-rose-100 text-rose-700' :
                                                                     selectedLog.status === 'flagged' ? 'bg-orange-100 text-orange-700' :
                                                                         'bg-slate-100 text-slate-700'

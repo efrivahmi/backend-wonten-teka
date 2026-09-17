@@ -55,14 +55,16 @@ class AttendanceAbsenceService
     ): bool {
         [$dayStartUtc, $dayEndUtc] = $this->shiftClock->utcDayBounds($workDate);
         $query = AttendanceLog::where('employee_id', $employeeId)
-            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc]);
-
-        if ($assignmentId !== null) {
-            $query->where('shift_assignment_id', $assignmentId);
-        } else {
-            $query->whereNull('shift_assignment_id')
-                ->where('flags->shift_template_id', $template->id);
-        }
+            ->whereBetween('check_in_at', [$dayStartUtc, $dayEndUtc])
+            ->where(function ($q) use ($assignmentId, $template) {
+                if ($assignmentId !== null) {
+                    $q->where('shift_assignment_id', $assignmentId);
+                }
+                $q->orWhere('flags->shift_template_id', $template->id);
+                $q->orWhereHas('shiftAssignment', function ($sq) use ($template) {
+                    $sq->where('shift_template_id', $template->id);
+                });
+            });
 
         if ($query->exists()) {
             return false;
@@ -101,18 +103,23 @@ class AttendanceAbsenceService
     /** @return Collection<int, array{template: ShiftTemplate, assignment_id: ?int}> */
     private function shiftsFor(int $employeeId, Carbon $date): Collection
     {
+        $shifts = collect();
+        $hasDefault = false;
+
         $assignments = ShiftAssignment::where('employee_id', $employeeId)
             ->whereDate('date', $date->toDateString())
             ->with('shiftTemplate')
-            ->get()
-            ->filter(fn ($assignment) => $assignment->shiftTemplate?->is_active)
-            ->map(fn ($assignment) => [
-                'template' => $assignment->shiftTemplate,
-                'assignment_id' => $assignment->id,
-            ]);
+            ->get();
 
-        if ($assignments->isNotEmpty()) {
-            return $assignments->values();
+        foreach ($assignments as $assignment) {
+            $template = $assignment->shiftTemplate;
+            if ($template && $template->is_active) {
+                if ($template->is_default) $hasDefault = true;
+                $shifts->push([
+                    'template' => $template,
+                    'assignment_id' => $assignment->id,
+                ]);
+            }
         }
 
         $recurring = RecurringShiftAssignment::where('employee_id', $employeeId)
@@ -120,29 +127,35 @@ class AttendanceAbsenceService
             ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', $date))
             ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', $date))
             ->with('shiftTemplate')
-            ->get()
-            ->filter(fn ($assignment) => $assignment->shiftTemplate?->is_active)
-            ->map(fn ($assignment) => [
-                'template' => $assignment->shiftTemplate,
-                'assignment_id' => null,
-            ]);
+            ->get();
 
-        if ($recurring->isNotEmpty()) {
-            return $recurring->values();
+        foreach ($recurring as $assignment) {
+            $template = $assignment->shiftTemplate;
+            if ($template && $template->is_active && !$shifts->contains(fn($s) => $s['template']->id === $template->id)) {
+                if ($template->is_default) $hasDefault = true;
+                $shifts->push([
+                    'template' => $template,
+                    'assignment_id' => null,
+                ]);
+            }
         }
 
-        $workingDays = Setting::where('key', 'working_days')->value('value') ?? [1, 2, 3, 4, 5, 6];
-        if (is_string($workingDays)) {
-            $workingDays = json_decode($workingDays, true) ?: [];
-        }
-        if (!in_array($date->dayOfWeekIso, $workingDays, true)) {
-            return collect();
+        if (!$hasDefault) {
+            $workingDays = Setting::where('key', 'working_days')->value('value') ?? [1, 2, 3, 4, 5, 6];
+            if (is_string($workingDays)) {
+                $workingDays = json_decode($workingDays, true) ?: [];
+            }
+            if (in_array($date->dayOfWeekIso, $workingDays, true)) {
+                $default = ShiftTemplate::active()->where('is_default', true)->first();
+                if ($default && !$shifts->contains(fn($s) => $s['template']->id === $default->id)) {
+                    $shifts->push([
+                        'template' => $default,
+                        'assignment_id' => null,
+                    ]);
+                }
+            }
         }
 
-        $default = ShiftTemplate::active()->where('is_default', true)->first();
-
-        return $default
-            ? collect([['template' => $default, 'assignment_id' => null]])
-            : collect();
+        return $shifts;
     }
 }
