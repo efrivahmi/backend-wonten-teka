@@ -31,7 +31,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Email/NIP atau kata sandi tidak sesuai.'],
+                'email' => ['Email atau kata sandi tidak sesuai.'],
             ]);
         }
         
