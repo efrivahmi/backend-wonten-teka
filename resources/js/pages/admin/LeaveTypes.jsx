@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const blank = { name:'', code:'', quota_per_month:1, is_paid:true, requires_attachment:false, is_active:true };
 
 export default function LeaveTypes(){
     const [items,setItems]=useState([]),[form,setForm]=useState(blank),[editing,setEditing]=useState(null),[open,setOpen]=useState(false),[error,setError]=useState('');
-    const load=async()=>{const r=await api.get('/admin/leave-types');setItems(r.data.data||[])};
-    useEffect(()=>{load()},[]);
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const load=async()=>{const r=await api.get(`/admin/leave-types?page=${currentPage}`);setPagination(r.data.data);setItems(r.data.data?.data||[])};
+    useEffect(()=>{load()},[currentPage]);
     const save=async e=>{e.preventDefault();setError('');try{editing?await api.put(`/admin/leave-types/${editing.id}`,form):await api.post('/admin/leave-types',form);setOpen(false);setEditing(null);setForm(blank);await load()}catch(x){setError(Object.values(x.response?.data?.errors||{})?.[0]?.[0]||x.response?.data?.message||'Gagal menyimpan jenis cuti.')}};
     const edit=x=>{setEditing(x);setForm({...blank,...x});setOpen(true)};
     const remove=async x=>{if(confirm(`Hapus ${x.name}?`)){await api.delete(`/admin/leave-types/${x.id}`);await load()}};
@@ -23,5 +26,6 @@ export default function LeaveTypes(){
             <div className="flex gap-3 md:col-span-2"><button className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white">Simpan</button><button type="button" onClick={()=>setOpen(false)} className="rounded-xl border px-5 py-3">Batal</button></div>
         </form>}
         <div className="grid gap-4 md:grid-cols-2">{items.map(x=><article key={x.id} className="flex justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5"><div className="flex gap-3"><div className="h-fit rounded-xl bg-emerald-100 p-3 text-emerald-700"><CalendarDays/></div><div><b className="text-slate-900">{x.name}</b><p className="mt-1 text-sm text-slate-500">{x.code||'Tanpa kode'} · {x.is_paid?'Dibayar':'Tidak dibayar'}</p><p className="mt-3 text-2xl font-bold text-emerald-700">{x.quota_per_month} <span className="text-sm font-medium text-slate-500">hari/bulan</span></p><span className={`mt-2 inline-block rounded-full px-2 py-1 text-xs font-semibold ${x.is_active?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-600'}`}>{x.is_active?'Aktif':'Nonaktif'}</span></div></div><div className="flex"><button onClick={()=>edit(x)} className="h-fit p-2 text-blue-700" title="Edit"><Pencil/></button><button onClick={()=>remove(x)} className="h-fit p-2 text-rose-700" title="Hapus"><Trash2/></button></div></article>)}</div>
+        <Pagination pagination={pagination} onPageChange={setCurrentPage} />
     </div>
 }

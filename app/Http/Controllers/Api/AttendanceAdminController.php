@@ -44,7 +44,7 @@ class AttendanceAdminController extends Controller
                 'employee', fn ($employee) => $employee->where('department', $request->string('department'))
             ))
             ->orderBy('created_at', 'desc')
-            ->paginate(min(500, max(1, (int) $request->query('per_page', 50))));
+            ->paginate(25);
 
         return response()->json($logs);
     }

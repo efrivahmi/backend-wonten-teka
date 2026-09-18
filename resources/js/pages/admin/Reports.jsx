@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import api from '../../api';
 import AttendanceDetailModal from './AttendanceDetailModal';
+import Pagination from '../../components/Pagination';
 
 const Reports = () => {
     const [loading, setLoading] = useState(true);
@@ -41,16 +42,18 @@ const Reports = () => {
     const [draftReady, setDraftReady] = useState(false);
     const [detailId, setDetailId] = useState(null);
     const [error, setError] = useState('');
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         Promise.all([fetchLogs(), api.get('/admin/employees').then(response => setEmployees(response.data.data || []))]);
-    }, []);
+    }, [currentPage]);
 
     const fetchLogs = async () => {
         try {
             setLoading(true);
             setError('');
-            const params = { per_page: 500 };
+            const params = { page: currentPage };
             if (search.trim()) params.search = search.trim();
             if (selectedEmployees.length) params.employee_ids = selectedEmployees.join(',');
             if (periodMode === 'month' && month) {
@@ -62,6 +65,7 @@ const Reports = () => {
                 if (dateTo) params.date_to = dateTo;
             }
             const response = await api.get('/admin/attendance', { params });
+            setPagination(response.data);
             setLogs(response.data.data || []);
             setDraftReady(true);
         } catch (error) {
@@ -288,6 +292,8 @@ const Reports = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
 
             {/* MODAL EDIT LOG ABSENSI */}

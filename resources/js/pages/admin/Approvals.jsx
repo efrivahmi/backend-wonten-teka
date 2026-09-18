@@ -8,22 +8,25 @@ import {
     Filter,
     Trash2
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Approvals = ({ filter = null }) => {
     const [loading, setLoading] = useState(true);
     const [approvals, setApprovals] = useState([]);
     const [actionLoading, setActionLoading] = useState(null);
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchApprovals();
-    }, [filter]);
+    }, [filter, currentPage]);
 
     const fetchApprovals = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/approvals/pending');
-            // Assuming response is paginated (has .data array)
+            const response = await api.get(`/approvals/pending?page=${currentPage}`);
+            setPagination(response.data);
             const items = response.data.data || [];
             setApprovals(filter ? items.filter(item => item.approvable_type?.includes(filter)) : items);
         } catch (error) {
@@ -202,6 +205,8 @@ const Approvals = ({ filter = null }) => {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
         </div>
     );

@@ -62,15 +62,22 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $search = $request->query('search');
         
         $employees = Employee::query()
             ->with(['user:id,email', 'user.roles:id,name'])
+            ->when($search, function ($query, $search) {
+                $query->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('employee_number', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('email', 'like', "%{$search}%");
+                    });
+            })
             ->orderBy('full_name', 'asc')
-            ->get();
+            ->paginate(25);
             
-        return response()->json([
-            'data' => $employees
-        ]);
+        return response()->json($employees);
     }
 
     public function getOptions(Request $request)

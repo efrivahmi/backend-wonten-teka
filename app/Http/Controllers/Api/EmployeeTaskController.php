@@ -33,9 +33,9 @@ class EmployeeTaskController extends Controller
                 });
             })
             ->orderBy('reminder_time', 'asc')
-            ->get();
+            ->paginate(25);
 
-        return response()->json(['data' => $tasks]);
+        return response()->json($tasks);
     }
 
     /**

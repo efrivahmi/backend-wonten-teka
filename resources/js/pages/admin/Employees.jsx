@@ -9,11 +9,14 @@ import {
     Edit2,
     Trash2
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Employees = () => {
     const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
 
     // Modal State
@@ -33,14 +36,18 @@ const Employees = () => {
     const [activeDropdown, setActiveDropdown] = useState(null);
 
     useEffect(() => {
-        fetchEmployees();
-    }, []);
+        const delayDebounceFn = setTimeout(() => {
+            fetchEmployees();
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [search, currentPage]);
 
     const fetchEmployees = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/employees');
-            setEmployees(response.data.data || response.data || []);
+            const response = await api.get(`/admin/employees?page=${currentPage}&search=${search}`);
+            setPagination(response.data);
+            setEmployees(response.data.data || []);
         } catch (error) {
             console.error("Error fetching employees:", error);
         } finally {
@@ -128,12 +135,8 @@ const Employees = () => {
         }
     };
 
-    const filteredEmployees = employees.filter(emp => 
-        emp.user?.name?.toLowerCase().includes(search.toLowerCase()) || 
-        emp.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
-        emp.position?.toLowerCase().includes(search.toLowerCase()) ||
-        emp.employee_number?.toLowerCase().includes(search.toLowerCase())
-    );
+    // Client-side filtering is no longer needed as search is done on the backend
+    const filteredEmployees = employees;
 
     if (loading) {
         return (
@@ -172,7 +175,10 @@ const Employees = () => {
                             className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
                             placeholder="Cari nama, email, ID pegawai, atau posisi..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setCurrentPage(1); // Reset page on new search
+                            }}
                         />
                     </div>
                 </div>
@@ -261,6 +267,8 @@ const Employees = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
 
             {/* MODAL FORM KARYAWAN */}

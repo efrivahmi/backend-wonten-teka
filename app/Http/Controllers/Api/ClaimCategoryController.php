@@ -19,7 +19,7 @@ class ClaimCategoryController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $categories = ClaimCategory::orderBy('name')->get();
+        $categories = ClaimCategory::orderBy('name')->paginate(25);
         return response()->json($categories);
     }
 

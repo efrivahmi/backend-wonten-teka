@@ -24,7 +24,7 @@ class PayslipController extends Controller
                 $query->select('id', 'period_month', 'period_year', 'status');
             }])
             ->orderBy('created_at', 'desc')
-            ->paginate(12); // A year of payslips per page
+            ->paginate(25);
             
         return response()->json($payslips);
     }

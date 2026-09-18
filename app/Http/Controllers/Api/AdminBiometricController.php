@@ -19,7 +19,7 @@ class AdminBiometricController extends Controller
                 $nested->where('full_name', 'like', "%{$search}%")
                     ->orWhere('employee_number', 'like', "%{$search}%");
             }))
-            ->orderBy('full_name')->paginate(20);
+            ->orderBy('full_name')->paginate(25);
 
         $employees->getCollection()->transform(function ($employee) {
             $mobile = $employee->biometric?->face_embedding;

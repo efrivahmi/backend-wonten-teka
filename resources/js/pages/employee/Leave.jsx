@@ -8,6 +8,7 @@ import {
     Loader2,
     FileText
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Leave = () => {
@@ -26,20 +27,24 @@ const Leave = () => {
         end_date: '',
         reason: ''
     });
+    
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [currentPage]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const [historyRes, balancesRes, typesRes] = await Promise.all([
-                api.get('/leave/history'),
+                api.get(`/leave/history?page=${currentPage}`),
                 api.get('/leave/balances'),
                 api.get('/leave/types')
             ]);
             
+            setPagination(historyRes.data);
             setHistory(historyRes.data.data || historyRes.data || []);
             setBalances(balancesRes.data || []);
             setTypes(typesRes.data || []);
@@ -207,6 +212,8 @@ const Leave = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
 
             {/* Request Modal */}

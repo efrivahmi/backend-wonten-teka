@@ -8,6 +8,7 @@ import {
     Calendar,
     FileText
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Overtime = () => {
@@ -24,15 +25,19 @@ const Overtime = () => {
         overtime_type: 'Hari Kerja',
         reason: ''
     });
+    
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [currentPage]);
 
     const fetchHistory = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/overtime/history');
+            const response = await api.get(`/overtime/history?page=${currentPage}`);
+            setPagination(response.data);
             setHistory(response.data.data || response.data || []);
         } catch (error) {
             console.error("Error fetching overtime history:", error);
@@ -155,6 +160,8 @@ const Overtime = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
 
             {/* Request Modal */}

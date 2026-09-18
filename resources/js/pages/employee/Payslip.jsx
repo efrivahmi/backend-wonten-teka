@@ -8,20 +8,25 @@ import {
     FileText,
     Wallet
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Payslip = () => {
     const [loading, setLoading] = useState(true);
     const [payslips, setPayslips] = useState([]);
+    
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchPayslips();
-    }, []);
+    }, [currentPage]);
 
     const fetchPayslips = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/payslips');
+            const response = await api.get(`/payslips?page=${currentPage}`);
+            setPagination(response.data);
             setPayslips(response.data.data || response.data || []);
         } catch (error) {
             console.error("Error fetching payslips:", error);
@@ -147,6 +152,8 @@ const Payslip = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
         </div>
     );

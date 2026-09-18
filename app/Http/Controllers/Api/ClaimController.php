@@ -39,7 +39,7 @@ class ClaimController extends Controller
         $claims = Claim::where('employee_id', $employee->id)
             ->with(['claimCategory', 'approvalInstance.actions'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(25);
             
         return response()->json($claims);
     }

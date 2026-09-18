@@ -15,7 +15,10 @@ import {
     ClipboardList,
     Plane,
     SlidersHorizontal,
-    ChevronDown
+    ChevronDown,
+    XCircle,
+    PanelLeftClose,
+    PanelLeftOpen
 } from 'lucide-react';
 import api from '../api';
 import { getDeviceFingerprint } from '../deviceIdentity';
@@ -133,9 +136,14 @@ const EmployeeLayout = () => {
             <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden bg-white shadow-xl transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} ${!isDesktopMenuClosed ? 'md:translate-x-0' : 'md:-translate-x-full'} md:w-64 transition-transform duration-300 ease-in-out`}>
                 <div className="flex h-20 flex-shrink-0 items-center justify-between px-5 border-b border-slate-100">
                     <div className="flex min-w-0 items-center gap-3"><BrandLogo className="h-11 w-11 shrink-0"/><span className="min-w-0 text-sm font-extrabold leading-tight text-emerald-900">e-Absensi<br/><span className="text-[11px] font-semibold text-slate-500">Lemdiklat Taruna Nusantara Indonesia</span></span></div>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-slate-600">
-                        <X className="h-6 w-6" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setIsDesktopMenuClosed(true)} className="hidden md:flex text-slate-400 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50 transition">
+                            <PanelLeftClose className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-slate-600 p-1.5">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
                 
                 <nav className="scrollbar-hidden min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-4 py-2 pb-6">
@@ -182,9 +190,6 @@ const EmployeeLayout = () => {
                         <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-slate-500 hover:text-slate-800 p-2">
                             <Menu className="h-6 w-6" />
                         </button>
-                        <button onClick={() => setIsDesktopMenuClosed(!isDesktopMenuClosed)} className="hidden md:flex text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 transition items-center justify-center">
-                            <Menu className="h-5 w-5" />
-                        </button>
                     </div>
                     
                     <div className="flex items-center space-x-4 ml-auto">
@@ -216,6 +221,17 @@ const EmployeeLayout = () => {
                     className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
+            )}
+
+            {/* Floating Unhide Button for Desktop */}
+            {isDesktopMenuClosed && (
+                <button 
+                    onClick={() => setIsDesktopMenuClosed(false)} 
+                    className="hidden md:flex fixed top-1/2 left-0 z-40 -translate-y-1/2 bg-white border border-l-0 border-slate-200 shadow-md text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 p-2 rounded-r-xl transition-colors"
+                    title="Tampilkan Sidebar"
+                >
+                    <PanelLeftOpen className="h-5 w-5" />
+                </button>
             )}
         </div>
     );

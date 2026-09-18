@@ -15,7 +15,7 @@ class AdminLeaveTypeController extends Controller
      */
     public function index(Request $request)
     {
-        $types = LeaveType::all();
+        $types = LeaveType::paginate(25);
         return response()->json([
             'status' => 'success',
             'data' => $types

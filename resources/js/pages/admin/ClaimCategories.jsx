@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Banknote, Pencil, Plus, Trash2 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const blank = { name: '', monthly_limit: 0, requires_receipt: true, is_active: true };
@@ -10,17 +11,20 @@ export default function ClaimCategories() {
     const [editing, setEditing] = useState(null);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState('');
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const load = async () => {
         try {
-            const r = await api.get('/admin/claim-categories');
-            setItems(r.data || []);
+            const r = await api.get(`/admin/claim-categories?page=${currentPage}`);
+            setPagination(r.data);
+            setItems(r.data?.data || []);
         } catch (x) {
             console.error(x);
         }
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [currentPage]);
 
     const save = async e => {
         e.preventDefault();
@@ -145,6 +149,8 @@ export default function ClaimCategories() {
                     </div>
                 )}
             </div>
+
+            <Pagination pagination={pagination} onPageChange={setCurrentPage} />
         </div>
     );
 }

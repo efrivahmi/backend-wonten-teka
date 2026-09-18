@@ -9,6 +9,7 @@ import {
     Calendar,
     FileText
 } from 'lucide-react';
+import Pagination from '../../components/Pagination';
 import api from '../../api';
 
 const Claims = () => {
@@ -26,19 +27,23 @@ const Claims = () => {
         description: '',
         receipt: null
     });
+    
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [currentPage]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const [historyRes, categoriesRes] = await Promise.all([
-                api.get('/claims/history'),
+                api.get(`/claims/history?page=${currentPage}`),
                 api.get('/claims/categories')
             ]);
             
+            setPagination(historyRes.data);
             setHistory(historyRes.data.data || historyRes.data || []);
             setCategories(categoriesRes.data || []);
         } catch (error) {
@@ -166,9 +171,11 @@ const Claims = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
 
-            {/* Request Modal */}
+            {/* MODAL PENGAJUAN KLAIM */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">

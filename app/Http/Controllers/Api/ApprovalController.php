@@ -26,7 +26,7 @@ class ApprovalController extends Controller
         $pending = ApprovalInstance::with('approvable')
             
             ->pending()
-            ->paginate(15);
+            ->paginate(25);
             
         return response()->json($pending);
     }

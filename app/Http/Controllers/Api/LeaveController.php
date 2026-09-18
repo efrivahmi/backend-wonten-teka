@@ -65,7 +65,7 @@ class LeaveController extends Controller
         $history = LeaveRequest::where('employee_id', $employee->id)
             ->with(['leaveType', 'approvalInstance.actions'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(25);
             
         return response()->json($history);
     }
