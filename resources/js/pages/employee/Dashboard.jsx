@@ -188,17 +188,13 @@ export default function EmployeeDashboard() {
                 </div>
             </header>
 
-            <section aria-labelledby="attendance-summary-title" className="order-1 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+            <section aria-labelledby="attendance-summary-title" className="order-2 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                         <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Pencatatan Absensi Hari Ini</h2>
                         <p className="mt-1 text-sm text-slate-500">Status, waktu masuk, waktu keluar, dan durasi kerja hari ini.</p>
                     </div>
                     <Link to="/employee/attendance" className="text-sm font-bold text-emerald-700 hover:underline">Lihat riwayat lengkap →</Link>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
-                    {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${shiftEnded ? 'bg-slate-900 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
                 </div>
                 <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
@@ -295,7 +291,7 @@ export default function EmployeeDashboard() {
             )}
 
             {/* 3. Today's shifts */}
-            <section className="order-2">
+            <section className="order-1">
                 <SectionHeading title="Jadwal Shift Hari Ini" subtitle="Jadwal dan progres kehadiran untuk setiap shift." action={<Link to="/employee/shifts" className="text-sm font-bold text-emerald-700">Semua jadwal</Link>} />
                 <div className="mt-4 space-y-4">
                     {shifts.length ? shifts.map((shift, index) => {
@@ -312,10 +308,10 @@ export default function EmployeeDashboard() {
                                         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Clock className="h-6 w-6" /></span>
                                         <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-900">{shift.name}</h3><span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${toneClasses[meta.tone]}`}>{meta.label}</span></div><p className="mt-2 text-sm text-slate-500">{shift.start_time}–{shift.end_time} • {shiftDuration(shift.start_time, shift.end_time)} • {shift.category || 'Reguler'}</p></div>
                                     </div>
-                                    {index > 0 && <div className="flex flex-wrap gap-2">
-                                        {!hasCheckedIn && !ended && status !== 'absent' && <button onClick={() => openAttendance('check-in', shift)} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white">Check In</button>}
-                                        {hasCheckedIn && !hasCheckedOut && <button onClick={() => openAttendance('check-out', shift)} disabled={!ended} title={!ended ? `Check Out tersedia mulai pukul ${shift.end_time}` : ''} className={`rounded-xl px-4 py-2.5 text-sm font-bold ${ended ? 'bg-slate-900 text-white' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}>{ended ? 'Check Out' : `Keluar mulai ${shift.end_time}`}</button>}
-                                    </div>}
+                                    <div className="flex flex-wrap gap-2 md:justify-end">
+                                        {!hasCheckedIn && !ended && status !== 'absent' && <button type="button" aria-label={`Check in untuk ${shift.name}`} onClick={() => openAttendance('check-in', shift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
+                                        {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={ended ? `Check out untuk ${shift.name}` : `Check out tersedia mulai ${shift.end_time}`} onClick={() => ended && openAttendance('check-out', shift)} disabled={!ended} title={!ended ? `Check Out tersedia mulai pukul ${shift.end_time}` : ''} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${ended ? 'bg-slate-900 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}><LogOut className="mr-2 h-4 w-4" />{ended ? 'Check Out' : `Keluar mulai ${shift.end_time}`}</button>}
+                                    </div>
                                 </div>
                             </article>
                         );
