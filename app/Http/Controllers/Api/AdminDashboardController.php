@@ -22,7 +22,7 @@ class AdminDashboardController extends Controller
         $logs = AuditLog::query()
             ->with('actor:id,name,email')
             ->latest()
-            ->paginate(50);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 50))));
 
         return response()->json($logs);
     }

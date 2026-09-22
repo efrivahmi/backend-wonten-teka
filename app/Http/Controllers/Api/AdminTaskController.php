@@ -15,7 +15,7 @@ class AdminTaskController extends Controller
             ->when($request->filled('employee_id'), fn ($query) => $query->where('employee_id', $request->integer('employee_id')))
             ->when($request->filled('type'), fn ($query) => $query->where('is_habit', $request->input('type') === 'habit'))
             ->latest()
-            ->paginate(30);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 30))));
 
         return response()->json($tasks);
     }

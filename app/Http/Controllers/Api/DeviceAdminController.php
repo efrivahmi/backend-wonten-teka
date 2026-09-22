@@ -25,7 +25,7 @@ class DeviceAdminController extends Controller
             
             ->where('status', 'pending_approval')
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 15))));
 
         return response()->json($pendingDevices);
     }
@@ -45,7 +45,7 @@ class DeviceAdminController extends Controller
             ->where('status', 'active')
             ->orderByDesc('last_used_at')
             ->orderByDesc('approved_at')
-            ->paginate(30);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 30))));
 
         return response()->json($activeDevices);
     }

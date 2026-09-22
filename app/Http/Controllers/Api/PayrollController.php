@@ -24,7 +24,7 @@ class PayrollController extends Controller
             ->withCount('payslips')
             ->orderBy('period_year', 'desc')
             ->orderBy('period_month', 'desc')
-            ->paginate(15);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 15))));
             
         return response()->json($runs);
     }

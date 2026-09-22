@@ -173,6 +173,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::post('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'store']);
         Route::get('/payroll/runs/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
+        Route::get('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'show']);
+        Route::put('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'update']);
         
         // Shifts
         Route::get('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'index']);

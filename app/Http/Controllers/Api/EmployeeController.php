@@ -86,7 +86,7 @@ class EmployeeController extends Controller
                     });
             })
             ->orderBy('full_name', 'asc')
-            ->paginate(25);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 25))));
             
         $employees->getCollection()->each->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
 

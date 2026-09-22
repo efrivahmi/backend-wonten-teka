@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\AttendanceSecurityEvent;
+use App\Services\AttendanceAbsenceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -13,12 +14,17 @@ class AttendanceAdminController extends Controller
     /**
      * Get all attendance logs for admin monitoring.
      */
-    public function index(Request $request)
+    public function index(Request $request, AttendanceAbsenceService $absenceService)
     {
         $user = $request->user();
         if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+
+        // Keep the admin preview consistent with employee history. This is
+        // idempotent and materializes ended shifts that were missed, so alpha
+        // rows are visible even when the scheduler has not run yet.
+        $absenceService->recordEndedShifts();
 
         $timezone = config('app.business_timezone', 'Asia/Jakarta');
         [$periodStart, $periodEnd] = $this->resolvePeriod($request, $timezone);
@@ -44,7 +50,7 @@ class AttendanceAdminController extends Controller
                 'employee', fn ($employee) => $employee->where('department', $request->string('department'))
             ))
             ->orderBy('created_at', 'desc')
-            ->paginate(25);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json($logs);
     }

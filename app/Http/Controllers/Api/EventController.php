@@ -20,7 +20,7 @@ class EventController extends Controller
 
         $events = CalendarEvent::query()
             ->orderBy('start_date', 'desc')
-            ->paginate(15);
+            ->paginate(min(500, max(1, (int) $request->query('per_page', 15))));
             
         return response()->json($events);
     }

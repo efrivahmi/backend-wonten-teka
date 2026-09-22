@@ -15,7 +15,7 @@ class AdminLeaveTypeController extends Controller
      */
     public function index(Request $request)
     {
-        $types = LeaveType::paginate(25);
+        $types = LeaveType::paginate(min(500, max(1, (int) $request->query('per_page', 25))));
         return $types;
     }
 

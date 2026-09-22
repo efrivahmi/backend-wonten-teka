@@ -202,9 +202,11 @@ class CompanyController extends Controller
         ], 201);
     }
 
-    public function adminAnnouncements()
+    public function adminAnnouncements(Request $request)
     {
-        return response()->json(Announcement::latest()->paginate(30));
+        return response()->json(
+            Announcement::latest()->paginate(min(500, max(1, (int) $request->query('per_page', 30))))
+        );
     }
 
     public function updateAnnouncement(Request $request, Announcement $announcement)
