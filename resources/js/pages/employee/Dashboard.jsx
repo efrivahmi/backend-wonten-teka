@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Bell, Briefcase, CalendarCheck, CalendarDays, CheckCircle2, Clock,
-    FileText, Layers3, Loader2, LogIn, LogOut, Plane, Timer, User, XCircle,
+    FileText, Layers3, Loader2, LogIn, LogOut, Plane, Timer, XCircle,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
@@ -130,11 +130,14 @@ export default function EmployeeDashboard() {
     const totalPresent = stats.present_days ?? ((stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0));
 
     const quickLinks = [
+        ['/employee/attendance', 'Absensi', CalendarCheck],
         ['/employee/habits', 'Habit Tracker', CheckCircle2],
+        ['/employee/shifts', 'Jadwal Shift', Clock],
         ['/employee/leave', 'Ajukan Cuti', Briefcase],
         ['/employee/overtime', 'Lembur', Clock],
         ['/employee/claims', 'Reimburse', FileText],
         ['/employee/business-trips', 'Perjalanan Dinas', Plane],
+        ['/employee/calendar', 'Kalender', CalendarDays],
     ];
 
     const openAttendance = (action, shift) => {
@@ -154,29 +157,21 @@ export default function EmployeeDashboard() {
 
             {/* 0. Welcome banner and primary attendance action */}
             <section className="teka-hero overflow-hidden rounded-4xl p-6 sm:p-8">
-                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)] lg:items-end">
-                    <div>
+                <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+                    <div className="min-w-0">
                         <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-5 text-4xl sm:text-6xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
-                        <p className="mt-4 max-w-xl text-sm text-stone-300">Pantau kehadiran, shift, dan informasi kerja Anda dari satu halaman.</p>
+                        <h1 className="teka-display mt-4 text-4xl sm:text-5xl"><span className="teka-accent">Selamat datang, {employee.full_name || user.name || 'Karyawan'}.</span></h1>
+                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-stone-300">
+                            <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
+                            <span className="hidden text-stone-500 sm:inline">•</span>
+                            <span>{employee.position || 'Posisi belum diatur'}</span>
+                            <span className="hidden text-stone-500 sm:inline">•</span>
+                            <span>{employee.department || 'Unit belum diatur'}</span>
+                        </div>
                     </div>
-                    <div className="min-w-0 rounded-3xl border border-white/15 bg-white/10 p-4 text-white shadow-xl backdrop-blur-sm sm:p-5">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-center gap-3">
-                                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15"><User className="h-6 w-6" /></span>
-                                <div className="min-w-0"><strong className="block truncate">{employee.full_name || user.name || 'Karyawan'}</strong><span className="block truncate text-xs text-stone-300">{employee.employee_number || 'Nomor pegawai belum diatur'}</span></div>
-                            </div>
-                            <span aria-live="polite" className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black ${currentStatusMeta.tone === 'emerald' ? 'border-emerald-300/30 bg-emerald-400/20 text-emerald-100' : currentStatusMeta.tone === 'amber' ? 'border-amber-300/30 bg-amber-400/20 text-amber-100' : currentStatusMeta.tone === 'rose' ? 'border-rose-300/30 bg-rose-400/20 text-rose-100' : 'border-white/20 bg-white/10 text-white/80'}`}>{currentStatusMeta.label}</span>
-                        </div>
-                        <p className="mt-4 truncate text-sm text-stone-300">{employee.position || 'Posisi belum diatur'} • {employee.department || 'Unit belum diatur'}</p>
-                        <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/10 p-3 text-sm">
-                            <div><span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Masuk</span><strong>{formatTime(currentAttendance?.check_in_time, currentStatus)}</strong></div>
-                            <div><span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Keluar</span><strong>{formatTime(currentAttendance?.check_out_time, currentStatus)}</strong></div>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-lime-300 px-4 py-2.5 text-sm font-black text-slate-950 transition hover:bg-lime-200 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:ring-offset-2 focus:ring-offset-slate-900"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
-                            {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-white/80 ${shiftEnded ? 'bg-white text-slate-950 hover:bg-blue-50' : 'cursor-not-allowed bg-white/15 text-white/60'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
-                        </div>
+                    <div className="shrink-0 border-l border-white/15 pl-4 text-left lg:text-right">
+                        <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Hari ini</p>
+                        <p className="mt-1 text-sm font-bold text-white">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                 </div>
             </section>
@@ -184,11 +179,14 @@ export default function EmployeeDashboard() {
             <section aria-labelledby="attendance-summary-title" className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
-                        <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Prioritas utama</p>
                         <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Absensi hari ini</h2>
                         <p className="mt-1 text-sm text-slate-500">Ringkasan kehadiran Anda untuk shift utama.</p>
                     </div>
                     <Link to="/employee/attendance" className="text-sm font-bold text-emerald-700 hover:underline">Lihat riwayat lengkap →</Link>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                    {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
+                    {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${shiftEnded ? 'bg-slate-900 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
@@ -319,7 +317,7 @@ export default function EmployeeDashboard() {
             <section>
                 <SectionHeading title="Akses Cepat" subtitle="Tindakan utama ada di depan; fitur lain tetap mudah ditemukan." />
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-                    {quickLinks.map(([href, label, Icon], index) => <Link key={href} to={href} className={`rounded-2xl border p-4 text-center shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${index < 3 ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'}`}><Icon className={`mx-auto h-6 w-6 ${index < 3 ? 'text-emerald-700' : 'text-slate-500'}`} /><span className="mt-3 block text-xs font-bold text-slate-700">{label}</span>{index < 3 && <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Prioritas</span>}</Link>)}
+                    {quickLinks.map(([href, label, Icon]) => <Link key={href} to={href} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><Icon className="mx-auto h-6 w-6 text-emerald-700" /><span className="mt-3 block text-xs font-bold text-slate-700">{label}</span></Link>)}
                 </div>
             </section>
         </div>
