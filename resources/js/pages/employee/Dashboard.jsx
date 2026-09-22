@@ -6,6 +6,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
+import { enableEventAlarms, eventAlarmPermission, scheduleEventAlarms } from '../../eventAlarmService';
 
 const statusMeta = {
     on_time: { label: 'Tepat waktu', tone: 'emerald' },
@@ -44,6 +45,13 @@ const shiftDuration = (start, end) => {
     return `${Math.floor(minutes / 60)}j ${minutes % 60}m`;
 };
 
+const eventDate = value => value
+    ? new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Tanggal belum ditentukan';
+
+const eventDay = value => value ? new Date(value).toLocaleDateString('id-ID', { day: '2-digit' }) : '--';
+const eventMonth = value => value ? new Date(value).toLocaleDateString('id-ID', { month: 'short' }).toUpperCase() : '---';
+
 const SummaryCard = ({ label, value, icon: Icon, tone = 'slate' }) => (
     <div className={`rounded-2xl border p-4 sm:p-5 ${toneClasses[tone]}`}>
         <div className="flex items-center justify-between gap-3">
@@ -60,6 +68,9 @@ export default function EmployeeDashboard() {
     const employee = user.employee || {};
     const [todayInfo, setTodayInfo] = useState(null);
     const [announcements, setAnnouncements] = useState([]);
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [alarmEnabled, setAlarmEnabled] = useState(() => eventAlarmPermission() === 'granted');
+    const [alarmMessage, setAlarmMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [now, setNow] = useState(new Date());
@@ -68,12 +79,14 @@ export default function EmployeeDashboard() {
         setLoading(true);
         setError('');
         try {
-            const [attendanceResponse, announcementResponse] = await Promise.all([
+            const [attendanceResponse, announcementResponse, calendarResponse] = await Promise.all([
                 api.get('/attendance/today-info'),
                 api.get('/announcements'),
+                api.get('/calendar').catch(() => ({ data: { events: [] } })),
             ]);
             setTodayInfo(attendanceResponse.data || null);
             setAnnouncements(announcementResponse.data?.data || announcementResponse.data || []);
+            setCalendarEvents(calendarResponse.data?.events || []);
         } catch (requestError) {
             setError(requestError.response?.data?.message || 'Dashboard belum dapat dimuat.');
         } finally {
@@ -86,6 +99,17 @@ export default function EmployeeDashboard() {
         const timer = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    useEffect(() => {
+        if (alarmEnabled) scheduleEventAlarms(calendarEvents);
+    }, [alarmEnabled, calendarEvents]);
+
+    const activateEventAlarm = async () => {
+        const enabled = await enableEventAlarms();
+        setAlarmEnabled(enabled);
+        setAlarmMessage(enabled ? 'Alarm event aktif di browser ini.' : 'Izin notifikasi belum diberikan oleh browser.');
+        if (enabled) scheduleEventAlarms(calendarEvents);
+    };
 
     const shifts = todayInfo?.shifts || [];
     const hasDoubleShift = todayInfo?.has_double_shift ?? shifts.length > 1;
@@ -151,7 +175,7 @@ export default function EmployeeDashboard() {
             <section>
                 <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
-                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                         {announcements.slice(0, 3).map(item => {
                             const attachUrl = item.attachment_full_url || item.attachment_url;
                             const isImage = attachUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(attachUrl);
@@ -159,8 +183,8 @@ export default function EmployeeDashboard() {
                             return (
                                 <article key={item.id} className="flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
-                                    <h3 className="break-words font-bold text-slate-900">{item.title}</h3>
-                                    <p className="whitespace-pre-line break-words text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
+                                    <h3 className="min-w-0 break-words [overflow-wrap:anywhere] font-bold text-slate-900">{item.title}</h3>
+                                    <p className="min-w-0 whitespace-pre-line break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
                                     {isImage && (
                                         <a href={attachUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                             <img src={attachUrl} alt="Lampiran pengumuman" className="max-h-56 w-full rounded-xl border border-slate-100 bg-slate-50 object-contain" />
@@ -168,7 +192,7 @@ export default function EmployeeDashboard() {
                                     )}
                                     {!isImage && attachUrl && (
                                         <a href={attachUrl} target="_blank" rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition">
+                                            className="inline-flex max-w-full items-center gap-2 self-start rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
                                             <FileText className="h-4 w-4" />
                                             {isPdf ? 'Unduh PDF' : 'Unduh Lampiran'}
                                         </a>
@@ -178,6 +202,31 @@ export default function EmployeeDashboard() {
                         })}
                     </div>
                 ) : <EmptyCard text="Belum ada pengumuman terbaru." />}
+            </section>
+
+            {/* 1b. Company events published by admin */}
+            <section>
+                <SectionHeading
+                    title="Agenda Perusahaan"
+                    subtitle="Event dan kegiatan yang tersedia dari admin."
+                    action={<div className="flex flex-wrap gap-2"><button onClick={activateEventAlarm} className={`rounded-xl px-4 py-2 text-sm font-bold ${alarmEnabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-amber-500 text-white'}`}>{alarmEnabled ? 'Alarm aktif' : 'Aktifkan alarm'}</button><Link to="/employee/attendance" className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Absen sekarang</Link><Link to="/employee/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">Lihat kalender</Link></div>}
+                />
+                {alarmMessage && <p className="mt-3 text-sm text-slate-500">{alarmMessage}</p>}
+                {calendarEvents.length ? (() => {
+                    const events = [...calendarEvents].sort((a, b) => new Date(a.start_date || 0) - new Date(b.start_date || 0));
+                    const nextEvent = events[0];
+                    return <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+                        <article className="min-w-0 overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-6 text-white shadow-lg shadow-blue-900/10 sm:p-8">
+                            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+                                <div className="w-fit shrink-0 rounded-2xl bg-white px-5 py-3 text-center text-blue-700 shadow-sm"><span className="block text-4xl font-black leading-none">{eventDay(nextEvent.start_date)}</span><span className="mt-1 block text-xs font-black tracking-widest">{eventMonth(nextEvent.start_date)}</span></div>
+                                <div className="min-w-0"><span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-blue-100">Event berikutnya</span><h3 className="mt-3 break-words text-2xl font-black leading-tight sm:text-3xl [overflow-wrap:anywhere]">{nextEvent.title}</h3><p className="mt-3 text-sm font-semibold text-blue-100">{eventDate(nextEvent.start_date)}{nextEvent.end_date && nextEvent.end_date !== nextEvent.start_date ? ` – ${eventDate(nextEvent.end_date)}` : ''}</p>{(nextEvent.start_time || nextEvent.end_time) && <p className="mt-1 text-sm text-blue-100">{nextEvent.start_time || ''}{nextEvent.end_time ? ` – ${nextEvent.end_time}` : ''}</p>}</div>
+                            </div>
+                            {nextEvent.description && <p className="mt-6 whitespace-pre-line break-words border-t border-white/15 pt-5 text-sm leading-6 text-blue-50 [overflow-wrap:anywhere]">{nextEvent.description}</p>}
+                            <Link to="/employee/calendar" className="mt-6 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 transition hover:bg-blue-50">Buka detail kalender</Link>
+                        </article>
+                        <div className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900">Agenda selanjutnya</h3><CalendarDays className="h-5 w-5 text-blue-600" /></div><div className="mt-4 space-y-3">{events.slice(1, 4).map(event => <div key={event.id} className="flex min-w-0 gap-3 rounded-2xl bg-slate-50 p-3"><div className="w-12 shrink-0 rounded-xl bg-blue-100 py-2 text-center text-blue-700"><span className="block text-lg font-black leading-none">{eventDay(event.start_date)}</span><span className="text-[10px] font-black tracking-wider">{eventMonth(event.start_date)}</span></div><div className="min-w-0"><p className="break-words text-sm font-bold text-slate-800 [overflow-wrap:anywhere]">{event.title}</p><p className="mt-1 text-xs text-slate-500">{event.start_time || 'Waktu belum ditentukan'}</p></div></div>)}{events.length === 1 && <p className="text-sm text-slate-500">Belum ada agenda lain yang akan datang.</p>}</div></div>
+                    </div>;
+                })() : <EmptyCard text="Belum ada event perusahaan yang tersedia." />}
             </section>
 
             {/* 2. Today's attendance */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Users, 
     CalendarCheck, 
+    CalendarDays,
     Clock, 
     AlertTriangle,
     FileText,
@@ -15,6 +16,7 @@ import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
+    const [calendarEvents, setCalendarEvents] = useState([]);
 
     useEffect(() => {
         fetchStats();
@@ -23,8 +25,12 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/dashboard');
+            const [response, calendarResponse] = await Promise.all([
+                api.get('/admin/dashboard'),
+                api.get('/calendar').catch(() => ({ data: { events: [] } })),
+            ]);
             setStats(response.data.data);
+            setCalendarEvents(calendarResponse.data?.events || []);
         } catch (error) {
             console.error("Error fetching admin stats:", error);
         } finally {
@@ -56,6 +62,18 @@ const AdminDashboard = () => {
                     <p className="text-stone-300 mt-6">Pantau kehadiran, tindak lanjuti persetujuan, dan kelola operasional dari satu tempat.</p>
                 </div>
             </div>
+
+            <section className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                    <div><h2 className="text-lg font-black text-slate-900">Agenda Perusahaan</h2><p className="mt-1 text-sm text-slate-500">Event yang sudah dipublikasikan admin dan akan terlihat oleh karyawan.</p></div>
+                    <a href="/admin/events" className="inline-flex self-start rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 sm:self-auto">Kelola kalender</a>
+                </div>
+                {calendarEvents.length ? (
+                    <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {calendarEvents.slice(0, 6).map(event => <article key={event.id} className="min-w-0 rounded-xl border border-white bg-white p-4 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{event.type || 'Kegiatan'}</p><h3 className="mt-1 break-words font-bold text-slate-900 [overflow-wrap:anywhere]">{event.title}</h3></div></div><p className="mt-3 text-sm font-semibold text-slate-700">{event.start_date ? new Date(event.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tanggal belum ditentukan'}</p>{event.description && <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{event.description}</p>}</article>)}
+                    </div>
+                ) : <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 p-6 text-center text-sm text-slate-500">Belum ada event perusahaan.</div>}
+            </section>
 
             <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 rounded-2xl bg-gradient-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
