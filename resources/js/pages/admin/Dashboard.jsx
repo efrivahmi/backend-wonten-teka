@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Users, 
-    CalendarCheck, 
+import {
+    Users,
+    CalendarCheck,
     CalendarDays,
-    Clock, 
+    Clock,
     AlertTriangle,
     FileText,
     CheckCircle2,
@@ -49,13 +49,13 @@ const AdminDashboard = () => {
     const { employees, attendance_today, attendance_month, daily_attendance_trend = [], monthly_attendance_trend = [], department_attendance = [], pending_approvals, recent_security_events = [] } = stats;
 
     // Calculate percentage for attendance
-    const attendancePercentage = employees.total > 0 
-        ? Math.round((attendance_today.present / employees.total) * 100) 
+    const attendancePercentage = employees.total > 0
+        ? Math.round((attendance_today.present / employees.total) * 100)
         : 0;
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <div className="teka-hero min-h-64 rounded-[2rem] p-7 md:p-10 flex flex-col justify-between">
+            <div className="teka-hero min-h-64 rounded-4xl p-7 md:p-10 flex flex-col justify-between">
                 <p className="teka-kicker text-stone-400">Pusat kendali organisasi</p>
                 <div className="pt-12 max-w-2xl">
                     <h1 className="teka-display text-5xl md:text-7xl">Data yang membuat tim <span className="teka-accent">bergerak.</span></h1>
@@ -63,23 +63,23 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <section className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50 to-white p-6 shadow-sm">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div><h2 className="text-lg font-black text-slate-900">Agenda Perusahaan</h2><p className="mt-1 text-sm text-slate-500">Event yang sudah dipublikasikan admin dan akan terlihat oleh karyawan.</p></div>
                     <a href="/admin/events" className="inline-flex self-start rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 sm:self-auto">Kelola kalender</a>
                 </div>
                 {calendarEvents.length ? (
                     <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        {calendarEvents.slice(0, 6).map(event => <article key={event.id} className="min-w-0 rounded-xl border border-white bg-white p-4 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{event.type || 'Kegiatan'}</p><h3 className="mt-1 break-words font-bold text-slate-900 [overflow-wrap:anywhere]">{event.title}</h3></div></div><p className="mt-3 text-sm font-semibold text-slate-700">{event.start_date ? new Date(event.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tanggal belum ditentukan'}</p>{event.description && <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{event.description}</p>}</article>)}
+                        {calendarEvents.slice(0, 6).map(event => <article key={event.id} className="min-w-0 rounded-xl border border-white bg-white p-4 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{event.type || 'Kegiatan'}</p><h3 className="mt-1 wrap-anywhere font-bold text-slate-900">{event.title}</h3></div></div><p className="mt-3 text-sm font-semibold text-slate-700">{event.start_date ? new Date(event.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tanggal belum ditentukan'}</p>{event.description && <p className="mt-1 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{event.description}</p>}</article>)}
                     </div>
                 ) : <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 p-6 text-center text-sm text-slate-500">Belum ada event perusahaan.</div>}
             </section>
 
             <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 rounded-2xl bg-gradient-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
+                <div className="md:col-span-2 rounded-2xl bg-linear-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
                     <p className="text-emerald-100 text-sm font-semibold">Tingkat kehadiran • {attendance_month?.label}</p>
                     <div className="flex items-end gap-3 mt-3"><strong className="text-5xl md:text-6xl">{attendance_month?.rate ?? 0}%</strong><span className="text-emerald-100 pb-2">bulan berjalan</span></div>
-                    <div className="mt-6 h-2 bg-white/20 rounded-full overflow-hidden"><div className="h-full bg-lime-300 rounded-full transition-all" style={{width: `${Math.min(100, attendance_month?.rate ?? 0)}%`}} /></div>
+                    <div className="mt-6 h-2 bg-white/20 rounded-full overflow-hidden"><div className="h-full bg-lime-300 rounded-full transition-all" style={{ width: `${Math.min(100, attendance_month?.rate ?? 0)}%` }} /></div>
                     <p className="mt-3 text-xs text-emerald-100">{attendance_month?.present_employee_days ?? 0} kehadiran dari {attendance_month?.expected_employee_days ?? 0} hari kerja karyawan yang diharapkan.</p>
                 </div>
                 <div className="rounded-2xl bg-white border border-slate-200 p-6">
@@ -92,17 +92,17 @@ const AdminDashboard = () => {
             <section className="grid lg:grid-cols-2 gap-6">
                 <div className="bg-white border border-slate-200 rounded-2xl p-6">
                     <div className="mb-6"><h2 className="font-bold text-slate-900 text-lg">Tren 6 bulan</h2><p className="text-sm text-slate-500">Persentase hadir terhadap hari kerja yang diharapkan.</p></div>
-                    <div className="h-56 flex items-end gap-3">{monthly_attendance_trend.map(month => <div key={month.label} className="flex-1 h-full flex flex-col justify-end items-center gap-2"><span className="text-xs font-bold text-emerald-700">{month.rate}%</span><div className="w-full max-w-12 bg-emerald-500 rounded-t-lg min-h-1 transition-all" style={{height: `${Math.max(2, month.rate)}%`}}/><span className="text-[10px] text-slate-500 text-center">{month.label}</span></div>)}</div>
+                    <div className="h-56 flex items-end gap-3">{monthly_attendance_trend.map(month => <div key={month.label} className="flex-1 h-full flex flex-col justify-end items-center gap-2"><span className="text-xs font-bold text-emerald-700">{month.rate}%</span><div className="w-full max-w-12 bg-emerald-500 rounded-t-lg min-h-1 transition-all" style={{ height: `${Math.max(2, month.rate)}%` }} /><span className="text-[10px] text-slate-500 text-center">{month.label}</span></div>)}</div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-2xl p-6">
                     <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Kehadiran per departemen</h2><p className="text-sm text-slate-500">Kondisi langsung hari ini.</p></div>
-                    <div className="space-y-4 max-h-64 overflow-y-auto">{department_attendance.map(dept => <div key={dept.department}><div className="flex justify-between text-sm mb-1"><span className="font-semibold text-slate-700">{dept.department}</span><span className="font-bold text-green-700">{dept.attendance_rate}%</span></div><div className="h-2 bg-slate-100 rounded-full"><div className="h-full bg-green-600 rounded-full" style={{width: `${Math.min(100, dept.attendance_rate)}%`}}/></div><p className="text-[11px] text-slate-400 mt-1">{dept.present} hadir • {dept.absent} belum hadir • {dept.late} terlambat</p></div>)}</div>
+                    <div className="space-y-4 max-h-64 overflow-y-auto">{department_attendance.map(dept => <div key={dept.department}><div className="flex justify-between text-sm mb-1"><span className="font-semibold text-slate-700">{dept.department}</span><span className="font-bold text-green-700">{dept.attendance_rate}%</span></div><div className="h-2 bg-slate-100 rounded-full"><div className="h-full bg-green-600 rounded-full" style={{ width: `${Math.min(100, dept.attendance_rate)}%` }} /></div><p className="text-[11px] text-slate-400 mt-1">{dept.present} hadir • {dept.absent} belum hadir • {dept.late} terlambat</p></div>)}</div>
                 </div>
             </section>
 
             <section className="bg-white border border-slate-200 rounded-2xl p-6">
                 <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Konsistensi bulan berjalan</h2><p className="text-sm text-slate-500">Tingkat kehadiran pada setiap hari kerja yang sudah berlalu.</p></div>
-                <div className="flex gap-2 overflow-x-auto pb-2">{daily_attendance_trend.map(day => <div key={day.date} className="min-w-16 text-center"><div className="h-28 bg-slate-100 rounded-xl flex items-end overflow-hidden"><div className={`w-full ${day.rate >= 90 ? 'bg-emerald-500' : day.rate >= 70 ? 'bg-lime-500' : 'bg-amber-500'}`} style={{height: `${Math.max(3, day.rate)}%`}}/></div><strong className="block text-xs mt-2 text-slate-700">{day.rate}%</strong><span className="text-[10px] text-slate-400">{day.label}</span></div>)}</div>
+                <div className="flex gap-2 overflow-x-auto pb-2">{daily_attendance_trend.map(day => <div key={day.date} className="min-w-16 text-center"><div className="h-28 bg-slate-100 rounded-xl flex items-end overflow-hidden"><div className={`w-full ${day.rate >= 90 ? 'bg-emerald-500' : day.rate >= 70 ? 'bg-lime-500' : 'bg-amber-500'}`} style={{ height: `${Math.max(3, day.rate)}%` }} /></div><strong className="block text-xs mt-2 text-slate-700">{day.rate}%</strong><span className="text-[10px] text-slate-400">{day.label}</span></div>)}</div>
             </section>
 
             {/* Top Stat Cards */}
@@ -156,7 +156,7 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
                     <h2 className="text-lg font-bold text-slate-800 mb-6">Status Kehadiran Hari Ini</h2>
                     <div className="flex-1 flex flex-col justify-center space-y-6">
-                        
+
                         <div>
                             <div className="flex justify-between text-sm mb-2">
                                 <span className="font-semibold text-slate-700">Hadir Tepat Waktu</span>
@@ -216,7 +216,7 @@ const AdminDashboard = () => {
                             <ul className="divide-y divide-slate-100">
                                 {recent_security_events.map((event) => (
                                     <li key={event.id} className="p-5 flex items-start space-x-4 hover:bg-slate-50 transition-colors">
-                                        <div className="bg-slate-100 rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0 text-slate-600 font-bold">
+                                        <div className="bg-slate-100 rounded-full h-10 w-10 flex items-center justify-center shrink-0 text-slate-600 font-bold">
                                             {event.employee?.full_name?.charAt(0) || '?'}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -242,12 +242,12 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-            
+
             <MobileAppDownloadCard audience="admin" />
 
             {/* Rincian Persetujuan & Karyawan Baru */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
+
                 {/* Rincian Persetujuan */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center space-x-2">

@@ -112,17 +112,20 @@ export default function EmployeeDashboard() {
     };
 
     const shifts = todayInfo?.shifts || [];
+    const primaryShift = shifts.find(s => s.category === 'Reguler' || !s.category) || shifts[0];
     const hasDoubleShift = todayInfo?.has_double_shift ?? shifts.length > 1;
     const overtimeToday = todayInfo?.overtime_today || [];
     const currentAttendance = useMemo(
         () => {
-            const mainShift = shifts.find(s => s.category === 'Reguler' || !s.category) || shifts[0];
-            return mainShift?.attendance || null;
+            return primaryShift?.attendance || null;
         },
-        [shifts],
+        [primaryShift],
     );
     const currentStatus = currentAttendance?.status || 'not_started';
     const currentStatusMeta = statusMeta[currentStatus] || { label: 'Belum absen', tone: 'slate' };
+    const hasCheckedIn = Boolean(currentAttendance?.check_in_time) && currentStatus !== 'absent';
+    const hasCheckedOut = Boolean(currentAttendance?.check_out_time);
+    const shiftEnded = primaryShift?.time_status === 'ended';
     const stats = todayInfo?.monthly_stats || {};
     const totalPresent = stats.present_days ?? ((stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0));
 
@@ -152,21 +155,32 @@ export default function EmployeeDashboard() {
         <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 md:p-8">
             {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error} <button onClick={load} className="ml-2 font-bold underline">Muat ulang</button></div>}
 
-            {/* 0. Welcome banner and profile */}
-            <section className="teka-hero overflow-hidden rounded-[2rem] p-6 sm:p-8">
-                <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
+            {/* 0. Welcome banner and primary attendance action */}
+            <section className="teka-hero overflow-hidden rounded-4xl p-6 sm:p-8">
+                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)] lg:items-end">
                     <div>
                         <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
                         <h1 className="teka-display mt-5 text-4xl sm:text-6xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
                         <p className="mt-4 max-w-xl text-sm text-stone-300">Pantau kehadiran, shift, dan informasi kerja Anda dari satu halaman.</p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur-sm md:min-w-72">
-                        <div className="flex items-center gap-3">
-                            <span className="grid h-12 w-12 place-items-center rounded-xl bg-white/15"><User className="h-6 w-6" /></span>
-                            <div><strong className="block">{employee.full_name || user.name || 'Karyawan'}</strong><span className="text-xs text-stone-300">{employee.employee_number || 'Nomor pegawai belum diatur'}</span></div>
+                    <div className="min-w-0 rounded-3xl border border-white/15 bg-white/10 p-4 text-white shadow-xl backdrop-blur-sm sm:p-5">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15"><User className="h-6 w-6" /></span>
+                                <div className="min-w-0"><strong className="block truncate">{employee.full_name || user.name || 'Karyawan'}</strong><span className="block truncate text-xs text-stone-300">{employee.employee_number || 'Nomor pegawai belum diatur'}</span></div>
+                            </div>
+                            <span aria-live="polite" className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black ${currentStatusMeta.tone === 'emerald' ? 'border-emerald-300/30 bg-emerald-400/20 text-emerald-100' : currentStatusMeta.tone === 'amber' ? 'border-amber-300/30 bg-amber-400/20 text-amber-100' : currentStatusMeta.tone === 'rose' ? 'border-rose-300/30 bg-rose-400/20 text-rose-100' : 'border-white/20 bg-white/10 text-white/80'}`}>{currentStatusMeta.label}</span>
                         </div>
-                        <p className="mt-4 text-sm text-stone-300">{employee.position || 'Posisi belum diatur'} • {employee.department || 'Unit belum diatur'}</p>
-                        <Link to="/employee/profile" className="mt-4 inline-flex text-sm font-bold text-lime-300">Lihat profil lengkap →</Link>
+                        <p className="mt-4 truncate text-sm text-stone-300">{employee.position || 'Posisi belum diatur'} • {employee.department || 'Unit belum diatur'}</p>
+                        <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/10 p-3 text-sm">
+                            <div><span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Masuk</span><strong>{formatTime(currentAttendance?.check_in_time, currentStatus)}</strong></div>
+                            <div><span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Keluar</span><strong>{formatTime(currentAttendance?.check_out_time, currentStatus)}</strong></div>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-lime-300 px-4 py-2.5 text-sm font-black text-slate-950 transition hover:bg-lime-200 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:ring-offset-2 focus:ring-offset-slate-900"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
+                            {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-white/80 ${shiftEnded ? 'bg-white text-slate-950 hover:bg-blue-50' : 'cursor-not-allowed bg-white/15 text-white/60'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
+                            <Link to="/employee/attendance" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/80">Detail absensi</Link>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -183,8 +197,8 @@ export default function EmployeeDashboard() {
                             return (
                                 <article key={item.id} className="flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
-                                    <h3 className="min-w-0 break-words [overflow-wrap:anywhere] font-bold text-slate-900">{item.title}</h3>
-                                    <p className="min-w-0 whitespace-pre-line break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
+                                    <h3 className="min-w-0 wrap-anywhere font-bold text-slate-900">{item.title}</h3>
+                                    <p className="min-w-0 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
                                     {isImage && (
                                         <a href={attachUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                             <img src={attachUrl} alt="Lampiran pengumuman" className="max-h-56 w-full rounded-xl border border-slate-100 bg-slate-50 object-contain" />
@@ -216,15 +230,15 @@ export default function EmployeeDashboard() {
                     const events = [...calendarEvents].sort((a, b) => new Date(a.start_date || 0) - new Date(b.start_date || 0));
                     const nextEvent = events[0];
                     return <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-                        <article className="min-w-0 overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-6 text-white shadow-lg shadow-blue-900/10 sm:p-8">
+                        <article className="min-w-0 overflow-hidden rounded-3xl border border-blue-200 bg-linear-to-br from-blue-700 via-blue-600 to-indigo-700 p-6 text-white shadow-lg shadow-blue-900/10 sm:p-8">
                             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
                                 <div className="w-fit shrink-0 rounded-2xl bg-white px-5 py-3 text-center text-blue-700 shadow-sm"><span className="block text-4xl font-black leading-none">{eventDay(nextEvent.start_date)}</span><span className="mt-1 block text-xs font-black tracking-widest">{eventMonth(nextEvent.start_date)}</span></div>
-                                <div className="min-w-0"><span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-blue-100">Event berikutnya</span><h3 className="mt-3 break-words text-2xl font-black leading-tight sm:text-3xl [overflow-wrap:anywhere]">{nextEvent.title}</h3><p className="mt-3 text-sm font-semibold text-blue-100">{eventDate(nextEvent.start_date)}{nextEvent.end_date && nextEvent.end_date !== nextEvent.start_date ? ` – ${eventDate(nextEvent.end_date)}` : ''}</p>{(nextEvent.start_time || nextEvent.end_time) && <p className="mt-1 text-sm text-blue-100">{nextEvent.start_time || ''}{nextEvent.end_time ? ` – ${nextEvent.end_time}` : ''}</p>}</div>
+                                <div className="min-w-0"><span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-blue-100">Event berikutnya</span><h3 className="mt-3 wrap-anywhere text-2xl font-black leading-tight sm:text-3xl">{nextEvent.title}</h3><p className="mt-3 text-sm font-semibold text-blue-100">{eventDate(nextEvent.start_date)}{nextEvent.end_date && nextEvent.end_date !== nextEvent.start_date ? ` – ${eventDate(nextEvent.end_date)}` : ''}</p>{(nextEvent.start_time || nextEvent.end_time) && <p className="mt-1 text-sm text-blue-100">{nextEvent.start_time || ''}{nextEvent.end_time ? ` – ${nextEvent.end_time}` : ''}</p>}</div>
                             </div>
-                            {nextEvent.description && <p className="mt-6 whitespace-pre-line break-words border-t border-white/15 pt-5 text-sm leading-6 text-blue-50 [overflow-wrap:anywhere]">{nextEvent.description}</p>}
+                            {nextEvent.description && <p className="mt-6 whitespace-pre-line wrap-anywhere border-t border-white/15 pt-5 text-sm leading-6 text-blue-50">{nextEvent.description}</p>}
                             <Link to="/employee/calendar" className="mt-6 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 transition hover:bg-blue-50">Buka detail kalender</Link>
                         </article>
-                        <div className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900">Agenda selanjutnya</h3><CalendarDays className="h-5 w-5 text-blue-600" /></div><div className="mt-4 space-y-3">{events.slice(1, 4).map(event => <div key={event.id} className="flex min-w-0 gap-3 rounded-2xl bg-slate-50 p-3"><div className="w-12 shrink-0 rounded-xl bg-blue-100 py-2 text-center text-blue-700"><span className="block text-lg font-black leading-none">{eventDay(event.start_date)}</span><span className="text-[10px] font-black tracking-wider">{eventMonth(event.start_date)}</span></div><div className="min-w-0"><p className="break-words text-sm font-bold text-slate-800 [overflow-wrap:anywhere]">{event.title}</p><p className="mt-1 text-xs text-slate-500">{event.start_time || 'Waktu belum ditentukan'}</p></div></div>)}{events.length === 1 && <p className="text-sm text-slate-500">Belum ada agenda lain yang akan datang.</p>}</div></div>
+                        <div className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900">Agenda selanjutnya</h3><CalendarDays className="h-5 w-5 text-blue-600" /></div><div className="mt-4 space-y-3">{events.slice(1, 4).map(event => <div key={event.id} className="flex min-w-0 gap-3 rounded-2xl bg-slate-50 p-3"><div className="w-12 shrink-0 rounded-xl bg-blue-100 py-2 text-center text-blue-700"><span className="block text-lg font-black leading-none">{eventDay(event.start_date)}</span><span className="text-[10px] font-black tracking-wider">{eventMonth(event.start_date)}</span></div><div className="min-w-0"><p className="wrap-anywhere text-sm font-bold text-slate-800">{event.title}</p><p className="mt-1 text-xs text-slate-500">{event.start_time || 'Waktu belum ditentukan'}</p></div></div>)}{events.length === 1 && <p className="text-sm text-slate-500">Belum ada agenda lain yang akan datang.</p>}</div></div>
                     </div>;
                 })() : <EmptyCard text="Belum ada event perusahaan yang tersedia." />}
             </section>
@@ -321,9 +335,9 @@ export default function EmployeeDashboard() {
 
             {/* 5. Quick access stays last */}
             <section>
-                <SectionHeading title="Akses Cepat" subtitle="Buka fitur yang paling sering digunakan." />
+                <SectionHeading title="Akses Cepat" subtitle="Tindakan utama ada di depan; fitur lain tetap mudah ditemukan." />
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-                    {quickLinks.map(([href, label, Icon]) => <Link key={href} to={href} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"><Icon className="mx-auto h-6 w-6 text-emerald-700" /><span className="mt-3 block text-xs font-bold text-slate-700">{label}</span></Link>)}
+                    {quickLinks.map(([href, label, Icon], index) => <Link key={href} to={href} className={`rounded-2xl border p-4 text-center shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${index < 3 ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'}`}><Icon className={`mx-auto h-6 w-6 ${index < 3 ? 'text-emerald-700' : 'text-slate-500'}`} /><span className="mt-3 block text-xs font-bold text-slate-700">{label}</span>{index < 3 && <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Prioritas</span>}</Link>)}
                 </div>
             </section>
         </div>
