@@ -84,7 +84,7 @@ class ClaimController extends Controller
         $receiptUrl = null;
         if ($request->hasFile('receipt')) {
             $path = $request->file('receipt')->store('receipts', 'public');
-            $receiptUrl = $path;
+            $receiptUrl = '/storage/' . $path;
         }
 
         $claim = Claim::create([
@@ -105,5 +105,23 @@ class ClaimController extends Controller
             'message' => 'Claim submitted successfully.',
             'data' => $claim->load('claimCategory')
         ], 201);
+    }
+
+    public function show(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $claim = \App\Models\Claim::where('employee_id', $employee->id)->with('category')->findOrFail($id);
+        return response()->json($claim);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $claim = \App\Models\Claim::where('employee_id', $employee->id)->findOrFail($id);
+        if ($claim->status !== 'pending') {
+            return response()->json(['message' => 'Hanya klaim dengan status pending yang dapat dibatalkan.'], 422);
+        }
+        $claim->delete();
+        return response()->json(['message' => 'Klaim berhasil dibatalkan.']);
     }
 }

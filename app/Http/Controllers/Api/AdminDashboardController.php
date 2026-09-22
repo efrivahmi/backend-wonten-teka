@@ -34,7 +34,7 @@ class AdminDashboardController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $today = Carbon::today();
+        $today = Carbon::today(config('app.business_timezone', 'Asia/Jakarta'));
 
         // 1. Total Employees
         $totalEmployees = Employee::where('is_active', true)->requiresAttendance()->count();

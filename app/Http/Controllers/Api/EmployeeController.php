@@ -41,21 +41,32 @@ class EmployeeController extends Controller
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($request->user()->id)],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:1000',
+            'photo' => 'nullable|image|max:5120',
         ]);
 
         DB::transaction(function () use ($employee, $validated, $request) {
-            $employee->update([
+            $data = [
                 'full_name' => $validated['full_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'address' => $validated['address'] ?? null,
-            ]);
+            ];
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('employees/photos', 'public');
+                $data['photo_url'] = '/storage/' . $path;
+            }
+
+            $employee->update($data);
             $request->user()->update(['name' => $validated['full_name'], 'email' => $validated['email']]);
         });
 
+        $user = $request->user()->fresh()->load('employee', 'roles');
+        $user->employee?->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
+
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
-            'user' => $request->user()->fresh()->load('employee', 'roles'),
+            'user' => $user,
         ]);
     }
 
@@ -77,6 +88,8 @@ class EmployeeController extends Controller
             ->orderBy('full_name', 'asc')
             ->paginate(25);
             
+        $employees->getCollection()->each->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
+
         return response()->json($employees);
     }
 

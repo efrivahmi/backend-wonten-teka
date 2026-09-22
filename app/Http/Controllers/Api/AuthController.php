@@ -43,8 +43,11 @@ class AuthController extends Controller
 
         $token = $user->createToken($request->device_name)->plainTextToken;
 
+        $user->load('employee', 'roles');
+        $user->employee?->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
+
         return response()->json([
-            'user' => $user->load('employee', 'roles'),
+            'user' => $user,
             'token' => $token,
         ]);
     }
@@ -58,8 +61,10 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
+        $user = $request->user()->load('employee', 'roles', 'permissions');
+        $user->employee?->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
         return response()->json([
-            'user' => $request->user()->load('employee', 'roles', 'permissions'),
+            'user' => $user,
         ]);
     }
 

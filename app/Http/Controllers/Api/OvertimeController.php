@@ -71,4 +71,22 @@ class OvertimeController extends Controller
             'data' => $overtimeRequest->load('approvalInstance')
         ]);
     }
+
+    public function show(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $overtime = \App\Models\Overtime::where('employee_id', $employee->id)->findOrFail($id);
+        return response()->json($overtime);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $overtime = \App\Models\Overtime::where('employee_id', $employee->id)->findOrFail($id);
+        if ($overtime->status !== 'pending') {
+            return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
+        }
+        $overtime->delete();
+        return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
+    }
 }

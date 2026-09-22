@@ -16,10 +16,7 @@ class AdminLeaveTypeController extends Controller
     public function index(Request $request)
     {
         $types = LeaveType::paginate(25);
-        return response()->json([
-            'status' => 'success',
-            'data' => $types
-        ]);
+        return $types;
     }
 
     /**
@@ -46,7 +43,7 @@ class AdminLeaveTypeController extends Controller
         $type = LeaveType::create($validator->validated());
 
         return response()->json([
-            'status' => 'success',
+            
             'message' => 'Leave type created successfully.',
             'data' => $type
         ], 201);
@@ -94,7 +91,7 @@ class AdminLeaveTypeController extends Controller
         }
 
         return response()->json([
-            'status' => 'success',
+            
             'message' => 'Leave type updated successfully.',
             'data' => $type
         ]);
@@ -116,7 +113,7 @@ class AdminLeaveTypeController extends Controller
             // Soft delete or deactivate instead? Let's deactivate
             $type->update(['is_active' => false]);
             return response()->json([
-                'status' => 'success',
+                
                 'message' => 'Leave type is in use and has been deactivated instead of deleted.',
             ]);
         }
@@ -124,7 +121,7 @@ class AdminLeaveTypeController extends Controller
         $type->delete();
 
         return response()->json([
-            'status' => 'success',
+            
             'message' => 'Leave type deleted successfully.'
         ]);
     }

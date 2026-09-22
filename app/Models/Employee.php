@@ -52,13 +52,7 @@ class Employee extends Model
         'face_embedding_encrypted',
     ];
 
-    protected $appends = [
-        'nik',
-        'npwp',
-        'bpjs_kesehatan_number',
-        'bpjs_ketenagakerjaan_number',
-        'bank_account_number',
-    ];
+
 
     protected function casts(): array
     {

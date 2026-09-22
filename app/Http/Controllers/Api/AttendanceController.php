@@ -234,7 +234,8 @@ class AttendanceController extends Controller
             );
         } else {
             $mobileBiometric = EmployeeBiometric::where('employee_id', $employee->id)->first();
-            abort_unless($mobileBiometric?->face_embedding, 422, 'Data wajah mobile belum didaftarkan atau telah direset admin. Silakan rekam ulang wajah.');
+            $hasMobileEmbeddings = $mobileBiometric?->face_embedding && is_array($mobileBiometric->face_embedding) && count($mobileBiometric->face_embedding) >= 3;
+            abort_unless($hasMobileEmbeddings, 422, 'Data wajah mobile belum didaftarkan atau tidak valid. Silakan rekam ulang wajah.');
         }
         if (!$request->filled('face_descriptor') && $faceMatchScore < 0.8) {
             return response()->json([

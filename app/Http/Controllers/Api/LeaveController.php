@@ -35,10 +35,11 @@ class LeaveController extends Controller
         $period = now(config('app.business_timezone', 'Asia/Jakarta'));
         $year = $period->year;
         $month = $period->month;
-        LeaveType::active()->get()->each(function (LeaveType $type) use ($employee, $year, $month) {
+        $balances = LeaveType::active()->get()->map(function (LeaveType $type) use ($employee, $year, $month) {
             $used = LeaveRequest::where('employee_id', $employee->id)
                 ->where('leave_type_id', $type->id)->where('status', 'approved')
                 ->whereYear('start_date', $year)->whereMonth('start_date', $month)->sum('total_days');
+            
             $balance = LeaveBalance::firstOrNew([
                 'employee_id' => $employee->id, 'leave_type_id' => $type->id,
                 'year' => $year, 'month' => $month,
@@ -47,11 +48,10 @@ class LeaveController extends Controller
             $balance->used_days = $used;
             $balance->carried_over_days = 0;
             $balance->remaining_days = max(0, $type->quota_per_month - $used);
-            $balance->save();
+            $balance->setRelation('leaveType', $type);
+            return $balance;
         });
 
-        $balances = $employee->leaveBalances()->where('year', $year)->where('month', $month)->with('leaveType')->get();
-        
         return response()->json($balances);
     }
 
@@ -171,5 +171,23 @@ class LeaveController extends Controller
             'message' => 'Pengajuan cuti dikirim dan menunggu persetujuan admin.',
             'data' => $leaveRequest->load('approvalInstance')
         ]);
+    }
+
+    public function show(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $leave = \App\Models\LeaveRequest::where('employee_id', $employee->id)->with('leaveType')->findOrFail($id);
+        return response()->json($leave);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $leave = \App\Models\LeaveRequest::where('employee_id', $employee->id)->findOrFail($id);
+        if ($leave->status !== 'pending') {
+            return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
+        }
+        $leave->delete();
+        return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
     }
 }

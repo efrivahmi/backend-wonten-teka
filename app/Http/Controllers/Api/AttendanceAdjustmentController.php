@@ -67,4 +67,22 @@ class AttendanceAdjustmentController extends Controller
             'data' => $adjustmentRequest->load('approvalInstance')
         ]);
     }
+
+    public function show(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $adj = \App\Models\AttendanceAdjustment::where('employee_id', $employee->id)->findOrFail($id);
+        return response()->json($adj);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $adj = \App\Models\AttendanceAdjustment::where('employee_id', $employee->id)->findOrFail($id);
+        if ($adj->status !== 'pending') {
+            return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
+        }
+        $adj->delete();
+        return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
+    }
 }

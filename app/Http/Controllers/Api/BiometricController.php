@@ -87,9 +87,18 @@ class BiometricController extends Controller
             ], 404);
         }
 
+        // A biometric enrolled on the web is still useful as a recovery source
+        // for the mobile onboarding flow. Prefer mobile descriptors when they
+        // exist, otherwise expose the web descriptor set so the app can ask
+        // the employee to confirm/re-enrol it on this device.
+        $embeddings = is_array($biometric->face_embedding) && count($biometric->face_embedding) >= 3
+            ? $biometric->face_embedding
+            : $biometric->web_face_embedding;
+
         return response()->json([
             'message' => 'Face data retrieved successfully.',
-            'embeddings' => $biometric->face_embedding,
+            'embeddings' => $embeddings,
+            'source' => $embeddings === $biometric->face_embedding ? 'mobile' : 'web',
         ]);
     }
 }

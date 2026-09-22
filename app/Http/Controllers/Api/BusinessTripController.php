@@ -67,4 +67,22 @@ class BusinessTripController extends Controller
             'data' => $businessTripRequest->load('approvalInstance')
         ]);
     }
+
+    public function show(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $trip = \App\Models\BusinessTrip::where('employee_id', $employee->id)->findOrFail($id);
+        return response()->json($trip);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $employee = $request->user()->employee;
+        $trip = \App\Models\BusinessTrip::where('employee_id', $employee->id)->findOrFail($id);
+        if ($trip->status !== 'pending') {
+            return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
+        }
+        $trip->delete();
+        return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
+    }
 }

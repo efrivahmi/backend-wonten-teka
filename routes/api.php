@@ -84,14 +84,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // New attendance form routes
         Route::post('/adjustment', [AttendanceAdjustmentController::class, 'store']);
         Route::get('/adjustment', [AttendanceAdjustmentController::class, 'index']);
+        Route::get('/adjustment/{id}', [AttendanceAdjustmentController::class, 'show']);
+        Route::delete('/adjustment/{id}', [AttendanceAdjustmentController::class, 'cancel']);
         
         Route::post('/business-trip', [BusinessTripController::class, 'store']);
         Route::get('/business-trip', [BusinessTripController::class, 'index']);
+        Route::get('/business-trip/{id}', [BusinessTripController::class, 'show']);
+        Route::delete('/business-trip/{id}', [BusinessTripController::class, 'cancel']);
     });
 
     Route::prefix('overtime')->group(function () {
         Route::post('/request', [OvertimeController::class, 'store']);
         Route::get('/history', [OvertimeController::class, 'index']);
+        Route::get('/requests/{id}', [OvertimeController::class, 'show']);
+        Route::delete('/requests/{id}', [OvertimeController::class, 'cancel']);
     });
 
     Route::prefix('leave')->group(function () {
@@ -99,6 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/balances', [LeaveController::class, 'balances']);
         Route::get('/history', [LeaveController::class, 'history']);
         Route::post('/request', [LeaveController::class, 'request']);
+        Route::get('/requests/{id}', [LeaveController::class, 'show']);
+        Route::delete('/requests/{id}', [LeaveController::class, 'cancel']);
     });
 
     Route::prefix('approvals')->group(function () {
@@ -111,6 +119,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories', [ClaimController::class, 'categories']);
         Route::get('/history', [ClaimController::class, 'history']);
         Route::post('/submit', [ClaimController::class, 'submit']);
+        Route::get('/{id}', [ClaimController::class, 'show']);
+        Route::delete('/{id}', [ClaimController::class, 'cancel']);
     });
 
     Route::prefix('payslips')->group(function () {
