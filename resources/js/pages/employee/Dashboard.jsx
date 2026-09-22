@@ -165,15 +165,15 @@ export default function EmployeeDashboard() {
                             <path d="m17 25 5 5 10-11" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
                         </svg>
                         <div className="min-w-0">
-                        <p className="teka-kicker text-slate-500">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-4 text-4xl text-slate-900 sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
-                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
-                            <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
-                            <span className="hidden text-slate-300 sm:inline">•</span>
-                            <span>{employee.position || 'Posisi belum diatur'}</span>
-                            <span className="hidden text-slate-300 sm:inline">•</span>
-                            <span>{employee.department || 'Unit belum diatur'}</span>
-                        </div>
+                            <p className="teka-kicker text-slate-500">Ruang kerja karyawan</p>
+                            <h1 className="teka-display mt-4 text-4xl text-slate-900 sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
+                            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
+                                <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
+                                <span className="hidden text-slate-300 sm:inline">•</span>
+                                <span>{employee.position || 'Posisi belum diatur'}</span>
+                                <span className="hidden text-slate-300 sm:inline">•</span>
+                                <span>{employee.department || 'Unit belum diatur'}</span>
+                            </div>
                         </div>
                     </div>
                     <div className="shrink-0 border-l border-slate-200 pl-4 text-left lg:text-right">

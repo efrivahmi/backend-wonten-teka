@@ -1,284 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Users,
-    CalendarCheck,
-    CalendarDays,
-    Clock,
-    AlertTriangle,
-    FileText,
-    CheckCircle2,
-    XCircle,
-    Loader2
+    AlertTriangle, Banknote, Bell, Briefcase, CalendarCheck, CalendarDays,
+    CalendarRange, CheckSquare, Clock, FileBarChart, FileText, Flag,
+    ListChecks, Loader2, MapPin, Shield, Smartphone, Users,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../api';
 import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
+
+const accessGroups = [
+    { title: 'SDM & Persetujuan', icon: Users, links: [
+        ['Karyawan', '/admin/employees', Users], ['Persetujuan', '/admin/approvals', CheckSquare],
+        ['Klaim / Reimburse', '/admin/claims', FileBarChart], ['Jenis Klaim', '/admin/claim-categories', Banknote],
+        ['Jenis Cuti', '/admin/leave-types', Briefcase],
+    ] },
+    { title: 'Presensi', icon: CalendarCheck, links: [
+        ['Jadwal & Shift', '/admin/schedule', CalendarRange], ['Penugasan Shift', '/admin/shift-assignments', CalendarRange],
+        ['Lokasi Absensi', '/admin/attendance-settings', MapPin], ['Kehadiran Harian', '/admin/attendance-daily', CalendarCheck],
+        ['Laporan Absensi', '/admin/reports', FileBarChart], ['Deteksi Fake GPS', '/admin/attendance-security-events', Flag],
+    ] },
+    { title: 'Operasional', icon: ListChecks, links: [
+        ['Perangkat', '/admin/devices', Smartphone], ['Event', '/admin/events', CalendarDays],
+        ['Pengumuman', '/admin/announcements', Bell], ['Daily Task & Habit', '/admin/tasks', ListChecks],
+        ['Payroll', '/admin/payroll', Banknote], ['Konfigurasi Payroll', '/admin/payroll-config', Banknote],
+        ['Biometrik Wajah', '/admin/biometrics', Shield], ['Analitik Departemen', '/admin/department-analytics', FileBarChart],
+        ['Pusat Ekspor', '/admin/export', FileBarChart], ['Log Audit', '/admin/audit-logs', Shield],
+        ['Pengaturan Perusahaan', '/admin/org-settings', MapPin], ['Pengaturan Sistem', '/admin/settings', Shield],
+    ] },
+    { title: 'Akun', icon: Shield, links: [['Profil Administrator', '/admin/profile', Shield]] },
+];
+
+const SummaryCard = ({ label, value, detail, icon: Icon, tone }) => (
+    <div className={`rounded-2xl border p-5 ${tone}`}>
+        <div className="flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[0.12em] opacity-75">{label}</p><Icon className="h-5 w-5" /></div>
+        <p className="mt-4 text-3xl font-black tracking-tight">{value}</p>
+        {detail && <p className="mt-1 text-xs font-semibold opacity-70">{detail}</p>}
+    </div>
+);
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [calendarEvents, setCalendarEvents] = useState([]);
-
-    useEffect(() => {
-        fetchStats();
-    }, []);
+    const [error, setError] = useState('');
 
     const fetchStats = async () => {
         try {
             setLoading(true);
+            setError('');
             const [response, calendarResponse] = await Promise.all([
                 api.get('/admin/dashboard'),
                 api.get('/calendar').catch(() => ({ data: { events: [] } })),
             ]);
-            setStats(response.data.data);
+            setStats(response.data.data || {});
             setCalendarEvents(calendarResponse.data?.events || []);
-        } catch (error) {
-            console.error("Error fetching admin stats:", error);
-        } finally {
-            setLoading(false);
-        }
+        } catch (requestError) {
+            setError(requestError.response?.data?.message || 'Dashboard admin belum dapat dimuat.');
+        } finally { setLoading(false); }
     };
 
-    if (loading || !stats) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-            </div>
-        );
-    }
+    useEffect(() => { fetchStats(); }, []);
 
-    const { employees, attendance_today, attendance_month, daily_attendance_trend = [], monthly_attendance_trend = [], department_attendance = [], pending_approvals, recent_security_events = [] } = stats;
+    if (loading || !stats) return <div className="grid min-h-[70vh] place-items-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>;
 
-    // Calculate percentage for attendance
-    const attendancePercentage = employees.total > 0
-        ? Math.round((attendance_today.present / employees.total) * 100)
-        : 0;
+    const employees = stats.employees || { total: 0, recent: [] };
+    const attendanceToday = stats.attendance_today || { present: 0, late: 0, on_leave: 0, absent: 0 };
+    const attendanceMonth = stats.attendance_month || {};
+    const approvals = stats.pending_approvals || { total: 0, leaves: 0, overtimes: 0, claims: 0 };
+    const securityEvents = stats.recent_security_events || [];
+    const totalEmployees = employees.total || 0;
+    const attendancePercentage = totalEmployees ? Math.round((attendanceToday.present / totalEmployees) * 100) : 0;
+    const onTime = Math.max(0, (attendanceToday.present || 0) - (attendanceToday.late || 0));
+    const statusRows = [['Tepat waktu', onTime, 'bg-emerald-500'], ['Terlambat', attendanceToday.late || 0, 'bg-amber-500'], ['Cuti / izin', attendanceToday.on_leave || 0, 'bg-blue-500'], ['Belum hadir', attendanceToday.absent || 0, 'bg-rose-500']];
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <div className="teka-hero min-h-64 rounded-4xl p-7 md:p-10 flex flex-col justify-between">
-                <p className="teka-kicker text-stone-400">Pusat kendali organisasi</p>
-                <div className="pt-12 max-w-2xl">
-                    <h1 className="teka-display text-5xl md:text-7xl">Data yang membuat tim <span className="teka-accent">bergerak.</span></h1>
-                    <p className="text-stone-300 mt-6">Pantau kehadiran, tindak lanjuti persetujuan, dan kelola operasional dari satu tempat.</p>
-                </div>
-            </div>
+        <div className="mx-auto flex max-w-7xl flex-col space-y-8 p-4 sm:p-6 md:p-8">
+            {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error} <button onClick={fetchStats} className="ml-2 font-bold underline">Muat ulang</button></div>}
 
-            <section className="rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50 to-white p-6 shadow-sm">
-                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                    <div><h2 className="text-lg font-black text-slate-900">Agenda Perusahaan</h2><p className="mt-1 text-sm text-slate-500">Event yang sudah dipublikasikan admin dan akan terlihat oleh karyawan.</p></div>
-                    <a href="/admin/events" className="inline-flex self-start rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 sm:self-auto">Kelola kalender</a>
-                </div>
-                {calendarEvents.length ? (
-                    <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        {calendarEvents.slice(0, 6).map(event => <article key={event.id} className="min-w-0 rounded-xl border border-white bg-white p-4 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{event.type || 'Kegiatan'}</p><h3 className="mt-1 wrap-anywhere font-bold text-slate-900">{event.title}</h3></div></div><p className="mt-3 text-sm font-semibold text-slate-700">{event.start_date ? new Date(event.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tanggal belum ditentukan'}</p>{event.description && <p className="mt-1 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{event.description}</p>}</article>)}
-                    </div>
-                ) : <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 p-6 text-center text-sm text-slate-500">Belum ada event perusahaan.</div>}
+            <header className="border-b border-slate-200 pb-6"><div className="flex items-start gap-4">
+                <svg aria-hidden="true" viewBox="0 0 48 48" className="mt-1 h-12 w-12 shrink-0 text-emerald-600"><path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" fill="currentColor" opacity=".12" /><path d="m24 9 13 7v16l-13 7-13-7V16l13-7Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M16 27h5v5h6v-9h5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" /></svg>
+                <div><p className="teka-kicker text-slate-500">Pusat kendali admin</p><h1 className="teka-display mt-3 text-4xl text-slate-900 sm:text-5xl">Ringkasan operasional</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">Pantau kondisi presensi, persetujuan, dan agenda organisasi dari satu halaman.</p></div>
+            </div></header>
+
+            <section aria-labelledby="admin-summary-title"><div className="flex items-end justify-between gap-3"><div><h2 id="admin-summary-title" className="text-2xl font-black tracking-tight text-slate-900">Ringkasan hari ini</h2><p className="mt-1 text-sm text-slate-500">Angka utama yang perlu diperhatikan sebelum membuka detail.</p></div><Link to="/admin/reports" className="text-sm font-bold text-emerald-700 hover:underline">Buka laporan →</Link></div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><SummaryCard label="Total karyawan" value={totalEmployees} icon={Users} tone="border-blue-100 bg-blue-50 text-blue-800" /><SummaryCard label="Hadir hari ini" value={attendanceToday.present || 0} detail={`${attendancePercentage}% dari karyawan`} icon={CalendarCheck} tone="border-emerald-100 bg-emerald-50 text-emerald-800" /><SummaryCard label="Terlambat" value={attendanceToday.late || 0} icon={Clock} tone="border-amber-100 bg-amber-50 text-amber-800" /><SummaryCard label="Perlu diproses" value={approvals.total || 0} detail="Persetujuan tertunda" icon={FileText} tone="border-rose-100 bg-rose-50 text-rose-800" /></div>
             </section>
 
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 rounded-2xl bg-linear-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
-                    <p className="text-emerald-100 text-sm font-semibold">Tingkat kehadiran • {attendance_month?.label}</p>
-                    <div className="flex items-end gap-3 mt-3"><strong className="text-5xl md:text-6xl">{attendance_month?.rate ?? 0}%</strong><span className="text-emerald-100 pb-2">bulan berjalan</span></div>
-                    <div className="mt-6 h-2 bg-white/20 rounded-full overflow-hidden"><div className="h-full bg-lime-300 rounded-full transition-all" style={{ width: `${Math.min(100, attendance_month?.rate ?? 0)}%` }} /></div>
-                    <p className="mt-3 text-xs text-emerald-100">{attendance_month?.present_employee_days ?? 0} kehadiran dari {attendance_month?.expected_employee_days ?? 0} hari kerja karyawan yang diharapkan.</p>
-                </div>
-                <div className="rounded-2xl bg-white border border-slate-200 p-6">
-                    <p className="text-sm text-slate-500">Rata-rata durasi kerja</p>
-                    <strong className="block text-4xl text-slate-900 mt-3">{Math.floor((attendance_month?.average_work_minutes ?? 0) / 60)}j {(attendance_month?.average_work_minutes ?? 0) % 60}m</strong>
-                    <p className="text-xs text-slate-400 mt-3">Dari absensi bulan berjalan yang memiliki waktu keluar.</p>
-                </div>
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
+                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-900">Status kehadiran hari ini</h2><p className="mt-1 text-sm text-slate-500">Satu visual ringkas untuk membaca data tabel presensi.</p></div><CalendarCheck className="h-5 w-5 text-emerald-600" /></div><div className="mt-6 space-y-4">{statusRows.map(([label, value, color]) => <div key={label}><div className="mb-1 flex justify-between gap-3 text-sm"><span className="font-semibold text-slate-700">{label}</span><span className="font-black text-slate-900">{value}</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width: `${totalEmployees ? Math.min(100, (value / totalEmployees) * 100) : 0}%` }} /></div></div>)}</div><div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 text-sm"><div><p className="text-slate-500">Tingkat bulan ini</p><p className="mt-1 text-xl font-black text-slate-900">{attendanceMonth.rate ?? 0}%</p></div><div><p className="text-slate-500">Rata-rata durasi</p><p className="mt-1 text-xl font-black text-slate-900">{Math.floor((attendanceMonth.average_work_minutes || 0) / 60)}j {(attendanceMonth.average_work_minutes || 0) % 60}m</p></div></div></div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-900">Antrean persetujuan</h2><p className="mt-1 text-sm text-slate-500">Buka hanya jika ada tindakan admin.</p></div><CheckSquare className="h-5 w-5 text-rose-600" /></div><div className="mt-6 grid grid-cols-3 gap-2 text-center"><div className="rounded-2xl bg-slate-50 p-3"><p className="text-2xl font-black text-slate-900">{approvals.leaves || 0}</p><p className="mt-1 text-xs font-bold text-slate-500">Cuti</p></div><div className="rounded-2xl bg-slate-50 p-3"><p className="text-2xl font-black text-slate-900">{approvals.overtimes || 0}</p><p className="mt-1 text-xs font-bold text-slate-500">Lembur</p></div><div className="rounded-2xl bg-slate-50 p-3"><p className="text-2xl font-black text-slate-900">{approvals.claims || 0}</p><p className="mt-1 text-xs font-bold text-slate-500">Klaim</p></div></div><Link to="/admin/approvals" className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white hover:bg-slate-800">Buka persetujuan</Link></div>
             </section>
 
-            <section className="grid lg:grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 rounded-2xl p-6">
-                    <div className="mb-6"><h2 className="font-bold text-slate-900 text-lg">Tren 6 bulan</h2><p className="text-sm text-slate-500">Persentase hadir terhadap hari kerja yang diharapkan.</p></div>
-                    <div className="h-56 flex items-end gap-3">{monthly_attendance_trend.map(month => <div key={month.label} className="flex-1 h-full flex flex-col justify-end items-center gap-2"><span className="text-xs font-bold text-emerald-700">{month.rate}%</span><div className="w-full max-w-12 bg-emerald-500 rounded-t-lg min-h-1 transition-all" style={{ height: `${Math.max(2, month.rate)}%` }} /><span className="text-[10px] text-slate-500 text-center">{month.label}</span></div>)}</div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl p-6">
-                    <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Kehadiran per departemen</h2><p className="text-sm text-slate-500">Kondisi langsung hari ini.</p></div>
-                    <div className="space-y-4 max-h-64 overflow-y-auto">{department_attendance.map(dept => <div key={dept.department}><div className="flex justify-between text-sm mb-1"><span className="font-semibold text-slate-700">{dept.department}</span><span className="font-bold text-green-700">{dept.attendance_rate}%</span></div><div className="h-2 bg-slate-100 rounded-full"><div className="h-full bg-green-600 rounded-full" style={{ width: `${Math.min(100, dept.attendance_rate)}%` }} /></div><p className="text-[11px] text-slate-400 mt-1">{dept.present} hadir • {dept.absent} belum hadir • {dept.late} terlambat</p></div>)}</div>
-                </div>
-            </section>
+            <section className="rounded-3xl border border-blue-100 bg-blue-50/60 p-5 sm:p-6"><div className="flex items-end justify-between gap-3"><div><h2 className="text-lg font-black text-slate-900">Agenda perusahaan</h2><p className="mt-1 text-sm text-slate-500">Event yang terlihat oleh karyawan.</p></div><Link to="/admin/events" className="text-sm font-bold text-blue-700 hover:underline">Kelola event →</Link></div>{calendarEvents.length ? <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{calendarEvents.slice(0, 3).map(event => <article key={event.id} className="min-w-0 rounded-2xl border border-white bg-white p-4 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{event.type || 'Kegiatan'}</p><h3 className="mt-1 wrap-anywhere font-bold text-slate-900">{event.title}</h3></div></div><p className="mt-3 text-sm font-semibold text-slate-700">{event.start_date ? new Date(event.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tanggal belum ditentukan'}</p></article>)}</div> : <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white/70 p-6 text-center text-sm text-slate-500">Belum ada event perusahaan.</div>}</section>
 
-            <section className="bg-white border border-slate-200 rounded-2xl p-6">
-                <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Konsistensi bulan berjalan</h2><p className="text-sm text-slate-500">Tingkat kehadiran pada setiap hari kerja yang sudah berlalu.</p></div>
-                <div className="flex gap-2 overflow-x-auto pb-2">{daily_attendance_trend.map(day => <div key={day.date} className="min-w-16 text-center"><div className="h-28 bg-slate-100 rounded-xl flex items-end overflow-hidden"><div className={`w-full ${day.rate >= 90 ? 'bg-emerald-500' : day.rate >= 70 ? 'bg-lime-500' : 'bg-amber-500'}`} style={{ height: `${Math.max(3, day.rate)}%` }} /></div><strong className="block text-xs mt-2 text-slate-700">{day.rate}%</strong><span className="text-[10px] text-slate-400">{day.label}</span></div>)}</div>
-            </section>
-
-            {/* Top Stat Cards */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Total Karyawan</p><p className="text-3xl font-bold text-slate-800">{employees.total}</p></div>
-                    <div className="rounded-xl bg-blue-50 p-3"><Users className="h-6 w-6 text-blue-600" /></div>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Hadir Hari Ini</p><div className="flex items-baseline space-x-2"><p className="text-3xl font-bold text-slate-800">{attendance_today.present}</p><p className="text-sm font-medium text-emerald-500">({attendancePercentage}%)</p></div></div>
-                    <div className="rounded-xl bg-emerald-50 p-3"><CalendarCheck className="h-6 w-6 text-emerald-600" /></div>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Terlambat</p><p className="text-3xl font-bold text-amber-600">{attendance_today.late}</p></div>
-                    <div className="rounded-xl bg-amber-50 p-3"><Clock className="h-6 w-6 text-amber-600" /></div>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Pending Request</p><p className="text-3xl font-bold text-rose-600">{pending_approvals.total}</p></div>
-                    <div className="rounded-xl bg-rose-50 p-3"><FileText className="h-6 w-6 text-rose-600" /></div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Visualisasi Kehadiran & Status (CSS Bar Chart) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
-                    <h2 className="text-lg font-bold text-slate-800 mb-6">Status Kehadiran Hari Ini</h2>
-                    <div className="flex-1 flex flex-col justify-center space-y-6">
-
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="font-semibold text-slate-700">Hadir Tepat Waktu</span>
-                                <span className="font-bold text-emerald-600">{attendance_today.present - attendance_today.late}</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-3">
-                                <div className="bg-emerald-500 h-3 rounded-full" style={{ width: `${employees.total > 0 ? ((attendance_today.present - attendance_today.late) / employees.total) * 100 : 0}%` }}></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="font-semibold text-slate-700">Terlambat</span>
-                                <span className="font-bold text-amber-500">{attendance_today.late}</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-3">
-                                <div className="bg-amber-500 h-3 rounded-full" style={{ width: `${employees.total > 0 ? (attendance_today.late / employees.total) * 100 : 0}%` }}></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="font-semibold text-slate-700">Cuti / Izin</span>
-                                <span className="font-bold text-blue-500">{attendance_today.on_leave}</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-3">
-                                <div className="bg-blue-500 h-3 rounded-full" style={{ width: `${employees.total > 0 ? (attendance_today.on_leave / employees.total) * 100 : 0}%` }}></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="font-semibold text-slate-700">Belum Absen / Mangkir</span>
-                                <span className="font-bold text-rose-500">{attendance_today.absent}</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-3">
-                                <div className="bg-rose-500 h-3 rounded-full" style={{ width: `${employees.total > 0 ? (attendance_today.absent / employees.total) * 100 : 0}%` }}></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                {/* Rejected mock-location attempts */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            <h3 className="text-lg font-bold text-slate-800">Deteksi Fake GPS</h3>
-                        </div>
-                        <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full">
-                            {recent_security_events.length} Terbaru
-                        </span>
-                    </div>
-                    <div className="p-0">
-                        {recent_security_events.length > 0 ? (
-                            <ul className="divide-y divide-slate-100">
-                                {recent_security_events.map((event) => (
-                                    <li key={event.id} className="p-5 flex items-start space-x-4 hover:bg-slate-50 transition-colors">
-                                        <div className="bg-slate-100 rounded-full h-10 w-10 flex items-center justify-center shrink-0 text-slate-600 font-bold">
-                                            {event.employee?.full_name?.charAt(0) || '?'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-slate-800 truncate">
-                                                {event.employee?.full_name || 'Karyawan tidak diketahui'}
-                                            </p>
-                                            <p className="text-xs text-rose-600 mt-1 font-medium">Absensi langsung ditolak • {event.device?.device_name || 'Perangkat tidak dikenal'}</p>
-                                            <p className="text-xs text-slate-400 mt-1">
-                                                {new Date(event.detected_at).toLocaleString('id-ID')}
-                                            </p>
-                                        </div>
-                                        <span className="text-xs font-medium bg-rose-50 text-rose-700 px-3 py-1.5 rounded-lg">Ditolak</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <div className="p-8 text-center flex flex-col items-center justify-center text-slate-500">
-                                <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-3" />
-                                <p className="font-medium text-slate-700">Semua Terkendali</p>
-                                <p className="text-sm mt-1">Tidak ada anomali absensi yang perlu ditinjau.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+            {securityEvents.length > 0 && <section className="rounded-3xl border border-amber-200 bg-amber-50/60 p-5 sm:p-6"><div className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" /><h2 className="text-lg font-black text-slate-900">Perlu ditinjau: deteksi fake GPS</h2></div><p className="mt-1 text-sm text-slate-600">{securityEvents.length} kejadian terbaru menunggu pemeriksaan.</p><Link to="/admin/attendance-security-events" className="mt-4 inline-flex rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-700">Tinjau kejadian</Link></section>}
 
             <MobileAppDownloadCard audience="admin" />
 
-            {/* Rincian Persetujuan & Karyawan Baru */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                {/* Rincian Persetujuan */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center space-x-2">
-                        <FileText className="h-5 w-5 text-slate-500" />
-                        <h3 className="text-lg font-bold text-slate-800">Antrean Persetujuan</h3>
-                    </div>
-                    <div className="p-6">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
-                                <p className="text-2xl font-bold text-slate-800 mb-1">{pending_approvals.leaves}</p>
-                                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Cuti</p>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
-                                <p className="text-2xl font-bold text-slate-800 mb-1">{pending_approvals.overtimes}</p>
-                                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Lembur</p>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
-                                <p className="text-2xl font-bold text-slate-800 mb-1">{pending_approvals.claims}</p>
-                                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Klaim</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Karyawan Baru */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center space-x-2">
-                        <Users className="h-5 w-5 text-slate-500" />
-                        <h3 className="text-lg font-bold text-slate-800">Karyawan Baru Terdaftar</h3>
-                    </div>
-                    <div className="p-0">
-                        {employees.recent.length > 0 ? (
-                            <ul className="divide-y divide-slate-100">
-                                {employees.recent.map((emp) => (
-                                    <li key={emp.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="bg-emerald-100 text-emerald-700 h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm">
-                                                {emp.user?.name?.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-800">{emp.user?.name}</p>
-                                                <p className="text-xs text-slate-500">{emp.position || 'Staff'}</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-400">
-                                            {new Date(emp.created_at).toLocaleDateString('id-ID')}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <div className="p-6 text-center text-slate-500 text-sm">Belum ada karyawan terdaftar.</div>
-                        )}
-                    </div>
-                </div>
-
-            </div>
+            <section aria-labelledby="quick-access-title"><div><h2 id="quick-access-title" className="text-2xl font-black tracking-tight text-slate-900">Akses cepat admin</h2><p className="mt-1 text-sm text-slate-500">Semua modul tersedia langsung dari dashboard.</p></div><div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{accessGroups.map(group => <div key={group.title} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center gap-2 border-b border-slate-100 pb-3"><group.icon className="h-5 w-5 text-emerald-700" /><h3 className="font-black text-slate-900">{group.title}</h3></div><div className="mt-3 space-y-1">{group.links.map(([label, href, Icon]) => <Link key={href} to={href} className="flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"><Icon className="h-4 w-4 shrink-0" /><span>{label}</span></Link>)}</div></div>)}</div></section>
         </div>
     );
 };
