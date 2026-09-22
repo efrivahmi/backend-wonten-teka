@@ -62,7 +62,7 @@ const Settings = () => {
                 api.get('/company/geofence'),
                 api.get('/app-config'),
             ]);
-            setAppConfig(configResponse.data.data);
+            setAppConfig(configResponse.data?.data || configResponse.data || { branding: {}, employee_menu: [], dropdowns: {} });
             if (response.data && response.data.latitude) {
                 setGeofence({
                     latitude: parseFloat(response.data.latitude),

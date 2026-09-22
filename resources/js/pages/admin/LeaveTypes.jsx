@@ -9,7 +9,7 @@ export default function LeaveTypes(){
     const [items,setItems]=useState([]),[form,setForm]=useState(blank),[editing,setEditing]=useState(null),[open,setOpen]=useState(false),[error,setError]=useState('');
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const load=async()=>{const r=await api.get(`/admin/leave-types?page=${currentPage}`);setPagination(r.data.data);setItems(r.data.data?.data||[])};
+    const load=async()=>{const r=await api.get(`/admin/leave-types?page=${currentPage}`);setPagination(r.data);setItems(r.data?.data||[])};
     useEffect(()=>{load()},[currentPage]);
     const save=async e=>{e.preventDefault();setError('');try{editing?await api.put(`/admin/leave-types/${editing.id}`,form):await api.post('/admin/leave-types',form);setOpen(false);setEditing(null);setForm(blank);await load()}catch(x){setError(Object.values(x.response?.data?.errors||{})?.[0]?.[0]||x.response?.data?.message||'Gagal menyimpan jenis cuti.')}};
     const edit=x=>{setEditing(x);setForm({...blank,...x});setOpen(true)};

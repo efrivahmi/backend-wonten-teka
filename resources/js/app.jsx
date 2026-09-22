@@ -45,7 +45,7 @@ const EmployeeFeatureGuard = ({ feature, children }) => {
     const [allowed, setAllowed] = useState(null);
     useEffect(() => {
         api.get('/app-config').then(response => {
-            const item = (response.data.data?.employee_menu || []).find(menu => menu.key === feature);
+            const item = ((response.data?.data || response.data)?.employee_menu || []).find(menu => menu.key === feature);
             setAllowed(item ? item.enabled : true);
         }).catch(() => setAllowed(true));
     }, [feature]);

@@ -36,7 +36,7 @@ const EmployeeLayout = () => {
     const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
 
     useEffect(() => {
-        api.get('/app-config').then(response => setMenuConfig(response.data.data?.employee_menu || [])).catch(() => setMenuConfig([]));
+        api.get('/app-config').then(response => setMenuConfig((response.data?.data || response.data)?.employee_menu || [])).catch(() => setMenuConfig([]));
         api.get('/me').then(response => {
             const freshUser = response.data.user || {};
             localStorage.setItem('user', JSON.stringify(freshUser));
