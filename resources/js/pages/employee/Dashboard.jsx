@@ -53,7 +53,7 @@ const eventDay = value => value ? new Date(value).toLocaleDateString('id-ID', { 
 const eventMonth = value => value ? new Date(value).toLocaleDateString('id-ID', { month: 'short' }).toUpperCase() : '---';
 
 const SummaryCard = ({ label, value, icon: Icon, tone = 'slate' }) => (
-    <div className={`rounded-2xl border p-4 sm:p-5 ${toneClasses[tone]}`}>
+    <div className={`rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 ${toneClasses[tone]}`}>
         <div className="flex items-center justify-between gap-3">
             <span className="text-xs font-bold uppercase tracking-[0.12em] opacity-75">{label}</span>
             <Icon className="h-5 w-5" />
@@ -156,29 +156,34 @@ export default function EmployeeDashboard() {
             {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error} <button onClick={load} className="ml-2 font-bold underline">Muat ulang</button></div>}
 
             {/* 0. Welcome banner and primary attendance action */}
-            <header className="border-b border-slate-200 pb-6">
-                <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <header className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-lg shadow-emerald-950/10 sm:p-8">
+                <svg aria-hidden="true" viewBox="0 0 420 220" className="pointer-events-none absolute -right-20 -top-24 h-72 w-[32rem] text-emerald-300 opacity-15">
+                    <circle cx="210" cy="110" r="96" fill="none" stroke="currentColor" strokeWidth="1" />
+                    <circle cx="210" cy="110" r="62" fill="none" stroke="currentColor" strokeWidth="1" />
+                    <path d="M0 110h420M210 0v220" stroke="currentColor" strokeWidth="1" />
+                </svg>
+                <div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
                     <div className="flex min-w-0 items-start gap-4">
-                        <svg aria-hidden="true" viewBox="0 0 48 48" className="mt-1 h-12 w-12 shrink-0 text-emerald-600">
-                            <path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" fill="currentColor" opacity=".12" />
+                        <svg aria-hidden="true" viewBox="0 0 48 48" className="mt-1 h-12 w-12 shrink-0 text-emerald-300">
+                            <path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" fill="currentColor" opacity=".16" />
                             <path d="m24 9 13 7v16l-13 7-13-7V16l13-7Z" fill="none" stroke="currentColor" strokeWidth="2" />
                             <path d="m17 25 5 5 10-11" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
                         </svg>
                         <div className="min-w-0">
-                            <p className="teka-kicker text-slate-500">Ruang kerja karyawan</p>
-                            <h1 className="teka-display mt-4 text-4xl text-slate-900 sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
-                            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">Ruang kerja karyawan</p>
+                            <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">{employee.full_name || user.name || 'Karyawan'}</h1>
+                            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-300">
                                 <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
-                                <span className="hidden text-slate-300 sm:inline">•</span>
+                                <span className="hidden text-emerald-400 sm:inline">•</span>
                                 <span>{employee.position || 'Posisi belum diatur'}</span>
-                                <span className="hidden text-slate-300 sm:inline">•</span>
+                                <span className="hidden text-emerald-400 sm:inline">•</span>
                                 <span>{employee.department || 'Unit belum diatur'}</span>
                             </div>
                         </div>
                     </div>
-                    <div className="shrink-0 border-l border-slate-200 pl-4 text-left lg:text-right">
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Hari ini</p>
-                        <p className="mt-1 text-sm font-bold text-slate-900">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <div className="shrink-0 border-l border-emerald-400/30 pl-4 text-left lg:text-right">
+                        <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">Hari ini</p>
+                        <p className="mt-1 text-sm font-bold text-white">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                 </div>
             </header>
@@ -203,7 +208,7 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="mt-5 border-t border-slate-100 pt-5">
                     <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                        <div><h3 className="font-black text-slate-900">Ringkasan bulan ini</h3><p className="text-sm text-slate-500">Rekap kehadiran tetap berada dalam satu bagian absensi.</p></div>
+                        <div><h3 className="text-xl font-black text-slate-900">Statistik Kehadiran {stats.month_label || 'Bulan Berjalan'}</h3><p className="text-sm text-slate-500">Perhitungan otomatis diperbarui setiap awal bulan.</p></div>
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{stats.month_label || 'Bulan berjalan'}</span>
                     </div>
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
