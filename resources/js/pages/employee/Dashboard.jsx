@@ -152,15 +152,15 @@ export default function EmployeeDashboard() {
     }
 
     return (
-        <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 md:p-8">
+        <div className="mx-auto flex max-w-7xl flex-col space-y-8 p-4 sm:p-6 md:p-8">
             {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{error} <button onClick={load} className="ml-2 font-bold underline">Muat ulang</button></div>}
 
             {/* 0. Welcome banner and primary attendance action */}
-            <section className="teka-hero overflow-hidden rounded-4xl p-6 sm:p-8">
+            <header className="border-b border-slate-200 pb-6">
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
                     <div className="min-w-0">
                         <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-4 text-4xl sm:text-5xl"><span className="teka-accent">Selamat datang, {employee.full_name || user.name || 'Karyawan'}.</span></h1>
+                        <h1 className="teka-display mt-4 text-4xl sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
                         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-stone-300">
                             <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
                             <span className="hidden text-stone-500 sm:inline">•</span>
@@ -169,14 +169,14 @@ export default function EmployeeDashboard() {
                             <span>{employee.department || 'Unit belum diatur'}</span>
                         </div>
                     </div>
-                    <div className="shrink-0 border-l border-white/15 pl-4 text-left lg:text-right">
-                        <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Hari ini</p>
-                        <p className="mt-1 text-sm font-bold text-white">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <div className="shrink-0 border-l border-slate-200 pl-4 text-left lg:text-right">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Hari ini</p>
+                        <p className="mt-1 text-sm font-bold text-slate-900">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                 </div>
-            </section>
+            </header>
 
-            <section aria-labelledby="attendance-summary-title" className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+            <section aria-labelledby="attendance-summary-title" className="order-1 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                         <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Absensi hari ini</h2>
@@ -209,7 +209,7 @@ export default function EmployeeDashboard() {
             </section>
 
             {/* 1. Latest announcements */}
-            <section>
+            <section className="order-3">
                 <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
                     <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -242,7 +242,7 @@ export default function EmployeeDashboard() {
             </section>
 
             {/* 1b. Company events published by admin */}
-            <section>
+            <section className="order-4">
                 <SectionHeading
                     title="Agenda Perusahaan"
                     subtitle="Event dan kegiatan yang tersedia dari admin."
@@ -265,7 +265,7 @@ export default function EmployeeDashboard() {
                 })() : <EmptyCard text="Belum ada event perusahaan yang tersedia." />}
             </section>
             {(hasDoubleShift || overtimeToday.length > 0) && (
-                <section>
+                <section className="order-5">
                     <SectionHeading title="Jadwal Tambahan Hari Ini" subtitle="Penugasan khusus dari admin yang perlu Anda perhatikan sebelum melakukan absensi." />
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                         {hasDoubleShift && (
@@ -283,7 +283,7 @@ export default function EmployeeDashboard() {
             )}
 
             {/* 3. Today's shifts */}
-            <section>
+            <section className="order-2">
                 <SectionHeading title="Jadwal Shift Hari Ini" subtitle="Jadwal dan progres kehadiran untuk setiap shift." action={<Link to="/employee/shifts" className="text-sm font-bold text-emerald-700">Semua jadwal</Link>} />
                 <div className="mt-4 space-y-4">
                     {shifts.length ? shifts.map((shift, index) => {
@@ -311,10 +311,10 @@ export default function EmployeeDashboard() {
                 </div>
             </section>
 
-            <MobileAppDownloadCard audience="karyawan" />
+            <div className="order-6"><MobileAppDownloadCard audience="karyawan" /></div>
 
             {/* 5. Quick access stays last */}
-            <section>
+            <section className="order-7">
                 <SectionHeading title="Akses Cepat" subtitle="Tindakan utama ada di depan; fitur lain tetap mudah ditemukan." />
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
                     {quickLinks.map(([href, label, Icon]) => <Link key={href} to={href} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><Icon className="mx-auto h-6 w-6 text-emerald-700" /><span className="mt-3 block text-xs font-bold text-slate-700">{label}</span></Link>)}
