@@ -75,13 +75,6 @@ const AdminDashboard = () => {
                 ) : <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 p-6 text-center text-sm text-slate-500">Belum ada event perusahaan.</div>}
             </section>
 
-            <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Metric label="Karyawan" value={employees.total} icon={Users} tone="blue" />
-                <Metric label="Hadir hari ini" value={`${attendance_today.present} (${attendancePercentage}%)`} icon={CalendarCheck} tone="emerald" />
-                <Metric label="Terlambat" value={attendance_today.late} icon={Clock} tone="amber" />
-                <Metric label="Perlu persetujuan" value={pending_approvals.total} icon={FileText} tone="rose" />
-            </section>
-
             <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 rounded-2xl bg-linear-to-br from-green-800 to-emerald-600 text-white p-6 shadow-lg shadow-emerald-900/10">
                     <p className="text-emerald-100 text-sm font-semibold">Tingkat kehadiran • {attendance_month?.label}</p>
@@ -111,6 +104,26 @@ const AdminDashboard = () => {
                 <div className="mb-5"><h2 className="font-bold text-slate-900 text-lg">Konsistensi bulan berjalan</h2><p className="text-sm text-slate-500">Tingkat kehadiran pada setiap hari kerja yang sudah berlalu.</p></div>
                 <div className="flex gap-2 overflow-x-auto pb-2">{daily_attendance_trend.map(day => <div key={day.date} className="min-w-16 text-center"><div className="h-28 bg-slate-100 rounded-xl flex items-end overflow-hidden"><div className={`w-full ${day.rate >= 90 ? 'bg-emerald-500' : day.rate >= 70 ? 'bg-lime-500' : 'bg-amber-500'}`} style={{ height: `${Math.max(3, day.rate)}%` }} /></div><strong className="block text-xs mt-2 text-slate-700">{day.rate}%</strong><span className="text-[10px] text-slate-400">{day.label}</span></div>)}</div>
             </section>
+
+            {/* Top Stat Cards */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Total Karyawan</p><p className="text-3xl font-bold text-slate-800">{employees.total}</p></div>
+                    <div className="rounded-xl bg-blue-50 p-3"><Users className="h-6 w-6 text-blue-600" /></div>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Hadir Hari Ini</p><div className="flex items-baseline space-x-2"><p className="text-3xl font-bold text-slate-800">{attendance_today.present}</p><p className="text-sm font-medium text-emerald-500">({attendancePercentage}%)</p></div></div>
+                    <div className="rounded-xl bg-emerald-50 p-3"><CalendarCheck className="h-6 w-6 text-emerald-600" /></div>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Terlambat</p><p className="text-3xl font-bold text-amber-600">{attendance_today.late}</p></div>
+                    <div className="rounded-xl bg-amber-50 p-3"><Clock className="h-6 w-6 text-amber-600" /></div>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div><p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">Pending Request</p><p className="text-3xl font-bold text-rose-600">{pending_approvals.total}</p></div>
+                    <div className="rounded-xl bg-rose-50 p-3"><FileText className="h-6 w-6 text-rose-600" /></div>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Visualisasi Kehadiran & Status (CSS Bar Chart) */}
@@ -271,20 +284,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-const metricTones = {
-    blue: 'border-blue-100 bg-blue-50 text-blue-700',
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-700',
-    amber: 'border-amber-100 bg-amber-50 text-amber-700',
-    rose: 'border-rose-100 bg-rose-50 text-rose-700',
-};
-
-const Metric = ({ label, value, icon: Icon, tone }) => (
-    <div className={`rounded-2xl border p-4 ${metricTones[tone]}`}>
-        <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider opacity-75">{label}</span>
-            <Icon className="h-5 w-5" />
-        </div>
-        <strong className="mt-3 block text-xl font-black text-slate-900 sm:text-2xl">{value}</strong>
-    </div>
-);

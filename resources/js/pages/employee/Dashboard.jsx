@@ -131,7 +131,6 @@ export default function EmployeeDashboard() {
 
     const quickLinks = [
         ['/employee/habits', 'Habit Tracker', CheckCircle2],
-        ['/employee/shifts', 'Jadwal Shift', Clock],
         ['/employee/leave', 'Ajukan Cuti', Briefcase],
         ['/employee/overtime', 'Lembur', Clock],
         ['/employee/claims', 'Reimburse', FileText],
@@ -177,39 +176,46 @@ export default function EmployeeDashboard() {
                         <div className="mt-4 flex flex-wrap gap-2">
                             {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-lime-300 px-4 py-2.5 text-sm font-black text-slate-950 transition hover:bg-lime-200 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:ring-offset-2 focus:ring-offset-slate-900"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
                             {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-white/80 ${shiftEnded ? 'bg-white text-slate-950 hover:bg-blue-50' : 'cursor-not-allowed bg-white/15 text-white/60'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
-                            <Link to="/employee/attendance" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/80">Detail absensi</Link>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section aria-label="Prioritas hari ini" className="grid gap-3 md:grid-cols-3">
-                <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                    <p className="text-xs font-black uppercase tracking-wider text-emerald-700">Absensi hari ini</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{currentStatusMeta.label}</p>
-                    <p className="mt-1 text-sm text-slate-600">{hasCheckedIn ? `Masuk ${formatTime(currentAttendance?.check_in_time, currentStatus)}` : 'Belum ada pencatatan masuk.'}</p>
-                    <Link to="/employee/attendance" className="mt-4 inline-flex text-sm font-black text-emerald-700 hover:underline">Lihat detail absensi →</Link>
-                </article>
-                <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-                    <p className="text-xs font-black uppercase tracking-wider text-blue-700">Shift utama</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{primaryShift ? `${primaryShift.start_time}–${primaryShift.end_time}` : 'Tidak ada shift'}</p>
-                    <p className="mt-1 text-sm text-slate-600">{primaryShift?.name || 'Jadwal belum tersedia.'}</p>
-                    <Link to="/employee/shifts" className="mt-4 inline-flex text-sm font-black text-blue-700 hover:underline">Lihat jadwal lengkap →</Link>
-                </article>
-                <article className="rounded-2xl border border-violet-200 bg-violet-50 p-5">
-                    <p className="text-xs font-black uppercase tracking-wider text-violet-700">Informasi berikutnya</p>
-                    <p className="mt-2 line-clamp-2 text-2xl font-black text-slate-900">{calendarEvents[0]?.title || (announcements[0]?.title || 'Tidak ada informasi baru')}</p>
-                    <p className="mt-1 text-sm text-slate-600">{calendarEvents[0] ? eventDate(calendarEvents[0].start_date) : `${announcements.length} pengumuman tersedia`}</p>
-                    <a href={calendarEvents[0] ? '/employee/calendar' : '#announcements'} className="mt-4 inline-flex text-sm font-black text-violet-700 hover:underline">Lihat detail →</a>
-                </article>
+            <section aria-labelledby="attendance-summary-title" className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Prioritas utama</p>
+                        <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Absensi hari ini</h2>
+                        <p className="mt-1 text-sm text-slate-500">Ringkasan kehadiran Anda untuk shift utama.</p>
+                    </div>
+                    <Link to="/employee/attendance" className="text-sm font-bold text-emerald-700 hover:underline">Lihat riwayat lengkap →</Link>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
+                    <SummaryCard label="Jam masuk" value={formatTime(currentAttendance?.check_in_time, currentStatus)} icon={LogIn} tone="emerald" />
+                    <SummaryCard label="Jam keluar" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
+                    <SummaryCard label="Durasi kerja" value={durationText(currentAttendance, now)} icon={Clock} tone="blue" />
+                </div>
+                <div className="mt-5 border-t border-slate-100 pt-5">
+                    <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                        <div><h3 className="font-black text-slate-900">Ringkasan bulan ini</h3><p className="text-sm text-slate-500">Rekap kehadiran tetap berada dalam satu bagian absensi.</p></div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{stats.month_label || 'Bulan berjalan'}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <SummaryCard label="Hadir" value={`${totalPresent} hari`} icon={CalendarCheck} tone="blue" />
+                        <SummaryCard label="Tepat waktu" value={`${stats.on_time || 0} hari`} icon={CheckCircle2} tone="emerald" />
+                        <SummaryCard label="Terlambat" value={`${stats.late || 0} hari`} icon={Clock} tone="amber" />
+                        <SummaryCard label="Alpha" value={`${stats.absent || 0} hari`} icon={XCircle} tone="rose" />
+                    </div>
+                </div>
             </section>
 
             {/* 1. Latest announcements */}
-            <section id="announcements">
+            <section>
                 <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
                     <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-                        {announcements.slice(0, 2).map(item => {
+                        {announcements.slice(0, 3).map(item => {
                             const attachUrl = item.attachment_full_url || item.attachment_url;
                             const isImage = attachUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(attachUrl);
                             const isPdf = attachUrl && /\.pdf(\?|$)/i.test(attachUrl);
@@ -217,7 +223,7 @@ export default function EmployeeDashboard() {
                                 <article key={item.id} className="flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
                                     <h3 className="min-w-0 wrap-anywhere font-bold text-slate-900">{item.title}</h3>
-                                    <p className="min-w-0 line-clamp-3 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
+                                    <p className="min-w-0 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
                                     {isImage && (
                                         <a href={attachUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                             <img src={attachUrl} alt="Lampiran pengumuman" className="max-h-56 w-full rounded-xl border border-slate-100 bg-slate-50 object-contain" />
@@ -242,7 +248,7 @@ export default function EmployeeDashboard() {
                 <SectionHeading
                     title="Agenda Perusahaan"
                     subtitle="Event dan kegiatan yang tersedia dari admin."
-                    action={<div className="flex flex-wrap gap-2"><button onClick={activateEventAlarm} className={`rounded-xl px-4 py-2 text-sm font-bold ${alarmEnabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-amber-500 text-white'}`}>{alarmEnabled ? 'Alarm aktif' : 'Aktifkan alarm'}</button><Link to="/employee/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">Lihat agenda</Link></div>}
+                    action={<div className="flex flex-wrap gap-2"><button onClick={activateEventAlarm} className={`rounded-xl px-4 py-2 text-sm font-bold ${alarmEnabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-amber-500 text-white'}`}>{alarmEnabled ? 'Alarm aktif' : 'Aktifkan alarm'}</button><Link to="/employee/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">Lihat kalender</Link></div>}
                 />
                 {alarmMessage && <p className="mt-3 text-sm text-slate-500">{alarmMessage}</p>}
                 {calendarEvents.length ? (() => {
@@ -260,36 +266,6 @@ export default function EmployeeDashboard() {
                     </div>;
                 })() : <EmptyCard text="Belum ada event perusahaan yang tersedia." />}
             </section>
-
-            {/* 2. Today's attendance */}
-            <section>
-                <SectionHeading title="Pencatatan Absensi Hari Ini" subtitle="Status, waktu masuk, waktu keluar, dan durasi kerja hari ini." action={<Link to="/employee/attendance" className="text-sm font-bold text-emerald-700">Buka riwayat</Link>} />
-                <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
-                    <SummaryCard label="Jam masuk" value={formatTime(currentAttendance?.check_in_time, currentStatus)} icon={LogIn} tone="emerald" />
-                    <SummaryCard label="Jam keluar" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
-                    <SummaryCard label="Durasi kerja" value={durationText(currentAttendance, now)} icon={Clock} tone="blue" />
-                </div>
-                
-                {shifts.filter(s => (!s.category || s.category !== 'Reguler') && s.attendance && s.attendance.check_in_time && !s.attendance.check_out_time && s.attendance.status !== 'absent').map(shift => {
-                    const att = shift.attendance;
-                    const meta = statusMeta[att.status] || { label: 'Belum absen', tone: 'slate' };
-                    return (
-                        <div key={shift.template_id} className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 lg:p-5">
-                            <h4 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-violet-700">
-                                <Layers3 className="h-4 w-4" /> Informasi Tambahan: {shift.name}
-                            </h4>
-                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                <SummaryCard label="Status" value={meta.label} icon={CheckCircle2} tone={meta.tone} />
-                                <SummaryCard label="Jam masuk" value={formatTime(att.check_in_time, att.status)} icon={LogIn} tone="emerald" />
-                                <SummaryCard label="Jam keluar" value={formatTime(att.check_out_time, att.status)} icon={LogOut} tone="rose" />
-                                <SummaryCard label="Durasi kerja" value={durationText(att, now)} icon={Clock} tone="blue" />
-                            </div>
-                        </div>
-                    );
-                })}
-            </section>
-
             {(hasDoubleShift || overtimeToday.length > 0) && (
                 <section>
                     <SectionHeading title="Jadwal Tambahan Hari Ini" subtitle="Penugasan khusus dari admin yang perlu Anda perhatikan sebelum melakukan absensi." />
@@ -334,17 +310,6 @@ export default function EmployeeDashboard() {
                             </article>
                         );
                     }) : <EmptyCard text="Tidak ada shift yang dijadwalkan hari ini." />}
-                </div>
-            </section>
-
-            {/* 4. Monthly statistics, deliberately without charts */}
-            <section>
-                <SectionHeading title={`Statistik Kehadiran ${stats.month_label || 'Bulan Ini'}`} subtitle={`Perhitungan otomatis dimulai kembali setiap awal bulan. Bulan ini memiliki ${stats.days_in_month || '—'} hari kalender.`} />
-                <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <SummaryCard label="Kehadiran bulan ini" value={`${totalPresent} dari ${stats.days_in_month || '—'} hari`} icon={CalendarCheck} tone="blue" />
-                    <SummaryCard label="Tepat waktu" value={`${stats.on_time || 0} hari`} icon={CheckCircle2} tone="emerald" />
-                    <SummaryCard label="Terlambat" value={`${stats.late || 0} hari`} icon={Clock} tone="amber" />
-                    <SummaryCard label="Alpha" value={`${stats.absent || 0} hari`} icon={XCircle} tone="rose" />
                 </div>
             </section>
 
