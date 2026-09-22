@@ -158,15 +158,22 @@ export default function EmployeeDashboard() {
             {/* 0. Welcome banner and primary attendance action */}
             <header className="border-b border-slate-200 pb-6">
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-                    <div className="min-w-0">
-                        <p className="teka-kicker text-stone-400">Ruang kerja karyawan</p>
-                        <h1 className="teka-display mt-4 text-4xl sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
-                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-stone-300">
+                    <div className="flex min-w-0 items-start gap-4">
+                        <svg aria-hidden="true" viewBox="0 0 48 48" className="mt-1 h-12 w-12 shrink-0 text-emerald-600">
+                            <path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" fill="currentColor" opacity=".12" />
+                            <path d="m24 9 13 7v16l-13 7-13-7V16l13-7Z" fill="none" stroke="currentColor" strokeWidth="2" />
+                            <path d="m17 25 5 5 10-11" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                        </svg>
+                        <div className="min-w-0">
+                        <p className="teka-kicker text-slate-500">Ruang kerja karyawan</p>
+                        <h1 className="teka-display mt-4 text-4xl text-slate-900 sm:text-5xl"><span className="teka-accent">{employee.full_name || user.name || 'Karyawan'}</span></h1>
+                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
                             <span>{employee.employee_number || 'Nomor pegawai belum diatur'}</span>
-                            <span className="hidden text-stone-500 sm:inline">•</span>
+                            <span className="hidden text-slate-300 sm:inline">•</span>
                             <span>{employee.position || 'Posisi belum diatur'}</span>
-                            <span className="hidden text-stone-500 sm:inline">•</span>
+                            <span className="hidden text-slate-300 sm:inline">•</span>
                             <span>{employee.department || 'Unit belum diatur'}</span>
+                        </div>
                         </div>
                     </div>
                     <div className="shrink-0 border-l border-slate-200 pl-4 text-left lg:text-right">
@@ -179,8 +186,8 @@ export default function EmployeeDashboard() {
             <section aria-labelledby="attendance-summary-title" className="order-1 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
-                        <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Absensi hari ini</h2>
-                        <p className="mt-1 text-sm text-slate-500">Ringkasan kehadiran Anda untuk shift utama.</p>
+                        <h2 id="attendance-summary-title" className="mt-1 text-2xl font-black tracking-tight text-slate-900">Pencatatan Absensi Hari Ini</h2>
+                        <p className="mt-1 text-sm text-slate-500">Status, waktu masuk, waktu keluar, dan durasi kerja hari ini.</p>
                     </div>
                     <Link to="/employee/attendance" className="text-sm font-bold text-emerald-700 hover:underline">Lihat riwayat lengkap →</Link>
                 </div>
@@ -188,7 +195,7 @@ export default function EmployeeDashboard() {
                     {!hasCheckedIn && primaryShift && !shiftEnded && currentStatus !== 'absent' && <button type="button" aria-label="Mulai check in untuk shift hari ini" onClick={() => openAttendance('check-in', primaryShift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
                     {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={shiftEnded ? 'Mulai check out untuk shift hari ini' : `Check out tersedia mulai ${primaryShift?.end_time || 'waktu shift berakhir'}`} onClick={() => shiftEnded && openAttendance('check-out', primaryShift)} disabled={!shiftEnded} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${shiftEnded ? 'bg-slate-900 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}><LogOut className="mr-2 h-4 w-4" />{shiftEnded ? 'Check Out' : `Keluar mulai ${primaryShift?.end_time || 'akhir shift'}`}</button>}
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
                     <SummaryCard label="Jam masuk" value={formatTime(currentAttendance?.check_in_time, currentStatus)} icon={LogIn} tone="emerald" />
                     <SummaryCard label="Jam keluar" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
@@ -199,7 +206,7 @@ export default function EmployeeDashboard() {
                         <div><h3 className="font-black text-slate-900">Ringkasan bulan ini</h3><p className="text-sm text-slate-500">Rekap kehadiran tetap berada dalam satu bagian absensi.</p></div>
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{stats.month_label || 'Bulan berjalan'}</span>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <SummaryCard label="Hadir" value={`${totalPresent} hari`} icon={CalendarCheck} tone="blue" />
                         <SummaryCard label="Tepat waktu" value={`${stats.on_time || 0} hari`} icon={CheckCircle2} tone="emerald" />
                         <SummaryCard label="Terlambat" value={`${stats.late || 0} hari`} icon={Clock} tone="amber" />
