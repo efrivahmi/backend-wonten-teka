@@ -130,14 +130,12 @@ export default function EmployeeDashboard() {
     const totalPresent = stats.present_days ?? ((stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0));
 
     const quickLinks = [
-        ['/employee/attendance', 'Absensi', CalendarCheck],
         ['/employee/habits', 'Habit Tracker', CheckCircle2],
         ['/employee/shifts', 'Jadwal Shift', Clock],
         ['/employee/leave', 'Ajukan Cuti', Briefcase],
         ['/employee/overtime', 'Lembur', Clock],
         ['/employee/claims', 'Reimburse', FileText],
         ['/employee/business-trips', 'Perjalanan Dinas', Plane],
-        ['/employee/calendar', 'Kalender', CalendarDays],
     ];
 
     const openAttendance = (action, shift) => {
@@ -185,12 +183,33 @@ export default function EmployeeDashboard() {
                 </div>
             </section>
 
+            <section aria-label="Prioritas hari ini" className="grid gap-3 md:grid-cols-3">
+                <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                    <p className="text-xs font-black uppercase tracking-wider text-emerald-700">Absensi hari ini</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{currentStatusMeta.label}</p>
+                    <p className="mt-1 text-sm text-slate-600">{hasCheckedIn ? `Masuk ${formatTime(currentAttendance?.check_in_time, currentStatus)}` : 'Belum ada pencatatan masuk.'}</p>
+                    <Link to="/employee/attendance" className="mt-4 inline-flex text-sm font-black text-emerald-700 hover:underline">Lihat detail absensi →</Link>
+                </article>
+                <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                    <p className="text-xs font-black uppercase tracking-wider text-blue-700">Shift utama</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{primaryShift ? `${primaryShift.start_time}–${primaryShift.end_time}` : 'Tidak ada shift'}</p>
+                    <p className="mt-1 text-sm text-slate-600">{primaryShift?.name || 'Jadwal belum tersedia.'}</p>
+                    <Link to="/employee/shifts" className="mt-4 inline-flex text-sm font-black text-blue-700 hover:underline">Lihat jadwal lengkap →</Link>
+                </article>
+                <article className="rounded-2xl border border-violet-200 bg-violet-50 p-5">
+                    <p className="text-xs font-black uppercase tracking-wider text-violet-700">Informasi berikutnya</p>
+                    <p className="mt-2 line-clamp-2 text-2xl font-black text-slate-900">{calendarEvents[0]?.title || (announcements[0]?.title || 'Tidak ada informasi baru')}</p>
+                    <p className="mt-1 text-sm text-slate-600">{calendarEvents[0] ? eventDate(calendarEvents[0].start_date) : `${announcements.length} pengumuman tersedia`}</p>
+                    <a href={calendarEvents[0] ? '/employee/calendar' : '#announcements'} className="mt-4 inline-flex text-sm font-black text-violet-700 hover:underline">Lihat detail →</a>
+                </article>
+            </section>
+
             {/* 1. Latest announcements */}
-            <section>
+            <section id="announcements">
                 <SectionHeading title="Pengumuman Terbaru" subtitle="Informasi terbaru yang perlu Anda ketahui." />
                 {announcements.length ? (
                     <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-                        {announcements.slice(0, 3).map(item => {
+                        {announcements.slice(0, 2).map(item => {
                             const attachUrl = item.attachment_full_url || item.attachment_url;
                             const isImage = attachUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(attachUrl);
                             const isPdf = attachUrl && /\.pdf(\?|$)/i.test(attachUrl);
@@ -198,7 +217,7 @@ export default function EmployeeDashboard() {
                                 <article key={item.id} className="flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <div className="flex items-start justify-between gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Bell className="h-5 w-5" /></span><span className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : ''}</span></div>
                                     <h3 className="min-w-0 wrap-anywhere font-bold text-slate-900">{item.title}</h3>
-                                    <p className="min-w-0 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
+                                    <p className="min-w-0 line-clamp-3 whitespace-pre-line wrap-anywhere text-sm leading-6 text-slate-600">{item.body || item.content || 'Buka untuk melihat detail pengumuman.'}</p>
                                     {isImage && (
                                         <a href={attachUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                             <img src={attachUrl} alt="Lampiran pengumuman" className="max-h-56 w-full rounded-xl border border-slate-100 bg-slate-50 object-contain" />
@@ -223,7 +242,7 @@ export default function EmployeeDashboard() {
                 <SectionHeading
                     title="Agenda Perusahaan"
                     subtitle="Event dan kegiatan yang tersedia dari admin."
-                    action={<div className="flex flex-wrap gap-2"><button onClick={activateEventAlarm} className={`rounded-xl px-4 py-2 text-sm font-bold ${alarmEnabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-amber-500 text-white'}`}>{alarmEnabled ? 'Alarm aktif' : 'Aktifkan alarm'}</button><Link to="/employee/attendance" className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Absen sekarang</Link><Link to="/employee/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">Lihat kalender</Link></div>}
+                    action={<div className="flex flex-wrap gap-2"><button onClick={activateEventAlarm} className={`rounded-xl px-4 py-2 text-sm font-bold ${alarmEnabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-amber-500 text-white'}`}>{alarmEnabled ? 'Alarm aktif' : 'Aktifkan alarm'}</button><Link to="/employee/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">Lihat agenda</Link></div>}
                 />
                 {alarmMessage && <p className="mt-3 text-sm text-slate-500">{alarmMessage}</p>}
                 {calendarEvents.length ? (() => {
@@ -236,7 +255,6 @@ export default function EmployeeDashboard() {
                                 <div className="min-w-0"><span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-blue-100">Event berikutnya</span><h3 className="mt-3 wrap-anywhere text-2xl font-black leading-tight sm:text-3xl">{nextEvent.title}</h3><p className="mt-3 text-sm font-semibold text-blue-100">{eventDate(nextEvent.start_date)}{nextEvent.end_date && nextEvent.end_date !== nextEvent.start_date ? ` – ${eventDate(nextEvent.end_date)}` : ''}</p>{(nextEvent.start_time || nextEvent.end_time) && <p className="mt-1 text-sm text-blue-100">{nextEvent.start_time || ''}{nextEvent.end_time ? ` – ${nextEvent.end_time}` : ''}</p>}</div>
                             </div>
                             {nextEvent.description && <p className="mt-6 whitespace-pre-line wrap-anywhere border-t border-white/15 pt-5 text-sm leading-6 text-blue-50">{nextEvent.description}</p>}
-                            <Link to="/employee/calendar" className="mt-6 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 transition hover:bg-blue-50">Buka detail kalender</Link>
                         </article>
                         <div className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900">Agenda selanjutnya</h3><CalendarDays className="h-5 w-5 text-blue-600" /></div><div className="mt-4 space-y-3">{events.slice(1, 4).map(event => <div key={event.id} className="flex min-w-0 gap-3 rounded-2xl bg-slate-50 p-3"><div className="w-12 shrink-0 rounded-xl bg-blue-100 py-2 text-center text-blue-700"><span className="block text-lg font-black leading-none">{eventDay(event.start_date)}</span><span className="text-[10px] font-black tracking-wider">{eventMonth(event.start_date)}</span></div><div className="min-w-0"><p className="wrap-anywhere text-sm font-bold text-slate-800">{event.title}</p><p className="mt-1 text-xs text-slate-500">{event.start_time || 'Waktu belum ditentukan'}</p></div></div>)}{events.length === 1 && <p className="text-sm text-slate-500">Belum ada agenda lain yang akan datang.</p>}</div></div>
                     </div>;
@@ -308,11 +326,10 @@ export default function EmployeeDashboard() {
                                         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Clock className="h-6 w-6" /></span>
                                         <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-900">{shift.name}</h3><span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${toneClasses[meta.tone]}`}>{meta.label}</span></div><p className="mt-2 text-sm text-slate-500">{shift.start_time}–{shift.end_time} • {shiftDuration(shift.start_time, shift.end_time)} • {shift.category || 'Reguler'}</p></div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    {index > 0 && <div className="flex flex-wrap gap-2">
                                         {!hasCheckedIn && !ended && status !== 'absent' && <button onClick={() => openAttendance('check-in', shift)} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white">Check In</button>}
                                         {hasCheckedIn && !hasCheckedOut && <button onClick={() => openAttendance('check-out', shift)} disabled={!ended} title={!ended ? `Check Out tersedia mulai pukul ${shift.end_time}` : ''} className={`rounded-xl px-4 py-2.5 text-sm font-bold ${ended ? 'bg-slate-900 text-white' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}>{ended ? 'Check Out' : `Keluar mulai ${shift.end_time}`}</button>}
-                                        {(hasCheckedOut || status === 'absent') && <Link to="/employee/attendance" className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">Lihat riwayat</Link>}
-                                    </div>
+                                    </div>}
                                 </div>
                             </article>
                         );
