@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceAdjustmentRequest;
 use App\Models\ApprovalInstance;
+use App\Models\BusinessTripRequest;
+use App\Models\Claim;
+use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Services\ApprovalService;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,10 +29,28 @@ class ApprovalController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         
-        $pending = ApprovalInstance::with('approvable')
-            
-            ->pending()
-            ->paginate(25);
+        $query = ApprovalInstance::query()
+            ->with([
+                'approvalFlow',
+                'approvable' => function (MorphTo $morphTo) {
+                    $morphTo->morphWith([
+                        LeaveRequest::class => ['employee.user', 'leaveType'],
+                        Claim::class => ['employee.user', 'claimCategory'],
+                        OvertimeRequest::class => ['employee.user'],
+                        AttendanceAdjustmentRequest::class => ['employee.user'],
+                        BusinessTripRequest::class => ['employee.user'],
+                    ]);
+                },
+            ])
+            ->pending();
+
+        // The claims menu is a focused inbox, not a client-side filter over
+        // only the current page of the generic approval pagination.
+        if ($request->query('type') === 'claim') {
+            $query->where('approvable_type', Claim::class);
+        }
+
+        $pending = $query->latest()->paginate(25);
             
         return response()->json($pending);
     }
