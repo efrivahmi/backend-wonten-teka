@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import EmployeeLayout from './layouts/EmployeeLayout';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
-import AdminApprovals from './pages/admin/Approvals';
+import AdminApprovals, { ApprovalDetailPage as AdminApprovalDetail } from './pages/admin/Approvals';
 import AdminEmployees from './pages/admin/Employees';
 import AdminSchedule from './pages/admin/Schedule';
 import AdminReports from './pages/admin/Reports';
@@ -115,6 +115,7 @@ const App = () => {
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="approvals" element={<AdminApprovals />} />
+                    <Route path="approvals/:id" element={<AdminApprovalDetail />} />
                     <Route path="employees" element={<AdminEmployees />} />
                     <Route path="employees/detail" element={<Navigate to="/admin/employees" replace />} />
                     <Route path="employees/edit" element={<Navigate to="/admin/employees" replace />} />
@@ -143,6 +144,7 @@ const App = () => {
                     <Route path="leave-types/form" element={<Navigate to="/admin/leave-types" replace />} />
                     <Route path="claim-categories" element={<AdminClaimCategories />} />
                     <Route path="claims" element={<AdminApprovals filter="Claim" />} />
+                    <Route path="claims/:id" element={<AdminApprovalDetail />} />
                     <Route path="attendance-security-events" element={<AdminOperations type="securityEvents" />} />
                     <Route path="biometrics" element={<AdminBiometrics />} />
                     <Route path="profile" element={<AdminProfile />} />

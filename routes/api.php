@@ -111,6 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('approvals')->group(function () {
         Route::get('/pending', [ApprovalController::class, 'pending']);
+        Route::get('/{instance}', [ApprovalController::class, 'show']);
         Route::post('/{instance}/action', [ApprovalController::class, 'action']);
         Route::delete('/{id}', [ApprovalController::class, 'destroy']);
     });

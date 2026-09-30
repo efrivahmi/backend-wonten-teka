@@ -16,6 +16,22 @@ use Illuminate\Support\Facades\Validator;
 
 class ApprovalController extends Controller
 {
+    private function approvableRelations(): array
+    {
+        return [
+            'approvalFlow',
+            'approvable' => function (MorphTo $morphTo) {
+                $morphTo->morphWith([
+                    LeaveRequest::class => ['employee.user', 'leaveType'],
+                    Claim::class => ['employee.user', 'claimCategory'],
+                    OvertimeRequest::class => ['employee.user'],
+                    AttendanceAdjustmentRequest::class => ['employee.user'],
+                    BusinessTripRequest::class => ['employee.user'],
+                ]);
+            },
+        ];
+    }
+
     /**
      * Get pending approvals for the current user.
      * Note: In a real system, you'd filter by checking if the user's role/id matches
@@ -30,18 +46,7 @@ class ApprovalController extends Controller
         }
         
         $query = ApprovalInstance::query()
-            ->with([
-                'approvalFlow',
-                'approvable' => function (MorphTo $morphTo) {
-                    $morphTo->morphWith([
-                        LeaveRequest::class => ['employee.user', 'leaveType'],
-                        Claim::class => ['employee.user', 'claimCategory'],
-                        OvertimeRequest::class => ['employee.user'],
-                        AttendanceAdjustmentRequest::class => ['employee.user'],
-                        BusinessTripRequest::class => ['employee.user'],
-                    ]);
-                },
-            ])
+            ->with($this->approvableRelations())
             ->pending();
 
         // The claims menu is a focused inbox, not a client-side filter over
@@ -53,6 +58,18 @@ class ApprovalController extends Controller
         $pending = $query->latest()->paginate(25);
             
         return response()->json($pending);
+    }
+
+    /** Return one approval with its employee, request type, and detail data. */
+    public function show(Request $request, ApprovalInstance $instance)
+    {
+        if (!$request->user()->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $instance->load($this->approvableRelations());
+
+        return response()->json($instance);
     }
 
     /**
