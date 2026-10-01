@@ -44,7 +44,7 @@
     "src": "_instrument-sans-600-normal-B9e8oLYv.woff"
   },
   "resources/css/app.css": {
-    "file": "assets/app-C21bS3rI.css",
+    "file": "assets/app-DGb-u0n1.css",
     "name": "app",
     "names": [
       "app.css"
@@ -57,13 +57,13 @@
     "src": "resources/images/e-absensi-logo-generated.png"
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-BaTuOeU4.js",
+    "file": "assets/app-BpxlqJxs.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
       "assets/app-1DTFk8zz.css",
-      "assets/app-C21bS3rI.css"
+      "assets/app-DGb-u0n1.css"
     ],
     "assets": [
       "assets/e-absensi-logo-generated--2_PVwyD.png",

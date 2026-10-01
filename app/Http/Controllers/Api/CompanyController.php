@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\CalendarEvent;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,11 +22,25 @@ class CompanyController extends Controller
         $month = $request->input('month', date('n'));
         $year = $request->input('year', date('Y'));
         
-        $startDate = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $timezone = config('app.business_timezone', 'Asia/Jakarta');
+        $businessNow = now($timezone);
+        $startDate = Carbon::createFromDate($year, $month, 1, $timezone)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
         
         $query = CalendarEvent::query()
-            ->whereBetween('start_date', [$startDate, $endDate]);
+            ->where('is_active', true)
+            ->whereDate('start_date', '<=', $endDate->toDateString())
+            ->whereDate('end_date', '>=', $startDate->toDateString())
+            ->where(function ($q) use ($businessNow) {
+                $q->whereDate('end_date', '>', $businessNow->toDateString())
+                    ->orWhere(function ($today) use ($businessNow) {
+                        $today->whereDate('end_date', $businessNow->toDateString())
+                            ->where(function ($time) use ($businessNow) {
+                                $time->whereNull('end_time')
+                                    ->orWhere('end_time', '>', $businessNow->format('H:i:s'));
+                            });
+                    });
+            });
         
         if ($employee) {
             $query->where(function ($q) use ($employee) {
@@ -67,6 +82,7 @@ class CompanyController extends Controller
         }
 
         $announcements = Announcement::query()
+            ->active()
             ->where(function ($query) use ($employee) {
                 $query->where('target_type', 'company')
                       ->orWhere(function ($q) use ($employee) {
@@ -179,6 +195,9 @@ class CompanyController extends Controller
             'priority' => 'required|in:low,normal,high,urgent',
             'target_type' => 'required|in:company,department,employee',
             'target_value' => 'nullable|string',
+            'published_at' => 'nullable|date',
+            'expires_at' => 'nullable|date|after_or_equal:published_at',
+            'is_active' => 'sometimes|boolean',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
@@ -193,6 +212,11 @@ class CompanyController extends Controller
             'priority' => $validated['priority'],
             'target_type' => $validated['target_type'],
             'target_value' => $validated['target_value'] ?? null,
+            'published_at' => isset($validated['published_at'])
+                ? Carbon::parse($validated['published_at'])->utc()
+                : now('UTC'),
+            'expires_at' => isset($validated['expires_at']) ? Carbon::parse($validated['expires_at'])->utc() : null,
+            'is_active' => $validated['is_active'] ?? true,
             'created_by' => $user->id,
         ]);
 
@@ -217,6 +241,9 @@ class CompanyController extends Controller
             'priority' => 'required|in:low,normal,high,urgent',
             'target_type' => 'required|in:company,department,employee',
             'target_value' => 'nullable|string',
+            'published_at' => 'nullable|date',
+            'expires_at' => 'nullable|date|after_or_equal:published_at',
+            'is_active' => 'sometimes|boolean',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
         $data = [
@@ -225,6 +252,11 @@ class CompanyController extends Controller
             'priority' => $validated['priority'],
             'target_type' => $validated['target_type'],
             'target_value' => $validated['target_value'] ?? null,
+            'published_at' => array_key_exists('published_at', $validated)
+                ? ($validated['published_at'] ? Carbon::parse($validated['published_at'])->utc() : null)
+                : $announcement->published_at,
+            'expires_at' => isset($validated['expires_at']) ? Carbon::parse($validated['expires_at'])->utc() : null,
+            'is_active' => $validated['is_active'] ?? $announcement->is_active,
         ];
         if ($request->hasFile('attachment')) {
             $data['attachment_url'] = $request->file('attachment')->store('announcements', 'public');
@@ -232,6 +264,14 @@ class CompanyController extends Controller
         $announcement->update($data);
 
         return response()->json(['message' => 'Pengumuman diperbarui.', 'data' => $announcement->fresh()]);
+    }
+
+    public function setAnnouncementActive(Request $request, Announcement $announcement)
+    {
+        $validated = $request->validate(['is_active' => 'required|boolean']);
+        $announcement->update(['is_active' => $validated['is_active']]);
+
+        return response()->json(['message' => 'Status pengumuman diperbarui.', 'data' => $announcement->fresh()]);
     }
 
     public function destroyAnnouncement(Announcement $announcement)

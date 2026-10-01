@@ -15,16 +15,17 @@ class Announcement extends Model
 
     protected $fillable = [
         'title', 'body', 'attachment_url', 'target_type', 'target_value',
-        'priority', 'created_by', 'published_at', 'expires_at',
+        'priority', 'created_by', 'published_at', 'expires_at', 'is_active',
     ];
 
-    protected $appends = ['attachment_full_url'];
+    protected $appends = ['attachment_full_url', 'status'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -61,8 +62,26 @@ class Announcement extends Model
 
     public function scopeActive($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-        });
+        $now = now('UTC');
+
+        return $query->where('is_active', true)
+            ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', $now));
+    }
+
+    public function getStatusAttribute(): string
+    {
+        $now = now('UTC');
+        if ($this->expires_at && $this->expires_at->copy()->utc()->lte($now)) {
+            return 'expired';
+        }
+        if (!$this->is_active) {
+            return 'inactive';
+        }
+        if ($this->published_at && $this->published_at->copy()->utc()->gt($now)) {
+            return 'scheduled';
+        }
+
+        return 'active';
     }
 }

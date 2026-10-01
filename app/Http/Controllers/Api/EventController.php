@@ -43,6 +43,7 @@ class EventController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $event = CalendarEvent::create([
@@ -57,6 +58,7 @@ class EventController extends Controller
             'created_by' => $user->id,
             'scope' => 'company',
             'is_recurring' => false,
+            'is_active' => $validated['is_active'] ?? true,
         ]);
 
         return response()->json([
@@ -85,6 +87,7 @@ class EventController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $event->update([
@@ -95,12 +98,27 @@ class EventController extends Controller
             'end_date' => $validated['end_date'] ?? $validated['start_date'],
             'start_time' => $validated['start_time'] ?? null,
             'end_time' => $validated['end_time'] ?? null,
+            'is_active' => $validated['is_active'] ?? $event->is_active,
         ]);
 
         return response()->json([
             'message' => 'Event updated successfully',
             'data' => $event
         ]);
+    }
+
+    public function setActive(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate(['is_active' => 'required|boolean']);
+        $event = CalendarEvent::whereKey($id)->firstOrFail();
+        $event->update(['is_active' => $validated['is_active']]);
+
+        return response()->json(['message' => 'Status event diperbarui.', 'data' => $event->fresh()]);
     }
 
     /**

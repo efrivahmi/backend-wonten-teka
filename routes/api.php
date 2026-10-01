@@ -162,12 +162,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/announcements', [CompanyController::class, 'adminAnnouncements']);
         Route::post('/announcements', [CompanyController::class, 'storeAnnouncement']);
         Route::put('/announcements/{announcement}', [CompanyController::class, 'updateAnnouncement']);
+        Route::patch('/announcements/{announcement}/active', [CompanyController::class, 'setAnnouncementActive']);
         Route::delete('/announcements/{announcement}', [CompanyController::class, 'destroyAnnouncement']);
         
         // Events
         Route::get('/events', [\App\Http\Controllers\Api\EventController::class, 'index']);
         Route::post('/events', [\App\Http\Controllers\Api\EventController::class, 'store']);
         Route::put('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
+        Route::patch('/events/{id}/active', [\App\Http\Controllers\Api\EventController::class, 'setActive']);
         Route::delete('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
         
         // Payroll
