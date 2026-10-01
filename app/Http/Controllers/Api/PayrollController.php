@@ -33,10 +33,17 @@ class PayrollController extends Controller
         $validated = $request->validate([
             'period_month' => 'required|integer|min:1|max:12',
             'period_year' => 'required|integer|min:2020|max:2100',
+            'period_start' => 'required|date_format:Y-m-d',
+            'period_end' => 'required|date_format:Y-m-d|after_or_equal:period_start',
+            'scheduled_payment_date' => 'required|date_format:Y-m-d',
             'employees' => 'required|array|min:1',
             'employees.*.employee_id' => 'required|integer|distinct|exists:employees,id',
             'employees.*.net_amount' => 'required|numeric|gt:0|max:999999999999',
+            'custom_deductions' => 'sometimes|array|max:20',
+            'custom_deductions.*.name' => 'required|string|max:100',
+            'custom_deductions.*.amount' => 'required|numeric|gt:0|max:999999999999',
         ]);
+        $customDeductions = $validated['custom_deductions'] ?? [];
         $employeeIds = collect($validated['employees'])->pluck('employee_id');
         $employees = Employee::active()->whereIn('id', $employeeIds)->get()->keyBy('id');
         if ($employees->count() !== $employeeIds->count()) {
@@ -50,20 +57,19 @@ class PayrollController extends Controller
             return response()->json(['message' => 'Payroll periode ini sudah diterbitkan dan tidak dapat dibuat ulang.'], 422);
         }
 
-        $timezone = config('app.business_timezone', 'Asia/Jakarta');
-        $periodStart = Carbon::create($year, $month, 1, 0, 0, 0, $timezone)->startOfMonth();
-        $periodEnd = $periodStart->copy()->endOfMonth();
-        $paymentDay = max(1, min((int) ($settings['payment_day'] ?? 25), $periodEnd->day));
-        $paymentDate = $periodStart->copy()->day($paymentDay);
+        $periodStart = Carbon::createFromFormat('!Y-m-d', $validated['period_start']);
+        $periodEnd = Carbon::createFromFormat('!Y-m-d', $validated['period_end']);
+        $paymentDate = Carbon::createFromFormat('!Y-m-d', $validated['scheduled_payment_date']);
 
-        $run = DB::transaction(function () use ($request, $existing, $validated, $settings, $periodStart, $periodEnd, $paymentDate, $employees, $month, $year) {
+        $run = DB::transaction(function () use ($request, $existing, $validated, $settings, $periodStart, $periodEnd, $paymentDate, $employees, $month, $year, $customDeductions) {
             $run = $existing ?? new PayrollRun(['period_month' => $month, 'period_year' => $year]);
             if ($run->exists) {
                 Claim::where('payroll_run_id', $run->id)->update(['payroll_run_id' => null]);
                 $run->payslips()->delete();
             }
             $snapshot = array_merge($settings, [
-                'payroll_mode' => 'manual_net_amount',
+                'payroll_mode' => 'manual_amount_before_custom_deductions',
+                'custom_deductions' => $customDeductions,
                 'attendance_deduction_enabled' => false,
                 'pph21_enabled' => false,
                 'bpjs_enabled' => false,
@@ -84,22 +90,39 @@ class PayrollController extends Controller
 
             foreach ($validated['employees'] as $entry) {
                 $amount = round((float) $entry['net_amount'], 2);
+                $customDeductionTotal = round(collect($customDeductions)->sum('amount'), 2);
+                if ($customDeductionTotal > $amount) {
+                    throw ValidationException::withMessages([
+                        'custom_deductions' => 'Total potongan khusus tidak boleh melebihi gaji sebelum potongan untuk setiap karyawan.',
+                    ]);
+                }
+                $components = [[
+                    'name' => 'Jumlah gaji sebelum potongan khusus (input keuangan)',
+                    'type' => 'earning',
+                    'amount' => $amount,
+                    'is_taxable' => false,
+                ]];
+                foreach ($customDeductions as $deduction) {
+                    $components[] = [
+                        'name' => $deduction['name'],
+                        'type' => 'deduction',
+                        'amount' => round((float) $deduction['amount'], 2),
+                        'is_taxable' => false,
+                        'custom' => true,
+                    ];
+                }
+                $netAmount = round($amount - $customDeductionTotal, 2);
                 $run->payslips()->create([
                     'employee_id' => $employees->get($entry['employee_id'])->id,
                     'basic_salary' => 0,
                     'total_earnings' => $amount,
-                    'total_deductions' => 0,
+                    'total_deductions' => $customDeductionTotal,
                     'gross_salary' => $amount,
-                    'net_salary' => $amount,
+                    'net_salary' => $netAmount,
                     'pph21_amount' => 0,
                     'attendance_absence_days' => 0,
                     'attendance_deduction_amount' => 0,
-                    'components_detail' => [[
-                        'name' => 'Jumlah bersih hasil perhitungan manual keuangan',
-                        'type' => 'earning',
-                        'amount' => $amount,
-                        'is_taxable' => false,
-                    ]],
+                    'components_detail' => $components,
                 ]);
             }
             return $run->fresh()->loadCount('payslips');
@@ -118,10 +141,38 @@ class PayrollController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'recap_from' => 'nullable|date_format:Y-m-d',
+            'recap_to' => 'nullable|date_format:Y-m-d|after_or_equal:recap_from',
+            'payment_from' => 'nullable|date_format:Y-m-d',
+            'payment_to' => 'nullable|date_format:Y-m-d|after_or_equal:payment_from',
+            'status' => 'nullable|in:draft,finalized,paid',
+        ]);
+
         $runs = PayrollRun::query()
             ->withCount('payslips')
             ->withCount(['payslips as collected_count' => fn ($query) => $query->where('payment_status', 'collected')])
             ->withCount(['payslips as available_count' => fn ($query) => $query->where('payment_status', 'available')])
+            ->when($filters['recap_from'] ?? null, fn ($query, $date) => $query->whereDate('period_end', '>=', $date))
+            ->when($filters['recap_to'] ?? null, fn ($query, $date) => $query->whereDate('period_start', '<=', $date))
+            ->when($filters['payment_from'] ?? null, fn ($query, $date) => $query->whereDate('scheduled_payment_date', '>=', $date))
+            ->when($filters['payment_to'] ?? null, fn ($query, $date) => $query->whereDate('scheduled_payment_date', '<=', $date))
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $term = trim($search);
+                $query->where(function ($query) use ($term) {
+                    $query->where('status', 'like', "%{$term}%")
+                        ->orWhereHas('payslips.employee', function ($employeeQuery) use ($term) {
+                            $employeeQuery->where('full_name', 'like', "%{$term}%")
+                                ->orWhere('employee_number', 'like', "%{$term}%");
+                        });
+                    if (ctype_digit($term)) {
+                        $query->orWhere('period_month', (int) $term)
+                            ->orWhere('period_year', (int) $term);
+                    }
+                });
+            })
             ->orderBy('period_year', 'desc')
             ->orderBy('period_month', 'desc')
             ->paginate(min(500, max(1, (int) $request->query('per_page', 15))));
@@ -142,6 +193,9 @@ class PayrollController extends Controller
         $validated = $request->validate([
             'period_month' => 'required|integer|min:1|max:12',
             'period_year' => 'required|integer|min:2020|max:2100',
+            'custom_deductions' => 'sometimes|array|max:20',
+            'custom_deductions.*.name' => 'required|string|max:100',
+            'custom_deductions.*.amount' => 'required|numeric|gt:0|max:999999999999',
         ]);
 
         $month = $validated['period_month'];
@@ -157,7 +211,7 @@ class PayrollController extends Controller
         }
 
         try {
-            $run = $payrollService->generatePayrollRun($month, $year, $user->id);
+            $run = $payrollService->generatePayrollRun($month, $year, $user->id, $validated['custom_deductions'] ?? []);
 
             return response()->json([
                 'message' => 'Payroll run generated successfully.',
@@ -200,8 +254,8 @@ class PayrollController extends Controller
         $summary = [
             'total_employees' => $run->payslips->count(),
             'total_basic_salary' => $totalBasic,
-            'manual_amount_only' => ($run->configuration_snapshot['payroll_mode'] ?? null) === 'manual_net_amount',
-            'total_manual_amount' => $run->payslips->sum('net_salary'),
+            'manual_amount_only' => in_array(($run->configuration_snapshot['payroll_mode'] ?? null), ['manual_net_amount', 'manual_amount_before_custom_deductions'], true),
+            'total_manual_amount' => $run->payslips->sum('gross_salary'),
             'total_earnings' => $totalEarnings,
             'total_deductions' => $totalDeductions,
             'total_net_salary' => $totalNet,
@@ -249,7 +303,7 @@ class PayrollController extends Controller
     {
         abort_unless($request->user()->hasAnyRole(['super_admin', 'admin']), 403);
         if ($run->status === 'paid') {
-            return response()->json(['message' => 'Seluruh slip periode ini sudah ditandai selesai.', 'data' => $run]);
+            return response()->json(['message' => 'Seluruh slip periode ini sudah dibayar.', 'data' => $run]);
         }
         return response()->json(['message' => 'Status dibayar mengikuti konfirmasi pengambilan setiap slip. Tandai slip karyawan satu per satu.', 'data' => $run], 422);
     }
@@ -257,13 +311,18 @@ class PayrollController extends Controller
     public function markSlipCollected(Request $request, Payslip $payslip)
     {
         abort_unless($request->user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $validated = $request->validate([
+            'payment_method' => 'sometimes|required|in:cash,transfer',
+            'payment_reference' => 'nullable|string|max:120',
+        ]);
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
 
-        return DB::transaction(function () use ($request, $payslip) {
+        return DB::transaction(function () use ($request, $payslip, $validated, $paymentMethod) {
             $run = PayrollRun::whereKey($payslip->payroll_run_id)->lockForUpdate()->firstOrFail();
             $slip = Payslip::whereKey($payslip->id)->lockForUpdate()->firstOrFail();
 
             if ($slip->payment_status === 'collected') {
-                return response()->json(['message' => 'Slip ini sudah ditandai diambil.', 'data' => $slip->load('employee')], 422);
+                return response()->json(['message' => 'Slip ini sudah ditandai lunas.', 'data' => $slip->load('employee')], 422);
             }
             if ($run->status !== 'finalized') {
                 return response()->json(['message' => 'Slip baru dapat diambil setelah payroll difinalisasi.'], 422);
@@ -274,7 +333,10 @@ class PayrollController extends Controller
 
             $slip->update([
                 'payment_status' => 'collected',
-                'collected_at' => now(),
+                'payment_method' => $paymentMethod,
+                'payment_reference' => $paymentMethod === 'transfer' ? ($validated['payment_reference'] ?? null) : null,
+                'paid_at' => now(),
+                'collected_at' => $paymentMethod === 'cash' ? now() : null,
                 'collected_by' => $request->user()->id,
             ]);
 
@@ -283,7 +345,9 @@ class PayrollController extends Controller
             }
 
             return response()->json([
-                'message' => 'Pengambilan gaji karyawan berhasil dicatat.',
+                'message' => $paymentMethod === 'transfer'
+                    ? 'Transfer gaji berhasil dicatat.'
+                    : 'Pembayaran gaji tunai berhasil dicatat.',
                 'data' => $slip->fresh()->load('employee'),
                 'run' => $run->fresh(),
             ]);

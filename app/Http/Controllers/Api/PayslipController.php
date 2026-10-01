@@ -23,7 +23,7 @@ class PayslipController extends Controller
         $payslips = Payslip::where('employee_id', $employee->id)
             ->whereHas('payrollRun', fn ($query) => $query->whereIn('status', ['finalized', 'paid']))
             ->with(['payrollRun' => function ($query) {
-                $query->select('id', 'period_month', 'period_year', 'period_start', 'period_end', 'status');
+                $query->select('id', 'period_month', 'period_year', 'period_start', 'period_end', 'scheduled_payment_date', 'status');
             }])
             ->orderByDesc('payroll_run_id')
             ->paginate(25);

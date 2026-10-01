@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Models\LeaveType;
 use App\Models\LeaveRequest;
 use App\Models\AttendanceLog;
+use App\Models\PayrollRun;
+use App\Models\PayrollComponent;
+use App\Models\Payslip;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -125,9 +128,9 @@ class ApiFeatureSmokeTest extends TestCase
             ->assertJsonPath('data.0.id', $id);
 
         $this->putJson("/api/attendance/adjustment/{$id}", ['reason' => 'Diubah'])
-            ->assertNotFound();
+            ->assertStatus(405);
         $this->deleteJson("/api/attendance/adjustment/{$id}")
-            ->assertNotFound();
+            ->assertOk();
     }
 
     public function test_all_admin_read_features_return_successful_responses(): void
@@ -154,6 +157,104 @@ class ApiFeatureSmokeTest extends TestCase
         foreach ($paths as $path) {
             $this->getJson($path)->assertOk("Admin feature failed: {$path}");
         }
+    }
+
+    public function test_admin_payroll_history_filters_by_recap_payment_date_and_paginates(): void
+    {
+        [$admin] = $this->employeeAccount(true);
+        Sanctum::actingAs($admin);
+
+        PayrollRun::create([
+            'period_month' => 9,
+            'period_year' => 2026,
+            'period_start' => '2026-09-01',
+            'period_end' => '2026-09-30',
+            'scheduled_payment_date' => '2026-10-05',
+            'status' => 'draft',
+            'run_by' => $admin->id,
+        ]);
+        PayrollRun::create([
+            'period_month' => 10,
+            'period_year' => 2026,
+            'period_start' => '2026-10-01',
+            'period_end' => '2026-10-31',
+            'scheduled_payment_date' => '2026-11-05',
+            'status' => 'finalized',
+            'run_by' => $admin->id,
+        ]);
+
+        $this->getJson('/api/admin/payroll/runs?per_page=1')
+            ->assertOk()
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('last_page', 2);
+
+        $this->getJson('/api/admin/payroll/runs?recap_from=2026-10-01&recap_to=2026-10-31&payment_from=2026-11-01&payment_to=2026-11-30&status=finalized')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.period_start', '2026-10-01T00:00:00.000000Z');
+    }
+
+    public function test_custom_deductions_apply_to_automatic_and_manual_payroll_and_cash_transfer_are_distinguished(): void
+    {
+        [$admin, $firstEmployee] = $this->employeeAccount(true);
+        [, $secondEmployee] = $this->employeeAccount();
+        Sanctum::actingAs($admin);
+
+        $manualRunId = $this->postJson('/api/admin/payroll/runs/manual', [
+            'period_month' => 9,
+            'period_year' => 2026,
+            'period_start' => '2026-08-21',
+            'period_end' => '2026-09-20',
+            'scheduled_payment_date' => '2026-09-25',
+            'employees' => [
+                ['employee_id' => $firstEmployee->id, 'net_amount' => 1000],
+                ['employee_id' => $secondEmployee->id, 'net_amount' => 2000],
+            ],
+            'custom_deductions' => [['name' => 'Tabungan wajib', 'amount' => 100]],
+        ])->assertCreated()->json('data.id');
+
+        $manual = $this->getJson("/api/admin/payroll/runs/{$manualRunId}")
+            ->assertOk()
+            ->assertJsonPath('summary.manual_amount_only', true)
+            ->assertJsonPath('summary.total_manual_amount', 3000)
+            ->assertJsonPath('summary.total_deductions', 200)
+            ->assertJsonPath('summary.total_net_salary', 2800);
+        $firstSlipId = $manual->json('payslips.0.id');
+        $secondSlipId = $manual->json('payslips.1.id');
+
+        $this->postJson("/api/admin/payroll/runs/{$manualRunId}/finalize")
+            ->assertOk();
+        $this->postJson("/api/admin/payroll/payslips/{$firstSlipId}/collect", [
+            'payment_method' => 'transfer',
+            'payment_reference' => 'TRX-TEST-001',
+        ])->assertOk()
+            ->assertJsonPath('data.payment_method', 'transfer')
+            ->assertJsonPath('data.payment_reference', 'TRX-TEST-001');
+        $this->postJson("/api/admin/payroll/payslips/{$secondSlipId}/collect", [
+            'payment_method' => 'cash',
+        ])->assertOk()->assertJsonPath('data.payment_method', 'cash')
+            ->assertJsonPath('run.status', 'paid');
+
+        PayrollComponent::create([
+            'name' => 'Gaji pokok',
+            'code' => 'BASE',
+            'type' => 'earning',
+            'is_taxable' => true,
+            'default_amount' => 5000,
+            'applies_to' => 'all',
+            'is_active' => true,
+        ]);
+        $this->postJson('/api/admin/payroll/runs', [
+            'period_month' => 10,
+            'period_year' => 2026,
+            'custom_deductions' => [['name' => 'Tabungan wajib', 'amount' => 250]],
+        ])->assertCreated();
+
+        $automaticSlip = Payslip::whereHas('payrollRun', fn ($query) => $query
+            ->where('period_month', 10)->where('period_year', 2026))->firstOrFail();
+        $this->assertSame('5000.00', $automaticSlip->gross_salary);
+        $this->assertSame('250.00', $automaticSlip->total_deductions);
+        $this->assertSame('4750.00', $automaticSlip->net_salary);
     }
 
     public function test_admin_creates_only_initial_account_and_employee_completes_profile_without_number_collision(): void

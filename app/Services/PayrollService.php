@@ -17,14 +17,14 @@ use Illuminate\Validation\ValidationException;
 
 class PayrollService
 {
-    public function generatePayrollRun(int $month, int $year, int $runByUserId): PayrollRun
+    public function generatePayrollRun(int $month, int $year, int $runByUserId, array $customDeductions = []): PayrollRun
     {
         $run = PayrollRun::where('period_month', $month)->where('period_year', $year)->first();
         if ($run && $run->status !== 'draft') {
             throw ValidationException::withMessages(['period' => 'Periode ini sudah difinalisasi dan tidak dapat dihitung ulang.']);
         }
 
-        return DB::transaction(function () use ($month, $year, $runByUserId, $run) {
+        return DB::transaction(function () use ($month, $year, $runByUserId, $run, $customDeductions) {
             $storedSettings = Setting::where('key', 'payroll_config')->first()?->value ?? [];
             $storedSettings = is_array($storedSettings) ? $storedSettings : [];
             $settings = array_merge([
@@ -69,6 +69,10 @@ class PayrollService
                 'scheduled_payment_date' => $paymentDate->toDateString(),
                 'configuration_snapshot' => $settings,
             ]);
+            $run->configuration_snapshot = array_merge($settings, [
+                'payroll_mode' => 'automatic',
+                'custom_deductions' => $customDeductions,
+            ]);
             $run->save();
 
             $components = PayrollComponent::active()->where('applies_to', 'all')->orderBy('sort_order')->get();
@@ -80,9 +84,9 @@ class PayrollService
             }
 
             $payrollDate = $periodEnd->copy();
-            Employee::active()->orderBy('id')->chunk(100, function ($employees) use ($run, $components, $payrollDate, $periodStart, $periodEnd, $settings) {
+            Employee::active()->orderBy('id')->chunk(100, function ($employees) use ($run, $components, $payrollDate, $periodStart, $periodEnd, $settings, $customDeductions) {
                 foreach ($employees as $employee) {
-                    $this->calculateEmployeePayslip($run, $employee, $components, $payrollDate, $periodStart, $periodEnd, $settings);
+                    $this->calculateEmployeePayslip($run, $employee, $components, $payrollDate, $periodStart, $periodEnd, $settings, $customDeductions);
                 }
             });
 
@@ -111,6 +115,7 @@ class PayrollService
         Carbon $periodStart,
         Carbon $periodEnd,
         array $settings,
+        array $customDeductions = [],
     ): void {
         $basicSalary = (float) $employee->basic_salary;
         $totalEarnings = 0.0;
@@ -165,6 +170,24 @@ class PayrollService
         $pph21 = $settings['pph21_enabled'] ? $this->calculatePph21($employee, $run, $taxableEarnings, $payrollDate, $settings, $basicSalary) : 0.0;
         $totalDeductions += $pph21;
         if ($pph21 != 0.0) $details[] = ['name' => $payrollDate->month === 12 ? 'Rekonsiliasi PPh 21 tahunan' : 'PPh 21 (TER bulanan)', 'type' => $pph21 >= 0 ? 'deduction' : 'earning', 'amount' => round(abs($pph21), 2), 'is_taxable' => false];
+
+        foreach ($customDeductions as $deduction) {
+            $amount = round((float) $deduction['amount'], 2);
+            $totalDeductions += $amount;
+            $details[] = [
+                'name' => $deduction['name'],
+                'type' => 'deduction',
+                'amount' => $amount,
+                'is_taxable' => false,
+                'custom' => true,
+            ];
+        }
+
+        if ($totalDeductions > $totalEarnings) {
+            throw ValidationException::withMessages([
+                'custom_deductions' => "Total potongan melebihi gaji kotor karyawan {$employee->full_name}.",
+            ]);
+        }
 
         Payslip::create([
             'payroll_run_id' => $run->id, 'employee_id' => $employee->id,

@@ -130,7 +130,7 @@ export default function EmployeeDashboard() {
     const totalPresent = stats.present_days ?? ((stats.on_time || 0) + (stats.grace_period || 0) + (stats.late || 0));
 
     const quickLinks = [
-        ['/employee/attendance', 'Absensi', CalendarCheck],
+        ['/employee/attendance-action', 'Absensi', CalendarCheck],
         ['/employee/habits', 'Habit Tracker', CheckCircle2],
         ['/employee/shifts', 'Jadwal Shift', Clock],
         ['/employee/leave', 'Ajukan Cuti', Briefcase],

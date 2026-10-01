@@ -93,7 +93,7 @@ const Payslip = () => {
 
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 md:p-5">
                 <p className="font-semibold">Cara membaca status gaji</p>
-                <p className="mt-1 text-emerald-900">“Tersedia untuk diambil” berarti slip sudah diterbitkan—hubungi bagian administrasi/keuangan untuk menerima gaji. “Sudah diambil” dicatat setelah penyerahan dikonfirmasi. “Belum diproses” berarti slip belum diterbitkan oleh admin.</p>
+                <p className="mt-1 text-emerald-900">Setelah slip diterbitkan, status menunggu pembayaran. Jika tunai, gaji diserahkan langsung dan diterima; jika nontunai, admin mencatat setelah transfer berhasil. Metode, tanggal pencatatan, dan referensi transfer (jika ada) tampil setelah pembayaran dikonfirmasi.</p>
             </div>
 
             {errorMessage && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">{errorMessage}</div>}
@@ -134,11 +134,13 @@ const Payslip = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                slip.payment_status === 'collected' ? 'bg-blue-100 text-blue-700' : slip.payment_status === 'available' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                                                slip.payment_status === 'collected' ? 'bg-blue-100 text-blue-700' : slip.payment_status === 'available' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
                                             }`}>
-                                                {{ collected: 'Sudah diambil', available: 'Tersedia untuk diambil', pending: 'Belum diproses' }[slip.payment_status] || 'Belum diproses'}
+                                                {{ collected: 'Sudah dibayar', available: 'Menunggu pembayaran', pending: 'Belum diproses' }[slip.payment_status] || 'Belum diproses'}
                                             </span>
-                                            {slip.payment_status === 'available' && <small className="mt-1 block text-slate-500">Silakan hubungi administrasi/keuangan untuk mengambil gaji.</small>}
+                                            {slip.payment_status === 'available' && <small className="mt-1 block text-slate-500">Admin akan mencatat pembayaran setelah tunai diterima atau transfer berhasil.</small>}
+                                            {slip.payment_status === 'collected' && <small className="mt-1 block text-slate-500">{slip.payment_method === 'transfer' ? 'Nontunai · transfer' : 'Tunai · diterima langsung'}{slip.paid_at ? ` · ${new Date(slip.paid_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{slip.payment_reference ? ` · Ref ${slip.payment_reference}` : ''}</small>}
+                                            {slip.payment_status === 'available' && slip.payroll_run?.scheduled_payment_date && <small className="mt-1 block text-slate-500">Jadwal bayar: {new Date(`${slip.payroll_run.scheduled_payment_date}T00:00:00`).toLocaleDateString('id-ID')}</small>}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end space-x-2">

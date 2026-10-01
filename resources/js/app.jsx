@@ -15,6 +15,7 @@ import AdminSettings from './pages/admin/Settings';
 import EmployeeDashboard from './pages/employee/Dashboard';
 
 import EmployeeAttendance from './pages/employee/Attendance';
+import EmployeeAttendanceAction from './pages/employee/AttendanceAction';
 import EmployeeLeave from './pages/employee/Leave';
 import EmployeeOvertime from './pages/employee/Overtime';
 import EmployeeClaims from './pages/employee/Claims';
@@ -71,6 +72,7 @@ const App = () => {
                 {/* Employee Routes */}
                 <Route path="/employee" element={<EmployeeLayout />}>
                     <Route path="dashboard" element={<EmployeeDashboard />} />
+                    <Route path="attendance-action" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendanceAction /></EmployeeFeatureGuard>} />
                     <Route path="attendance" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
                     <Route path="attendance/detail" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />
                     <Route path="attendance/report" element={<EmployeeFeatureGuard feature="attendance"><EmployeeAttendance /></EmployeeFeatureGuard>} />

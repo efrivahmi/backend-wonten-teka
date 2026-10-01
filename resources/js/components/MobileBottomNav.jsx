@@ -6,7 +6,7 @@ const config = {
     employee: [
         { label: 'Beranda', to: '/employee/dashboard', icon: LayoutDashboard },
         { label: 'Jadwal', to: '/employee/shifts', icon: CalendarDays },
-        { label: 'Absen', to: '/employee/attendance', icon: CalendarCheck, primary: true },
+        { label: 'Absen', to: '/employee/attendance-action', icon: CalendarCheck, primary: true },
         { label: 'Gaji', to: '/employee/payslip', icon: Banknote },
     ],
     admin: [
@@ -18,11 +18,11 @@ const config = {
 };
 
 export default function MobileBottomNav({ role, onMenu }) {
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
     const items = config[role] || config.employee;
 
-    return <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-        <div className="relative mx-auto max-w-xl">
+    return <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 xl:hidden">
+        <div className="relative mx-auto max-w-2xl">
             <div className="grid h-[4.25rem] grid-cols-5 items-center rounded-2xl border border-white/80 bg-white/90 shadow-[0_-8px_30px_rgba(15,60,42,.12)] backdrop-blur-xl">
                 {items.slice(0, 2).map(item => <NavItem key={item.to} item={item} pathname={pathname} />)}
                 <span aria-hidden="true" />
@@ -31,7 +31,7 @@ export default function MobileBottomNav({ role, onMenu }) {
                     <Menu className="h-5 w-5" strokeWidth={2} /><span className="text-[10px] font-semibold">Menu</span>
                 </button>
             </div>
-            <Link to={items[2].to} aria-label="Buka halaman absensi" aria-current={pathname.startsWith(items[2].to) ? 'page' : undefined} className="group absolute left-1/2 top-0 flex -translate-x-1/2 -translate-y-[1.05rem] flex-col items-center focus-visible:outline-none">
+            <Link to={items[2].to} aria-label="Buka halaman untuk melakukan absensi" aria-current={pathname.startsWith(items[2].to) || (role === 'employee' && pathname === '/employee/attendance' && search.startsWith('?action=')) ? 'page' : undefined} className="group absolute left-1/2 top-0 flex -translate-x-1/2 -translate-y-[1.05rem] flex-col items-center focus-visible:outline-none">
                 <span className="grid h-[3.6rem] w-[3.6rem] place-items-center rounded-full border-[5px] border-[var(--teka-canvas)] bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-800 text-white shadow-[0_8px_22px_rgba(5,110,72,.34)] transition duration-200 group-hover:-translate-y-1 group-hover:shadow-[0_12px_26px_rgba(5,110,72,.4)] group-active:scale-95 group-focus-visible:ring-4 group-focus-visible:ring-emerald-300">
                     <CalendarCheck className="h-6 w-6" strokeWidth={2.5} />
                 </span>
