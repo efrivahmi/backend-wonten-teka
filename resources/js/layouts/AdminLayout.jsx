@@ -26,6 +26,7 @@ import {
 import api from '../api';
 import { getDeviceFingerprint } from '../deviceIdentity';
 import BrandLogo from '../components/BrandLogo';
+import MobileBottomNav from '../components/MobileBottomNav';
 
 const AdminLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -94,7 +95,7 @@ const AdminLayout = () => {
                 { name: 'Jadwal & Shift', href: '/admin/schedule', icon: CalendarRange },
                 { name: 'Penugasan Shift', href: '/admin/shift-assignments', icon: CalendarRange },
                 { name: 'Lokasi Absensi', href: '/admin/attendance-settings', icon: MapPin },
-                { name: 'Kehadiran Harian', href: '/admin/attendance-daily', icon: CalendarCheck },
+                { name: 'Absensi Harian', href: '/admin/attendance-daily', icon: CalendarCheck },
                 { name: 'Laporan Absensi', href: '/admin/reports', icon: FileBarChart },
                 { name: 'Deteksi Fake GPS', href: '/admin/attendance-security-events', icon: Flag },
             ],
@@ -135,14 +136,14 @@ const AdminLayout = () => {
     return (
         <div className="teka-shell flex h-screen">
             {/* Sidebar */}
-            <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden shadow-xl transform bg-white ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} ${!isDesktopMenuClosed ? 'md:translate-x-0' : 'md:-translate-x-full'} md:w-64 transition-transform duration-300 ease-in-out`}>
+            <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden shadow-xl transform bg-white ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} ${!isDesktopMenuClosed ? 'lg:translate-x-0' : 'lg:-translate-x-full'} lg:w-64 transition-transform duration-300 ease-in-out`}>
                 <div className="flex h-20 flex-shrink-0 items-center justify-between px-5 border-b border-slate-100">
                     <div className="flex min-w-0 items-center gap-3"><BrandLogo className="h-11 w-11 shrink-0"/><span className="min-w-0 text-sm font-extrabold leading-tight text-emerald-900">e-Absensi<br/><span className="text-[11px] font-semibold text-slate-500">Lemdiklat Taruna Nusantara Indonesia</span></span></div>
                     <div className="flex items-center gap-1">
-                        <button onClick={() => setIsDesktopMenuClosed(true)} className="hidden md:flex text-slate-400 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50 transition">
+                        <button onClick={() => setIsDesktopMenuClosed(true)} className="hidden lg:flex text-slate-400 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50 transition">
                             <PanelLeftClose className="h-5 w-5" />
                         </button>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-green-700 p-1.5">
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-slate-500 hover:text-green-700 p-1.5">
                             <X className="h-6 w-6" />
                         </button>
                     </div>
@@ -218,10 +219,10 @@ const AdminLayout = () => {
             </div>
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative z-0 transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'md:ml-64' : 'md:ml-0'}`}>
+            <div className={`flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative z-0 transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'lg:ml-64' : 'lg:ml-0'}`}>
                 <header className="teka-topbar border-b h-16 flex items-center px-4 md:px-8 justify-between z-10 flex-shrink-0 bg-white">
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-slate-500 hover:text-slate-800 p-2">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden text-slate-500 hover:text-slate-800 p-2">
                             <Menu className="h-6 w-6" />
                         </button>
                     </div>
@@ -237,7 +238,7 @@ const AdminLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto w-full">
+                <main className="flex-1 overflow-y-auto w-full pb-24 lg:pb-0">
                     <Outlet />
                 </main>
             </div>
@@ -245,16 +246,18 @@ const AdminLayout = () => {
             {/* Mobile Overlay */}
             {isMobileMenuOpen && (
                 <div 
-                    className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm"
+                    className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}
+
+            <MobileBottomNav role="admin" onMenu={() => setIsMobileMenuOpen(true)} />
 
             {/* Floating Unhide Button for Desktop */}
             {isDesktopMenuClosed && (
                 <button 
                     onClick={() => setIsDesktopMenuClosed(false)} 
-                    className="hidden md:flex fixed top-1/2 left-0 z-40 -translate-y-1/2 bg-white border border-l-0 border-slate-200 shadow-md text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 p-2 rounded-r-xl transition-colors"
+                    className="hidden lg:flex fixed top-1/2 left-0 z-40 -translate-y-1/2 bg-white border border-l-0 border-slate-200 shadow-md text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 p-2 rounded-r-xl transition-colors"
                     title="Tampilkan Sidebar"
                 >
                     <PanelLeftOpen className="h-5 w-5" />

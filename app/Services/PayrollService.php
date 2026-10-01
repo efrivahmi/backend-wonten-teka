@@ -26,6 +26,7 @@ class PayrollService
 
         return DB::transaction(function () use ($month, $year, $runByUserId, $run) {
             $storedSettings = Setting::where('key', 'payroll_config')->first()?->value ?? [];
+            $storedSettings = is_array($storedSettings) ? $storedSettings : [];
             $settings = array_merge([
                 'attendance_period_start' => 21,
                 'attendance_period_end' => 20,
@@ -33,11 +34,24 @@ class PayrollService
                 'attendance_deduction_enabled' => false,
                 'attendance_deduction_per_day' => 0,
                 'pph21_enabled' => false,
+                'bpjs_kesehatan_enabled' => false,
+                'bpjs_jht_enabled' => false,
+                'bpjs_jp_enabled' => false,
+                'bpjs_jkk_enabled' => false,
+                'bpjs_jkm_enabled' => false,
                 'bpjs_enabled' => false,
                 'jkk_risk_class' => 'I',
                 'job_expense_rate' => 0.05,
                 'job_expense_monthly_cap' => 500000,
-            ], is_array($storedSettings) ? $storedSettings : []);
+            ], $storedSettings);
+            foreach (['kesehatan', 'jht', 'jp', 'jkk', 'jkm'] as $program) {
+                $key = "bpjs_{$program}_enabled";
+                if (!array_key_exists($key, $storedSettings)) {
+                    $settings[$key] = (bool) ($settings['bpjs_enabled'] ?? false);
+                }
+            }
+            $settings['bpjs_enabled'] = collect(['kesehatan', 'jht', 'jp', 'jkk', 'jkm'])
+                ->contains(fn ($program) => (bool) $settings["bpjs_{$program}_enabled"]);
             [$periodStart, $periodEnd] = $this->periodBounds($month, $year, $settings);
             $paymentDate = Carbon::create($year, $month, 1, 0, 0, 0, config('app.business_timezone', 'Asia/Jakarta'))
                 ->day(min((int) $settings['payment_day'], Carbon::create($year, $month, 1)->daysInMonth));
@@ -171,13 +185,12 @@ class PayrollService
     private function calculateBpjs(float $salary, Carbon $date, array $settings): array
     {
         $result = array_fill_keys(['kesehatan_employee','kesehatan_employer','jht_employee','jht_employer','jp_employee','jp_employer','jkk_employer','jkm_employer','jkp_employer'], 0.0);
-        if (!$settings['bpjs_enabled']) return $result;
-
         $rates = BpjsRate::whereDate('effective_from', '<=', $date)->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $date))
             ->orderByDesc('effective_from')->get()->groupBy(fn ($rate) => strtolower($rate->program));
         // JKP is financed through government funding and recomposition of JKK/JKM,
         // not as an additional employee/employer payroll-rate line.
         foreach (['kesehatan', 'jht', 'jp', 'jkk', 'jkm'] as $program) {
+            if (empty($settings["bpjs_{$program}_enabled"])) continue;
             $programRates = $rates->get($program, collect());
             $rate = $program === 'jkk'
                 ? $programRates->firstWhere('jkk_risk_class', $settings['jkk_risk_class'])
@@ -204,15 +217,16 @@ class PayrollService
             $annualTaxable = $priorTaxable + $taxableIncome;
             $months = max(1, $previousSlips->count() + 1);
             $jobExpense = min($annualTaxable * (float) $settings['job_expense_rate'], (float) $settings['job_expense_monthly_cap'] * $months);
-            $priorPensionContributions = !empty($settings['bpjs_enabled'])
-                ? $previousSlips->sum(fn ($slip) => (float) $slip->bpjs_jht_employee + (float) $slip->bpjs_jp_employee)
-                : 0.0;
+            $priorPensionContributions = $previousSlips->sum(fn ($slip) =>
+                (float) $slip->bpjs_jht_employee + (float) $slip->bpjs_jp_employee
+            );
             $currentPensionContributions = 0.0;
             // Only employee-paid JHT/JP are included as annual deductions; the
             // passed contribution aggregate is not used because it also includes health.
-            if (!empty($settings['bpjs_enabled'])) {
+            if (!empty($settings['bpjs_jht_enabled']) || !empty($settings['bpjs_jp_enabled'])) {
                 $currentRates = BpjsRate::whereDate('effective_from', '<=', $date)->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $date))->orderByDesc('effective_from')->get()->groupBy(fn ($row) => strtolower($row->program));
                 foreach (['jht', 'jp'] as $program) {
+                    if (empty($settings["bpjs_{$program}_enabled"])) continue;
                     $row = $currentRates->get($program, collect())->first();
                     if ($row) {
                         $base = $row->salary_cap ? min($basicSalary, (float) $row->salary_cap) : $basicSalary;

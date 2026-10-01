@@ -22,12 +22,27 @@ class PayrollConfigurationController extends Controller
             'attendance_deduction_enabled' => false,
             'attendance_deduction_per_day' => 0,
             'pph21_enabled' => false,
+            'bpjs_kesehatan_enabled' => false,
+            'bpjs_jht_enabled' => false,
+            'bpjs_jp_enabled' => false,
+            'bpjs_jkk_enabled' => false,
+            'bpjs_jkm_enabled' => false,
             'bpjs_enabled' => false,
             'jkk_risk_class' => 'I',
             'job_expense_rate' => 0.05,
             'job_expense_monthly_cap' => 500000,
         ];
-        $settings = array_merge($defaults, Setting::where('key', 'payroll_config')->first()?->value ?? []);
+        $stored = Setting::where('key', 'payroll_config')->first()?->value ?? [];
+        $stored = is_array($stored) ? $stored : [];
+        $settings = array_merge($defaults, $stored);
+        foreach (['kesehatan', 'jht', 'jp', 'jkk', 'jkm'] as $program) {
+            $key = "bpjs_{$program}_enabled";
+            if (!array_key_exists($key, $stored)) {
+                $settings[$key] = (bool) ($stored['bpjs_enabled'] ?? false);
+            }
+        }
+        $settings['bpjs_enabled'] = collect(['kesehatan', 'jht', 'jp', 'jkk', 'jkm'])
+            ->contains(fn ($program) => (bool) $settings["bpjs_{$program}_enabled"]);
         return response()->json([
             'data' => [
                 'settings' => $settings,
@@ -50,13 +65,27 @@ class PayrollConfigurationController extends Controller
             'settings.attendance_deduction_enabled' => 'required|boolean',
             'settings.attendance_deduction_per_day' => 'required|numeric|min:0|max:999999999',
             'settings.pph21_enabled' => 'required|boolean',
-            'settings.bpjs_enabled' => 'required|boolean',
+            'settings.bpjs_enabled' => 'sometimes|boolean',
+            'settings.bpjs_kesehatan_enabled' => 'sometimes|boolean',
+            'settings.bpjs_jht_enabled' => 'sometimes|boolean',
+            'settings.bpjs_jp_enabled' => 'sometimes|boolean',
+            'settings.bpjs_jkk_enabled' => 'sometimes|boolean',
+            'settings.bpjs_jkm_enabled' => 'sometimes|boolean',
             'settings.jkk_risk_class' => ['required', Rule::in(['I', 'II', 'III', 'IV', 'V'])],
             'settings.job_expense_rate' => 'required|numeric|min:0|max:1',
             'settings.job_expense_monthly_cap' => 'required|numeric|min:0|max:999999999',
         ]);
 
-        Setting::updateOrCreate(['key' => 'payroll_config'], ['value' => $data['settings']]);
+        $settings = $data['settings'];
+        $legacyEnabled = (bool) ($settings['bpjs_enabled'] ?? false);
+        foreach (['kesehatan', 'jht', 'jp', 'jkk', 'jkm'] as $program) {
+            $key = "bpjs_{$program}_enabled";
+            $settings[$key] = (bool) ($settings[$key] ?? $legacyEnabled);
+        }
+        $settings['bpjs_enabled'] = collect(['kesehatan', 'jht', 'jp', 'jkk', 'jkm'])
+            ->contains(fn ($program) => $settings["bpjs_{$program}_enabled"]);
+
+        Setting::updateOrCreate(['key' => 'payroll_config'], ['value' => $settings]);
         return $this->show();
     }
 
@@ -171,5 +200,26 @@ class PayrollConfigurationController extends Controller
             $id ? DB::table('ptkp_thresholds')->where('id', $id)->update([...$row, 'updated_at' => now()]) : DB::table('ptkp_thresholds')->insert([...$row, 'created_at' => now(), 'updated_at' => now()]);
         }
         return $this->show();
+    }
+
+    public function destroyBpjsRate(BpjsRate $rate)
+    {
+        $rate->delete();
+        return response()->json(['message' => 'Tarif BPJS dihapus.']);
+    }
+
+    public function destroyTerRate(Pph21TerRate $rate)
+    {
+        $rate->delete();
+        return response()->json(['message' => 'Rentang TER dihapus.']);
+    }
+
+    public function destroyAnnualTaxRow(Request $request, string $type, int $id)
+    {
+        abort_unless(in_array($type, ['bracket', 'ptkp'], true), 404);
+        $table = $type === 'bracket' ? 'pph21_progressive_brackets' : 'ptkp_thresholds';
+        $deleted = DB::table($table)->where('id', $id)->delete();
+        abort_unless($deleted, 404);
+        return response()->json(['message' => $type === 'bracket' ? 'Lapisan tarif dihapus.' : 'Status PTKP dihapus.']);
     }
 }

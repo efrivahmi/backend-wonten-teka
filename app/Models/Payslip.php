@@ -19,7 +19,7 @@ class Payslip extends Model
         'bpjs_jp_employee', 'bpjs_jp_employer',
         'bpjs_jkk_employer', 'bpjs_jkm_employer', 'bpjs_jkp_employer',
         'tapera_employee', 'tapera_employer',
-        'components_detail', 'pdf_url',
+        'components_detail', 'pdf_url', 'payment_status', 'payment_available_at', 'collected_at', 'collected_by',
     ];
 
     protected function casts(): array
@@ -45,6 +45,8 @@ class Payslip extends Model
             'tapera_employee' => 'decimal:2',
             'tapera_employer' => 'decimal:2',
             'components_detail' => 'array',
+            'payment_available_at' => 'datetime',
+            'collected_at' => 'datetime',
         ];
     }
 

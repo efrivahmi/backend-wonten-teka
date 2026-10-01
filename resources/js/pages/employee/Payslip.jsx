@@ -91,6 +91,11 @@ const Payslip = () => {
                 </div>
             </div>
 
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 md:p-5">
+                <p className="font-semibold">Cara membaca status gaji</p>
+                <p className="mt-1 text-emerald-900">“Tersedia untuk diambil” berarti slip sudah diterbitkan—hubungi bagian administrasi/keuangan untuk menerima gaji. “Sudah diambil” dicatat setelah penyerahan dikonfirmasi. “Belum diproses” berarti slip belum diterbitkan oleh admin.</p>
+            </div>
+
             {errorMessage && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">{errorMessage}</div>}
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -129,10 +134,11 @@ const Payslip = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                ['finalized', 'paid'].includes(slip.payroll_run?.status) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                                                slip.payment_status === 'collected' ? 'bg-blue-100 text-blue-700' : slip.payment_status === 'available' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
                                             }`}>
-                                                {slip.payroll_run?.status === 'paid' ? 'Sudah dibayar' : 'Slip tersedia'}
+                                                {{ collected: 'Sudah diambil', available: 'Tersedia untuk diambil', pending: 'Belum diproses' }[slip.payment_status] || 'Belum diproses'}
                                             </span>
+                                            {slip.payment_status === 'available' && <small className="mt-1 block text-slate-500">Silakan hubungi administrasi/keuangan untuk mengambil gaji.</small>}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end space-x-2">

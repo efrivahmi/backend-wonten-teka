@@ -175,9 +175,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Payroll
         Route::get('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::post('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'store']);
+        Route::post('/payroll/runs/manual', [\App\Http\Controllers\Api\PayrollController::class, 'storeManual']);
+        Route::get('/payroll/eligible-employees', [\App\Http\Controllers\Api\PayrollController::class, 'eligibleEmployees']);
         Route::get('/payroll/runs/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
         Route::post('/payroll/runs/{run}/finalize', [\App\Http\Controllers\Api\PayrollController::class, 'finalize']);
         Route::post('/payroll/runs/{run}/paid', [\App\Http\Controllers\Api\PayrollController::class, 'markPaid']);
+        Route::post('/payroll/payslips/{payslip}/collect', [\App\Http\Controllers\Api\PayrollController::class, 'markSlipCollected']);
         Route::get('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'show']);
         Route::put('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'update']);
         Route::post('/payroll/config/components', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'storeComponent']);
@@ -186,6 +189,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/payroll/config/bpjs-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveBpjsRates']);
         Route::put('/payroll/config/ter-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveTerRates']);
         Route::put('/payroll/config/annual-tax-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveAnnualTaxRates']);
+        Route::delete('/payroll/config/bpjs-rates/{rate}', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'destroyBpjsRate']);
+        Route::delete('/payroll/config/ter-rates/{rate}', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'destroyTerRate']);
+        Route::delete('/payroll/config/annual-tax-rates/{type}/{id}', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'destroyAnnualTaxRow']);
         
         // Shifts
         Route::get('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'index']);

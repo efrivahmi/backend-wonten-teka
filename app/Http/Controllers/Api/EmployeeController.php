@@ -7,8 +7,10 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -41,6 +43,13 @@ class EmployeeController extends Controller
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($request->user()->id)],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:1000',
+            'npwp' => 'nullable|string|max:50',
+            'ptkp_status' => ['nullable', 'string', Rule::in(['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'])],
+            'bpjs_kesehatan_number' => 'nullable|string|max:50',
+            'bpjs_ketenagakerjaan_number' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:50',
+            'bank_account_holder' => 'nullable|string|max:255',
             'photo' => 'nullable|image|max:5120',
         ]);
 
@@ -51,6 +60,31 @@ class EmployeeController extends Controller
                 'phone' => $validated['phone'] ?? null,
                 'address' => $validated['address'] ?? null,
             ];
+
+            if (array_key_exists('npwp', $validated)) {
+                $data['npwp_encrypted'] = filled($validated['npwp'])
+                    ? \Illuminate\Support\Facades\Crypt::encryptString($validated['npwp'])
+                    : null;
+            }
+            if (array_key_exists('ptkp_status', $validated)) {
+                $data['ptkp_status'] = $validated['ptkp_status'] ?: 'TK/0';
+            }
+            foreach ([
+                'bpjs_kesehatan_number' => 'bpjs_kesehatan_number_encrypted',
+                'bpjs_ketenagakerjaan_number' => 'bpjs_ketenagakerjaan_number_encrypted',
+                'bank_account_number' => 'bank_account_number_encrypted',
+            ] as $input => $column) {
+                if (array_key_exists($input, $validated)) {
+                    $data[$column] = filled($validated[$input])
+                        ? \Illuminate\Support\Facades\Crypt::encryptString($validated[$input])
+                        : null;
+                }
+            }
+            foreach (['bank_name', 'bank_account_holder'] as $field) {
+                if (array_key_exists($field, $validated)) {
+                    $data[$field] = $validated[$field];
+                }
+            }
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('employees/photos', 'public');
@@ -142,7 +176,7 @@ class EmployeeController extends Controller
             'position' => 'nullable|string|max:100',
             'join_date' => 'nullable|date',
             'employment_status' => 'required|string',
-            'ptkp_status' => 'nullable|string',
+            'ptkp_status' => ['nullable', 'string', Rule::in(['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'])],
             'bpjs_kesehatan_number' => 'nullable|string',
             'bpjs_ketenagakerjaan_number' => 'nullable|string',
             'bank_name' => 'nullable|string',
@@ -200,6 +234,7 @@ class EmployeeController extends Controller
             }
 
             $employee->save();
+            $employee->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
 
             // The account is initially named from the email only as a
             // placeholder. Once onboarding is completed, the employee's full
@@ -210,11 +245,13 @@ class EmployeeController extends Controller
             ]);
 
             DB::commit();
+            $freshUser = $user->fresh()->load('employee', 'roles');
+            $freshUser->employee?->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
 
             return response()->json([
                 'message' => 'Profile completed successfully',
                 'data' => $employee,
-                'user' => $user->fresh()->load('employee', 'roles'),
+                'user' => $freshUser,
             ], 201);
             
         } catch (\Exception $e) {
@@ -391,6 +428,8 @@ class EmployeeController extends Controller
                     }
                 }
             }
+
+            $employee->append(['nik', 'npwp', 'bpjs_kesehatan_number', 'bpjs_ketenagakerjaan_number', 'bank_account_number']);
 
             DB::commit();
 
