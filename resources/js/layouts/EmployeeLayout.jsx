@@ -189,7 +189,7 @@ const EmployeeLayout = () => {
             </div>
 
             {/* Main Content */}
-            <div className={`teka-shell flex-1 flex flex-col h-dvh min-h-dvh overflow-hidden relative z-0 transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'xl:ml-64' : 'xl:ml-0'}`}>
+            <div className={`teka-shell flex-1 flex flex-col h-dvh min-h-dvh overflow-hidden transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'xl:ml-64' : 'xl:ml-0'}`}>
                 <header className="teka-topbar border-b h-16 flex items-center px-4 md:px-8 justify-between z-10 flex-shrink-0 bg-white">
                     <div className="flex items-center gap-2">
                         <button onClick={() => setIsMobileMenuOpen(true)} className="xl:hidden text-slate-500 hover:text-slate-800 p-2">
