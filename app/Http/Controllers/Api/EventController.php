@@ -70,14 +70,14 @@ class EventController extends Controller
     /**
      * Update the specified event.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, CalendarEvent $calendarEvent)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $event = CalendarEvent::where('id', $id)->firstOrFail();
+        $event = $calendarEvent;
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -107,7 +107,7 @@ class EventController extends Controller
         ]);
     }
 
-    public function setActive(Request $request, $id)
+    public function setActive(Request $request, CalendarEvent $calendarEvent)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
@@ -115,24 +115,22 @@ class EventController extends Controller
         }
 
         $validated = $request->validate(['is_active' => 'required|boolean']);
-        $event = CalendarEvent::whereKey($id)->firstOrFail();
-        $event->update(['is_active' => $validated['is_active']]);
+        $calendarEvent->update(['is_active' => $validated['is_active']]);
 
-        return response()->json(['message' => 'Status event diperbarui.', 'data' => $event->fresh()]);
+        return response()->json(['message' => 'Status event diperbarui.', 'data' => $calendarEvent->fresh()]);
     }
 
     /**
      * Remove the specified event.
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, CalendarEvent $calendarEvent)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $event = CalendarEvent::where('id', $id)->firstOrFail();
-        $event->delete();
+        $calendarEvent->delete();
 
         return response()->json([
             'message' => 'Event deleted successfully'

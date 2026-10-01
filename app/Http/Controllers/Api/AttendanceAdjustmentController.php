@@ -68,21 +68,25 @@ class AttendanceAdjustmentController extends Controller
         ]);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, AttendanceAdjustmentRequest $adjustmentRequest)
     {
         $employee = $request->user()->employee;
-        $adj = \App\Models\AttendanceAdjustment::where('employee_id', $employee->id)->findOrFail($id);
-        return response()->json($adj);
+        if ($adjustmentRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        return response()->json($adjustmentRequest->load('approvalInstance.actions'));
     }
 
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, AttendanceAdjustmentRequest $adjustmentRequest)
     {
         $employee = $request->user()->employee;
-        $adj = \App\Models\AttendanceAdjustment::where('employee_id', $employee->id)->findOrFail($id);
-        if ($adj->status !== 'pending') {
+        if ($adjustmentRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        if ($adjustmentRequest->status !== 'pending') {
             return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
         }
-        $adj->delete();
+        $adjustmentRequest->delete();
         return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
     }
 }

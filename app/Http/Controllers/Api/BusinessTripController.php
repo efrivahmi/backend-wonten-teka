@@ -68,21 +68,25 @@ class BusinessTripController extends Controller
         ]);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, BusinessTripRequest $businessTripRequest)
     {
         $employee = $request->user()->employee;
-        $trip = \App\Models\BusinessTrip::where('employee_id', $employee->id)->findOrFail($id);
-        return response()->json($trip);
+        if ($businessTripRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        return response()->json($businessTripRequest->load('approvalInstance.actions'));
     }
 
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, BusinessTripRequest $businessTripRequest)
     {
         $employee = $request->user()->employee;
-        $trip = \App\Models\BusinessTrip::where('employee_id', $employee->id)->findOrFail($id);
-        if ($trip->status !== 'pending') {
+        if ($businessTripRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        if ($businessTripRequest->status !== 'pending') {
             return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
         }
-        $trip->delete();
+        $businessTripRequest->delete();
         return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
     }
 }

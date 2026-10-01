@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\AttendanceSecurityEvent;
+use App\Models\Employee;
 use App\Models\EmployeeBiometric;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -56,7 +57,7 @@ class AttendanceController extends Controller
     /**
      * Calculate distance between two coordinates in meters (Haversine formula).
      */
-    private function calculateDistanceMeters($lat1, $lon1, $lat2, $lon2)
+    private function calculateDistanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earthRadius = 6371000; // meters
 
@@ -530,7 +531,7 @@ class AttendanceController extends Controller
         );
     }
 
-    private function rejectMockLocationAttempt(Request $request, $employee, string $attemptedAction)
+    private function rejectMockLocationAttempt(Request $request, Employee $employee, string $attemptedAction)
     {
         $device = \App\Models\Device::where('device_fingerprint', $request->device_id)
             ->where('employee_id', $employee->id)

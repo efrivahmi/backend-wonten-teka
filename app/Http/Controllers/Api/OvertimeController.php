@@ -72,21 +72,25 @@ class OvertimeController extends Controller
         ]);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, OvertimeRequest $overtimeRequest)
     {
         $employee = $request->user()->employee;
-        $overtime = \App\Models\Overtime::where('employee_id', $employee->id)->findOrFail($id);
-        return response()->json($overtime);
+        if ($overtimeRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        return response()->json($overtimeRequest->load('approvalInstance.actions'));
     }
 
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, OvertimeRequest $overtimeRequest)
     {
         $employee = $request->user()->employee;
-        $overtime = \App\Models\Overtime::where('employee_id', $employee->id)->findOrFail($id);
-        if ($overtime->status !== 'pending') {
+        if ($overtimeRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        if ($overtimeRequest->status !== 'pending') {
             return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
         }
-        $overtime->delete();
+        $overtimeRequest->delete();
         return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
     }
 }

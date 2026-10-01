@@ -86,19 +86,19 @@ class AttendanceAdminController extends Controller
     /**
      * Show one attendance record with all information needed by admin.
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, AttendanceLog $attendanceLog)
     {
         if (!$request->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $log = AttendanceLog::with([
+        $attendanceLog->load([
             'employee:id,full_name,employee_number,department,position,email,phone',
             'device:id,employee_id,device_name,device_model,os_version,app_version,status,last_used_at',
             'shiftAssignment.shiftTemplate:id,name,category,start_time,end_time',
-        ])->findOrFail($id);
+        ]);
 
-        return response()->json(['data' => $log]);
+        return response()->json(['data' => $attendanceLog]);
     }
 
     public function securityEvents(Request $request)
@@ -122,14 +122,12 @@ class AttendanceAdminController extends Controller
     /**
      * Update an attendance log manually (Admin override).
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, AttendanceLog $attendanceLog)
     {
         $user = $request->user();
         if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
-        $log = AttendanceLog::findOrFail($id);
 
         $validated = $request->validate([
             'check_in_at' => 'nullable|date',
@@ -138,35 +136,34 @@ class AttendanceAdminController extends Controller
         ]);
 
         if (array_key_exists('check_in_at', $validated)) {
-            $log->check_in_at = $validated['check_in_at'];
+            $attendanceLog->check_in_at = $validated['check_in_at'];
         }
         if (array_key_exists('check_out_at', $validated)) {
-            $log->check_out_at = $validated['check_out_at'];
+            $attendanceLog->check_out_at = $validated['check_out_at'];
         }
         if (isset($validated['status'])) {
-            $log->status = $validated['status'];
+            $attendanceLog->status = $validated['status'];
         }
 
-        $log->save();
+        $attendanceLog->save();
 
         return response()->json([
             'message' => 'Attendance log updated successfully.',
-            'data' => $log
+            'data' => $attendanceLog
         ]);
     }
 
     /**
      * Delete an attendance log (Admin override).
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, AttendanceLog $attendanceLog)
     {
         $user = $request->user();
         if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $log = AttendanceLog::findOrFail($id);
-        $log->delete();
+        $attendanceLog->delete();
 
         return response()->json([
             'message' => 'Attendance log deleted successfully.'

@@ -68,8 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'index']);
         Route::get('/tracking', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'tracking']);
         Route::post('/', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'store']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'destroy']);
+        Route::put('/{personalTask}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'update']);
+        Route::delete('/{personalTask}', [\App\Http\Controllers\Api\EmployeeTaskController::class, 'destroy']);
         Route::post('/{task}/complete', [PersonalTaskController::class, 'complete']);
     });
 
@@ -84,20 +84,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // New attendance form routes
         Route::post('/adjustment', [AttendanceAdjustmentController::class, 'store']);
         Route::get('/adjustment', [AttendanceAdjustmentController::class, 'index']);
-        Route::get('/adjustment/{id}', [AttendanceAdjustmentController::class, 'show']);
-        Route::delete('/adjustment/{id}', [AttendanceAdjustmentController::class, 'cancel']);
+        Route::get('/adjustment/{adjustmentRequest}', [AttendanceAdjustmentController::class, 'show']);
+        Route::delete('/adjustment/{adjustmentRequest}', [AttendanceAdjustmentController::class, 'cancel']);
         
         Route::post('/business-trip', [BusinessTripController::class, 'store']);
         Route::get('/business-trip', [BusinessTripController::class, 'index']);
-        Route::get('/business-trip/{id}', [BusinessTripController::class, 'show']);
-        Route::delete('/business-trip/{id}', [BusinessTripController::class, 'cancel']);
+        Route::get('/business-trip/{businessTripRequest}', [BusinessTripController::class, 'show']);
+        Route::delete('/business-trip/{businessTripRequest}', [BusinessTripController::class, 'cancel']);
     });
 
     Route::prefix('overtime')->group(function () {
         Route::post('/request', [OvertimeController::class, 'store']);
         Route::get('/history', [OvertimeController::class, 'index']);
-        Route::get('/requests/{id}', [OvertimeController::class, 'show']);
-        Route::delete('/requests/{id}', [OvertimeController::class, 'cancel']);
+        Route::get('/requests/{overtimeRequest}', [OvertimeController::class, 'show']);
+        Route::delete('/requests/{overtimeRequest}', [OvertimeController::class, 'cancel']);
     });
 
     Route::prefix('leave')->group(function () {
@@ -105,23 +105,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/balances', [LeaveController::class, 'balances']);
         Route::get('/history', [LeaveController::class, 'history']);
         Route::post('/request', [LeaveController::class, 'request']);
-        Route::get('/requests/{id}', [LeaveController::class, 'show']);
-        Route::delete('/requests/{id}', [LeaveController::class, 'cancel']);
+        Route::get('/requests/{leaveRequest}', [LeaveController::class, 'show']);
+        Route::delete('/requests/{leaveRequest}', [LeaveController::class, 'cancel']);
     });
 
     Route::prefix('approvals')->group(function () {
         Route::get('/pending', [ApprovalController::class, 'pending']);
         Route::get('/{instance}', [ApprovalController::class, 'show']);
         Route::post('/{instance}/action', [ApprovalController::class, 'action']);
-        Route::delete('/{id}', [ApprovalController::class, 'destroy']);
+        Route::delete('/{approvalInstance}', [ApprovalController::class, 'destroy']);
     });
 
     Route::prefix('claims')->group(function () {
         Route::get('/categories', [ClaimController::class, 'categories']);
         Route::get('/history', [ClaimController::class, 'history']);
         Route::post('/submit', [ClaimController::class, 'submit']);
-        Route::get('/{id}', [ClaimController::class, 'show']);
-        Route::delete('/{id}', [ClaimController::class, 'cancel']);
+        Route::get('/{claim}', [ClaimController::class, 'show']);
+        Route::delete('/{claim}', [ClaimController::class, 'cancel']);
     });
 
     Route::prefix('payslips')->group(function () {
@@ -153,8 +153,8 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::get('/employees', [EmployeeController::class, 'index']);
         Route::post('/employees', [EmployeeController::class, 'store']);
-        Route::put('/employees/{id}', [EmployeeController::class, 'update']);
-        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+        Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
         Route::get('/tasks', [\App\Http\Controllers\Api\AdminTaskController::class, 'index']);
         Route::post('/tasks', [\App\Http\Controllers\Api\AdminTaskController::class, 'store']);
         Route::put('/tasks/{task}', [\App\Http\Controllers\Api\AdminTaskController::class, 'update']);
@@ -168,9 +168,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Events
         Route::get('/events', [\App\Http\Controllers\Api\EventController::class, 'index']);
         Route::post('/events', [\App\Http\Controllers\Api\EventController::class, 'store']);
-        Route::put('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'update']);
-        Route::patch('/events/{id}/active', [\App\Http\Controllers\Api\EventController::class, 'setActive']);
-        Route::delete('/events/{id}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
+        Route::put('/events/{calendarEvent}', [\App\Http\Controllers\Api\EventController::class, 'update']);
+        Route::patch('/events/{calendarEvent}/active', [\App\Http\Controllers\Api\EventController::class, 'setActive']);
+        Route::delete('/events/{calendarEvent}', [\App\Http\Controllers\Api\EventController::class, 'destroy']);
         
         // Payroll
         Route::get('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
@@ -196,8 +196,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Shifts
         Route::get('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'index']);
         Route::post('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'store']);
-        Route::put('/shifts/{id}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'update']);
-        Route::delete('/shifts/{id}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'destroy']);
+        Route::put('/shifts/{shiftTemplate}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'update']);
+        Route::delete('/shifts/{shiftTemplate}', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'destroy']);
         
         // Shift Assignments
         Route::get('/shift-assignments', [\App\Http\Controllers\Api\ShiftAssignmentController::class, 'index']);
@@ -206,8 +206,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Leave Types (Admin)
         Route::get('/leave-types', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'index']);
         Route::post('/leave-types', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'store']);
-        Route::put('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'update']);
-        Route::delete('/leave-types/{id}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'destroy']);
+        Route::put('/leave-types/{leaveType}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'update']);
+        Route::delete('/leave-types/{leaveType}', [\App\Http\Controllers\Api\AdminLeaveTypeController::class, 'destroy']);
         
         // Claim Categories (Admin)
         Route::get('/claim-categories', [\App\Http\Controllers\Api\ClaimCategoryController::class, 'index']);
@@ -217,9 +217,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Attendance security events are read-only evidence, not an approval queue.
         Route::get('/attendance', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'index']);
-        Route::get('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'show']);
-        Route::put('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'update']);
-        Route::delete('/attendance/{id}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'destroy']);
+        Route::get('/attendance/{attendanceLog}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'show']);
+        Route::put('/attendance/{attendanceLog}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'update']);
+        Route::delete('/attendance/{attendanceLog}', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'destroy']);
         Route::get('/attendance-security-events', [\App\Http\Controllers\Api\AttendanceAdminController::class, 'securityEvents']);
         
         // Device Approvals

@@ -52,14 +52,8 @@ class AdminLeaveTypeController extends Controller
     /**
      * Update the specified leave type.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, LeaveType $leaveType)
     {
-        $type = LeaveType::find($id);
-
-        if (!$type) {
-            return response()->json(['message' => 'Leave type not found.'], 404);
-        }
-
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:100',
             'description' => 'nullable|string',
@@ -76,16 +70,16 @@ class AdminLeaveTypeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $type->update($validator->validated());
+        $leaveType->update($validator->validated());
         if (array_key_exists('quota_per_month', $validator->validated())) {
-            LeaveBalance::where('leave_type_id', $type->id)
+            LeaveBalance::where('leave_type_id', $leaveType->id)
                 ->where('year', now()->year)
                 ->where('month', now()->month)
                 ->get()
-                ->each(function (LeaveBalance $balance) use ($type) {
+                ->each(function (LeaveBalance $balance) use ($leaveType) {
                     $balance->update([
-                        'entitled_days' => $type->quota_per_month,
-                        'remaining_days' => max(0, $type->quota_per_month - $balance->used_days),
+                        'entitled_days' => $leaveType->quota_per_month,
+                        'remaining_days' => max(0, $leaveType->quota_per_month - $balance->used_days),
                     ]);
                 });
         }
@@ -93,32 +87,26 @@ class AdminLeaveTypeController extends Controller
         return response()->json([
             
             'message' => 'Leave type updated successfully.',
-            'data' => $type
+            'data' => $leaveType
         ]);
     }
 
     /**
      * Remove the specified leave type.
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, LeaveType $leaveType)
     {
-        $type = LeaveType::find($id);
-
-        if (!$type) {
-            return response()->json(['message' => 'Leave type not found.'], 404);
-        }
-
         // Only allow deleting if not used in any leave requests (optional, but good practice)
-        if ($type->leaveRequests()->exists()) {
+        if ($leaveType->leaveRequests()->exists()) {
             // Soft delete or deactivate instead? Let's deactivate
-            $type->update(['is_active' => false]);
+            $leaveType->update(['is_active' => false]);
             return response()->json([
                 
                 'message' => 'Leave type is in use and has been deactivated instead of deleted.',
             ]);
         }
 
-        $type->delete();
+        $leaveType->delete();
 
         return response()->json([
             

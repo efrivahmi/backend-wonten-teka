@@ -117,13 +117,14 @@ class EmployeeTaskController extends Controller
     /**
      * Mark task as complete / incomplete
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, PersonalTask $personalTask)
     {
         $employee = $request->user()->employee;
-        
-        $task = PersonalTask::where('id', $id)
-            ->where('employee_id', $employee->id)
-            ->firstOrFail();
+        if ($personalTask->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $task = $personalTask;
 
         $validated = $request->validate([
             'is_active' => 'nullable|boolean',
@@ -153,15 +154,14 @@ class EmployeeTaskController extends Controller
     /**
      * Delete task
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, PersonalTask $personalTask)
     {
         $employee = $request->user()->employee;
-        
-        $task = PersonalTask::where('id', $id)
-            ->where('employee_id', $employee->id)
-            ->firstOrFail();
+        if ($personalTask->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
 
-        $task->delete();
+        $personalTask->delete();
 
         return response()->json(['message' => 'Tugas dihapus.']);
     }

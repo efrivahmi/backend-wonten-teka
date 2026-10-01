@@ -352,10 +352,10 @@ class EmployeeController extends Controller
         return $candidate;
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Employee $employee)
     {
         $user = $request->user();
-        $employee = Employee::findOrFail($id);
+        // $employee is injected via Route Model Binding
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -446,10 +446,10 @@ class EmployeeController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, Employee $employee)
     {
         $user = $request->user();
-        $employee = Employee::findOrFail($id);
+        // $employee is injected via Route Model Binding
 
         try {
             DB::beginTransaction();

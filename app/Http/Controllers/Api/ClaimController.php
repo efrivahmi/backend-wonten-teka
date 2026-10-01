@@ -107,17 +107,21 @@ class ClaimController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, Claim $claim)
     {
         $employee = $request->user()->employee;
-        $claim = \App\Models\Claim::where('employee_id', $employee->id)->with('category')->findOrFail($id);
-        return response()->json($claim);
+        if ($claim->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        return response()->json($claim->load('claimCategory', 'approvalInstance.actions'));
     }
 
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, Claim $claim)
     {
         $employee = $request->user()->employee;
-        $claim = \App\Models\Claim::where('employee_id', $employee->id)->findOrFail($id);
+        if ($claim->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
         if ($claim->status !== 'pending') {
             return response()->json(['message' => 'Hanya klaim dengan status pending yang dapat dibatalkan.'], 422);
         }

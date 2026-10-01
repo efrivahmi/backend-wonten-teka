@@ -174,7 +174,7 @@ class PayrollController extends Controller
     /**
      * Get details of a specific payroll run.
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, int|string $id)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {

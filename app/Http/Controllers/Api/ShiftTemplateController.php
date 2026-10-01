@@ -63,14 +63,12 @@ class ShiftTemplateController extends Controller
     /**
      * Update an existing shift template.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, ShiftTemplate $shiftTemplate)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
-        $template = ShiftTemplate::where('id', $id)->firstOrFail();
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -83,32 +81,30 @@ class ShiftTemplateController extends Controller
         ]);
 
         // If this is set to default, unset other defaults
-        if (isset($validated['is_default']) && $validated['is_default'] && !$template->is_default) {
+        if (isset($validated['is_default']) && $validated['is_default'] && !$shiftTemplate->is_default) {
             ShiftTemplate::query()->update(['is_default' => false]);
         }
 
-        $template->update($validated);
+        $shiftTemplate->update($validated);
 
         return response()->json([
             'message' => 'Shift template updated successfully.',
-            'data' => $template
+            'data' => $shiftTemplate
         ]);
     }
 
     /**
      * Delete a shift template.
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, ShiftTemplate $shiftTemplate)
     {
         $user = $request->user();
         if (!$user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
-        $template = ShiftTemplate::where('id', $id)->firstOrFail();
         
         // Cannot delete default shift if it's the only active one, but for simplicity let's just allow it
-        $template->delete();
+        $shiftTemplate->delete();
 
         return response()->json(['message' => 'Shift template deleted successfully.']);
     }

@@ -173,21 +173,25 @@ class LeaveController extends Controller
         ]);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, LeaveRequest $leaveRequest)
     {
         $employee = $request->user()->employee;
-        $leave = \App\Models\LeaveRequest::where('employee_id', $employee->id)->with('leaveType')->findOrFail($id);
-        return response()->json($leave);
+        if ($leaveRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        return response()->json($leaveRequest->load('leaveType', 'approvalInstance.actions'));
     }
 
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, LeaveRequest $leaveRequest)
     {
         $employee = $request->user()->employee;
-        $leave = \App\Models\LeaveRequest::where('employee_id', $employee->id)->findOrFail($id);
-        if ($leave->status !== 'pending') {
+        if ($leaveRequest->employee_id !== $employee->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+        if ($leaveRequest->status !== 'pending') {
             return response()->json(['message' => 'Hanya pengajuan dengan status pending yang dapat dibatalkan.'], 422);
         }
-        $leave->delete();
+        $leaveRequest->delete();
         return response()->json(['message' => 'Pengajuan berhasil dibatalkan.']);
     }
 }
