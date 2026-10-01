@@ -44,27 +44,33 @@ const Reports = () => {
     const [error, setError] = useState('');
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         Promise.all([fetchLogs(), api.get('/admin/employees').then(response => setEmployees(response.data.data || []))]);
     }, [currentPage]);
 
+    const getAttendanceParams = (page = currentPage, perPage) => {
+        const params = { page };
+        if (perPage) params.per_page = perPage;
+        if (search.trim()) params.search = search.trim();
+        if (selectedEmployees.length) params.employee_ids = selectedEmployees.join(',');
+        if (periodMode === 'month' && month) {
+            const [year, monthNumber] = month.split('-');
+            params.year = year; params.month = monthNumber;
+        }
+        if (periodMode === 'range') {
+            if (dateFrom) params.date_from = dateFrom;
+            if (dateTo) params.date_to = dateTo;
+        }
+        return params;
+    };
+
     const fetchLogs = async () => {
         try {
             setLoading(true);
             setError('');
-            const params = { page: currentPage };
-            if (search.trim()) params.search = search.trim();
-            if (selectedEmployees.length) params.employee_ids = selectedEmployees.join(',');
-            if (periodMode === 'month' && month) {
-                const [year, monthNumber] = month.split('-');
-                params.year = year; params.month = monthNumber;
-            }
-            if (periodMode === 'range') {
-                if (dateFrom) params.date_from = dateFrom;
-                if (dateTo) params.date_to = dateTo;
-            }
-            const response = await api.get('/admin/attendance', { params });
+            const response = await api.get('/admin/attendance', { params: getAttendanceParams() });
             setPagination(response.data);
             setLogs(response.data.data || []);
             setDraftReady(true);
@@ -81,14 +87,30 @@ const Reports = () => {
     const selectedAll = employees.length > 0 && selectedEmployees.length === employees.length;
     const toggleAll = () => setSelectedEmployees(selectedAll ? [] : employees.map(item => item.id));
     const statusLabel = status => ({ on_time: 'Tepat Waktu', present: 'Hadir', late: 'Terlambat', absent: 'Alpha / Tidak Masuk', leave: 'Cuti / Sakit' }[status] || status || '-');
-    const exportCsv = () => {
+    const exportCsv = async () => {
         if (!draftReady) return;
-        const rows = [['Karyawan','Nomor Karyawan','Tanggal','Check In','Check Out','Status'], ...logs.map(log => [log.employee?.full_name || log.employee?.user?.name || `Emp #${log.employee_id}`, log.employee?.employee_number || '', log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID') : '', log.status === 'absent' ? '' : (log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID') : ''), log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID') : '', statusLabel(log.status)])];
-        const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
-        link.download = `draft-rekap-absensi-${periodMode === 'month' ? month : `${dateFrom}-${dateTo}`}.csv`;
-        link.click(); URL.revokeObjectURL(link.href);
+        setExporting(true);
+        try {
+            const firstResponse = await api.get('/admin/attendance', { params: getAttendanceParams(1, 500) });
+            const allLogs = [...(firstResponse.data.data || [])];
+            const lastPage = Number(firstResponse.data.last_page || 1);
+            for (let page = 2; page <= lastPage; page += 1) {
+                const response = await api.get('/admin/attendance', { params: getAttendanceParams(page, 500) });
+                allLogs.push(...(response.data.data || []));
+            }
+            const rows = [['Karyawan','Nomor Karyawan','Tanggal','Check In','Check Out','Status'], ...allLogs.map(log => [log.employee?.full_name || log.employee?.user?.name || `Emp #${log.employee_id}`, log.employee?.employee_number || '', log.check_in_at ? new Date(log.check_in_at).toLocaleDateString('id-ID') : '', log.status === 'absent' ? '' : (log.check_in_at ? new Date(log.check_in_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''), log.check_out_at ? new Date(log.check_out_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }) : '', statusLabel(log.status)])];
+            const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+            const link = document.createElement('a');
+            const objectUrl = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+            link.href = objectUrl;
+            link.download = `draft-rekap-absensi-${periodMode === 'month' ? month : `${dateFrom}-${dateTo}`}.csv`;
+            link.click();
+            URL.revokeObjectURL(objectUrl);
+        } catch (exportError) {
+            alert(exportError?.response?.data?.message || 'Ekspor seluruh data gagal. Periksa koneksi lalu coba lagi.');
+        } finally {
+            setExporting(false);
+        }
     };
 
     // --- CRUD Handlers ---
@@ -168,9 +190,9 @@ const Reports = () => {
                     <p className="text-slate-500 mt-1">Unduh dan pantau riwayat absensi secara keseluruhan.</p>
                 </div>
                 <div className="flex space-x-2">
-                    <button disabled={!draftReady || !logs.length} onClick={exportCsv} className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50">
+                    <button disabled={!draftReady || !logs.length || exporting} onClick={exportCsv} className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50">
                         <Download className="h-4 w-4" />
-                        <span>Export Draft CSV</span>
+                        <span>{exporting ? 'Mengekspor seluruh data…' : 'Ekspor semua hasil CSV'}</span>
                     </button>
                 </div>
             </div>
@@ -184,7 +206,7 @@ const Reports = () => {
                 </div>
                 <div><div className="mb-2 flex items-center justify-between"><span className="text-sm font-semibold text-slate-700">Pilih karyawan ({selectedEmployees.length || 'semua'})</span><button onClick={toggleAll} className="text-xs font-bold text-emerald-700">{selectedAll ? 'Hapus semua centang' : 'Centang semua'}</button></div><div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{employees.filter(item => !search.trim() || `${item.full_name} ${item.employee_number || ''} ${item.email || ''}`.toLowerCase().includes(search.toLowerCase())).map(item => <label key={item.id} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50"><input type="checkbox" checked={selectedEmployees.includes(item.id)} onChange={() => {toggleEmployee(item.id);setDraftReady(false);}}/><span className="text-sm"><b className="block text-slate-800">{item.full_name || item.user?.email}</b><small className="text-slate-500">{item.employee_number || item.user?.email || 'Belum lengkap'}</small></span></label>)}</div></div>
                 <button onClick={fetchLogs} disabled={loading || (periodMode === 'range' && (!dateFrom || !dateTo))} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Eye className="h-4 w-4"/>{loading ? 'Menyiapkan…' : 'Tampilkan Draft'}</button>
-                {draftReady && <p className="text-sm text-emerald-700"><b>Draft siap:</b> {logs.length} catatan sesuai karyawan dan periode terpilih. Periksa tabel sebelum mengekspor.</p>}
+                {draftReady && <p className="text-sm text-emerald-700"><b>Draft siap:</b> {pagination?.total ?? logs.length} catatan sesuai karyawan dan periode. Tabel memakai pagination; ekspor mengambil semua halaman.</p>}
                 {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"><span>{error}</span><button onClick={fetchLogs} className="font-bold underline">Coba lagi</button></div>}
             </section>
 

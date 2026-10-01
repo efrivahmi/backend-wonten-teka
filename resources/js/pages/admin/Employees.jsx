@@ -205,6 +205,7 @@ const Employees = () => {
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-800">{emp.user?.name || emp.full_name}</p>
+                                                    <p className="mt-0.5 text-xs font-medium text-slate-500">ID Karyawan: {emp.employee_number || 'Belum tersedia'}</p>
                                                 </div>
                                             </div>
                                         </td>

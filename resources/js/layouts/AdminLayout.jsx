@@ -28,6 +28,8 @@ import { getDeviceFingerprint } from '../deviceIdentity';
 import BrandLogo from '../components/BrandLogo';
 import MobileBottomNav from '../components/MobileBottomNav';
 
+const routeMatches = (pathname, href) => pathname === href || pathname.startsWith(`${href}/`);
+
 const AdminLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDesktopMenuClosed, setIsDesktopMenuClosed] = useState(false);
@@ -134,7 +136,7 @@ const AdminLayout = () => {
     };
 
     return (
-        <div className="teka-shell flex h-screen">
+        <div className="teka-shell flex h-dvh min-h-dvh">
             {/* Sidebar */}
             <div className={`teka-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col overflow-hidden shadow-xl transform bg-white ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} ${!isDesktopMenuClosed ? 'xl:translate-x-0' : 'xl:-translate-x-full'} xl:w-64 transition-transform duration-300 ease-in-out`}>
                 <div className="flex h-20 flex-shrink-0 items-center justify-between px-5 border-b border-slate-100">
@@ -152,7 +154,7 @@ const AdminLayout = () => {
                 <nav className="scrollbar-hidden min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-4 py-2 pb-6">
                     {navigation.map((item) => {
                         if (item.children) {
-                            const isChildActive = item.children.some(child => location.pathname.startsWith(child.href));
+                            const isChildActive = item.children.some(child => routeMatches(location.pathname, child.href));
                             const isOpen = openMenus[item.name] ?? isChildActive;
                             return (
                                 <div key={item.name} className="space-y-1">
@@ -174,7 +176,7 @@ const AdminLayout = () => {
                                     {isOpen && (
                                         <div className="pl-11 pr-2 py-1 space-y-1">
                                             {item.children.map(child => {
-                                                const isActive = location.pathname.startsWith(child.href);
+                                                const isActive = routeMatches(location.pathname, child.href);
                                                 return (
                                                     <Link
                                                         key={child.name}
@@ -197,7 +199,7 @@ const AdminLayout = () => {
                             );
                         }
 
-                        const isActive = location.pathname.startsWith(item.href);
+                        const isActive = routeMatches(location.pathname, item.href);
                         return (
                             <Link
                                 key={item.name}
@@ -219,7 +221,7 @@ const AdminLayout = () => {
             </div>
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative z-0 transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'xl:ml-64' : 'xl:ml-0'}`}>
+            <div className={`flex-1 flex flex-col h-dvh min-h-dvh overflow-hidden bg-slate-50 relative z-0 transition-all duration-300 ease-in-out ${!isDesktopMenuClosed ? 'xl:ml-64' : 'xl:ml-0'}`}>
                 <header className="teka-topbar border-b h-16 flex items-center px-4 md:px-8 justify-between z-10 flex-shrink-0 bg-white">
                     <div className="flex items-center gap-2">
                         <button onClick={() => setIsMobileMenuOpen(true)} className="xl:hidden text-slate-500 hover:text-slate-800 p-2">
@@ -238,7 +240,7 @@ const AdminLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto w-full pb-24 xl:pb-0">
+                <main className="flex-1 overflow-y-auto w-full overscroll-contain pb-[calc(7rem+env(safe-area-inset-bottom))] xl:pb-0">
                     <Outlet />
                 </main>
             </div>

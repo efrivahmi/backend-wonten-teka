@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarCheck, CheckCircle2, Clock3, Loader2, LogIn, LogOut, MapPin } from 'lucide-react';
 import api from '../../api';
+import { attendanceToneClasses, getAttendanceStatusMeta } from '../../attendanceStatus';
 
 const clock = value => value
     ? new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -66,18 +67,10 @@ export default function AttendanceAction() {
                     const ended = shift.time_status === 'ended';
                     const canCheckIn = !checkedIn && !ended && attendance?.status !== 'absent';
                     const canCheckOut = checkedIn && !checkedOut && ended;
-                    const statusLabel = attendance?.status === 'absent'
-                        ? 'Tidak hadir'
-                        : checkedOut
-                            ? 'Absensi selesai'
-                            : checkedIn
-                                ? 'Sudah absen masuk'
-                                : attendance?.status
-                                    ? attendance.status_label || attendance.status.replaceAll('_', ' ')
-                                    : 'Belum absen';
+                    const statusMeta = getAttendanceStatusMeta(attendance);
                     return <article key={`${shift.assignment_id || shift.template_id || 'shift'}-${index}`} className="grid gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-emerald-50/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                         <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-slate-900 sm:text-lg">{shift.name || 'Shift'}</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${attendance?.status === 'absent' ? 'bg-rose-100 text-rose-800' : checkedOut ? 'bg-emerald-100 text-emerald-800' : checkedIn ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>{statusLabel}</span></div>
+                            <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-slate-900 sm:text-lg">{shift.name || 'Shift'}</h3><span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${attendanceToneClasses[statusMeta.tone]}`}>{statusMeta.label}</span></div>
                             <p className="mt-1 text-sm text-slate-500">{shift.start_time || '--:--'}–{shift.end_time || '--:--'}{shift.category ? ` · ${shift.category}` : ''}</p>
                             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-slate-600"><span className="inline-flex items-center gap-1.5"><LogIn className="h-4 w-4 text-emerald-700" /><span>Waktu masuk: <strong className="text-slate-800">{clock(attendance?.check_in_time)}</strong></span></span><span className="inline-flex items-center gap-1.5"><LogOut className="h-4 w-4 text-rose-700" /><span>Waktu pulang: <strong className="text-slate-800">{clock(attendance?.check_out_time)}</strong></span></span></div>
                         </div>

@@ -7,23 +7,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
 import { enableEventAlarms, eventAlarmPermission, scheduleEventAlarms } from '../../eventAlarmService';
+import { attendanceToneClasses, getAttendanceStatusMeta } from '../../attendanceStatus';
 
-const statusMeta = {
-    not_started: { label: 'Belum absen', tone: 'slate' },
-    on_time: { label: 'Tepat waktu', tone: 'emerald' },
-    present: { label: 'Tepat waktu', tone: 'emerald' },
-    late: { label: 'Terlambat', tone: 'amber' },
-    absent: { label: 'Alpha / Tidak masuk', tone: 'rose' },
-    incomplete: { label: 'Belum check-out', tone: 'amber' },
-};
-
-const toneClasses = {
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    rose: 'bg-rose-50 text-rose-700 border-rose-200',
-    slate: 'bg-slate-50 text-slate-600 border-slate-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-};
+const toneClasses = attendanceToneClasses;
 
 const formatTime = (value, status) => {
     if (!value || status === 'absent') return '--:--';
@@ -123,7 +109,7 @@ export default function EmployeeDashboard() {
         [primaryShift],
     );
     const currentStatus = currentAttendance?.status || 'not_started';
-    const currentStatusMeta = statusMeta[currentStatus] || { label: 'Belum absen', tone: 'slate' };
+    const currentStatusMeta = getAttendanceStatusMeta(currentAttendance);
     const hasCheckedIn = Boolean(currentAttendance?.check_in_time) && currentStatus !== 'absent';
     const hasCheckedOut = Boolean(currentAttendance?.check_out_time);
     const shiftEnded = primaryShift?.time_status === 'ended';
@@ -298,7 +284,7 @@ export default function EmployeeDashboard() {
                     {shifts.length ? shifts.map((shift, index) => {
                         const attendance = shift.attendance;
                         const status = attendance?.status || 'not_started';
-                        const meta = statusMeta[status] || { label: 'Belum absen', tone: 'slate' };
+                        const meta = getAttendanceStatusMeta(attendance);
                         const hasCheckedIn = Boolean(attendance?.check_in_time) && status !== 'absent';
                         const hasCheckedOut = Boolean(attendance?.check_out_time);
                         const ended = shift.time_status === 'ended';
