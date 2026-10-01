@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarCheck, CheckCircle2, Clock3, Loader2, LogIn, LogOut, MapPin, RefreshCw } from 'lucide-react';
+import { CalendarCheck, CheckCircle2, Clock3, Loader2, LogIn, LogOut, MapPin } from 'lucide-react';
 import api from '../../api';
 
 const clock = value => value
@@ -45,7 +45,6 @@ export default function AttendanceAction() {
                     <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Catat kehadiran</h1>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-50/90 sm:text-base">Pilih shift, lalu lakukan verifikasi wajah dan lokasi. Riwayat kehadiran tersedia terpisah.</p>
                 </div>
-                <button type="button" onClick={load} aria-label="Muat ulang status absensi" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/20"><RefreshCw className="h-4 w-4" />Muat ulang</button>
             </div>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/90">
                 <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4" />{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -56,7 +55,6 @@ export default function AttendanceAction() {
         <section className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="today-shifts-title">
             <div className="flex flex-wrap items-end justify-between gap-3">
                 <div><h2 id="today-shifts-title" className="text-xl font-extrabold text-slate-900 sm:text-2xl">Jadwal shift hari ini</h2><p className="mt-1 text-sm text-slate-500">Status dan tombol absensi ditampilkan untuk tiap shift.</p></div>
-                <button type="button" onClick={() => navigate('/employee/attendance')} className="min-h-11 rounded-xl px-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">Riwayat absensi <span aria-hidden="true">→</span></button>
             </div>
 
             {error && <div role="alert" className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><span>{error}</span><button onClick={load} className="font-bold underline">Coba lagi</button></div>}
@@ -68,12 +66,20 @@ export default function AttendanceAction() {
                     const ended = shift.time_status === 'ended';
                     const canCheckIn = !checkedIn && !ended && attendance?.status !== 'absent';
                     const canCheckOut = checkedIn && !checkedOut && ended;
-                    const statusLabel = checkedOut ? 'Selesai' : checkedIn ? 'Sudah check-in' : attendance?.status === 'absent' ? 'Tidak hadir' : ended ? 'Jadwal selesai' : shift.time_status_label || 'Belum absen';
+                    const statusLabel = attendance?.status === 'absent'
+                        ? 'Tidak hadir'
+                        : checkedOut
+                            ? 'Absensi selesai'
+                            : checkedIn
+                                ? 'Sudah absen masuk'
+                                : attendance?.status
+                                    ? attendance.status_label || attendance.status.replaceAll('_', ' ')
+                                    : 'Belum absen';
                     return <article key={`${shift.assignment_id || shift.template_id || 'shift'}-${index}`} className="grid gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-emerald-50/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                         <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-slate-900 sm:text-lg">{shift.name || 'Shift'}</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${checkedOut ? 'bg-emerald-100 text-emerald-800' : checkedIn ? 'bg-blue-100 text-blue-800' : attendance?.status === 'absent' || ended ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{statusLabel}</span></div>
+                            <div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold text-slate-900 sm:text-lg">{shift.name || 'Shift'}</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${attendance?.status === 'absent' ? 'bg-rose-100 text-rose-800' : checkedOut ? 'bg-emerald-100 text-emerald-800' : checkedIn ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>{statusLabel}</span></div>
                             <p className="mt-1 text-sm text-slate-500">{shift.start_time || '--:--'}–{shift.end_time || '--:--'}{shift.category ? ` · ${shift.category}` : ''}</p>
-                            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-1.5"><LogIn className="h-3.5 w-3.5 text-emerald-700" />Masuk {clock(attendance?.check_in_time)}</span><span className="inline-flex items-center gap-1.5"><LogOut className="h-3.5 w-3.5 text-rose-700" />Keluar {clock(attendance?.check_out_time)}</span></div>
+                            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-slate-600"><span className="inline-flex items-center gap-1.5"><LogIn className="h-4 w-4 text-emerald-700" /><span>Waktu masuk: <strong className="text-slate-800">{clock(attendance?.check_in_time)}</strong></span></span><span className="inline-flex items-center gap-1.5"><LogOut className="h-4 w-4 text-rose-700" /><span>Waktu pulang: <strong className="text-slate-800">{clock(attendance?.check_out_time)}</strong></span></span></div>
                         </div>
                         <div className="flex flex-wrap gap-2 sm:justify-end">
                             {canCheckIn && <button onClick={() => doAttendance('check-in', shift)} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:flex-none"><LogIn className="h-4 w-4" />Check in</button>}
@@ -84,6 +90,9 @@ export default function AttendanceAction() {
                     </article>;
                 })}
             </div>}
+            <div className="mt-5 border-t border-slate-100 pt-4 text-right">
+                <button type="button" onClick={() => navigate('/employee/attendance')} className="min-h-11 rounded-xl px-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">Buka riwayat absensi <span aria-hidden="true">→</span></button>
+            </div>
         </section>
         <p className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950"><strong>Petunjuk:</strong> Izinkan kamera dan lokasi pada browser. Check out aktif setelah jadwal shift berakhir. Jika wajah atau GPS bermasalah, periksa izin perangkat lalu coba kembali.</p>
     </div>;

@@ -9,6 +9,7 @@ import MobileAppDownloadCard from '../../components/MobileAppDownloadCard';
 import { enableEventAlarms, eventAlarmPermission, scheduleEventAlarms } from '../../eventAlarmService';
 
 const statusMeta = {
+    not_started: { label: 'Belum absen', tone: 'slate' },
     on_time: { label: 'Tepat waktu', tone: 'emerald' },
     present: { label: 'Tepat waktu', tone: 'emerald' },
     late: { label: 'Terlambat', tone: 'amber' },
@@ -198,8 +199,8 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <SummaryCard label="Status" value={currentStatusMeta.label} icon={CheckCircle2} tone={currentStatusMeta.tone} />
-                    <SummaryCard label="Jam masuk" value={formatTime(currentAttendance?.check_in_time, currentStatus)} icon={LogIn} tone="emerald" />
-                    <SummaryCard label="Jam keluar" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
+                    <SummaryCard label="Waktu masuk" value={formatTime(currentAttendance?.check_in_time, currentStatus)} icon={LogIn} tone="emerald" />
+                    <SummaryCard label="Waktu pulang" value={formatTime(currentAttendance?.check_out_time, currentStatus)} icon={LogOut} tone="rose" />
                     <SummaryCard label="Durasi kerja" value={durationText(currentAttendance, now)} icon={Clock} tone="blue" />
                 </div>
                 <div className="mt-5 border-t border-slate-100 pt-5">
@@ -309,7 +310,7 @@ export default function EmployeeDashboard() {
                                         <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-900">{shift.name}</h3><span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${toneClasses[meta.tone]}`}>{meta.label}</span></div><p className="mt-2 text-sm text-slate-500">{shift.start_time}–{shift.end_time} • {shiftDuration(shift.start_time, shift.end_time)} • {shift.category || 'Reguler'}</p></div>
                                     </div>
                                     <div className="flex flex-wrap gap-2 md:justify-end">
-                                        {!hasCheckedIn && !ended && status !== 'absent' && <button type="button" aria-label={`Check in untuk ${shift.name}`} onClick={() => openAttendance('check-in', shift)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
+                                        {!hasCheckedIn && !ended && status !== 'absent' && <button type="button" aria-label={`Check in untuk ${shift.name}`} onClick={() => openAttendance('check-in', shift)} className="hidden min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 xl:inline-flex"><LogIn className="mr-2 h-4 w-4" />Check In</button>}
                                         {hasCheckedIn && !hasCheckedOut && <button type="button" aria-label={ended ? `Check out untuk ${shift.name}` : `Check out tersedia mulai ${shift.end_time}`} onClick={() => ended && openAttendance('check-out', shift)} disabled={!ended} title={!ended ? `Check Out tersedia mulai pukul ${shift.end_time}` : ''} className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${ended ? 'bg-slate-900 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}><LogOut className="mr-2 h-4 w-4" />{ended ? 'Check Out' : `Keluar mulai ${shift.end_time}`}</button>}
                                     </div>
                                 </div>

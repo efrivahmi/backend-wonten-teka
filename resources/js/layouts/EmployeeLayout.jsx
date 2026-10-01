@@ -98,12 +98,13 @@ const EmployeeLayout = () => {
         const definition = menuDefinitions[key];
         const configured = menuConfig.find(item => item.key === key);
         if (!definition || (key !== 'biometric' && configured?.enabled === false)) return null;
-        return { ...definition, name: key === 'biometric' ? definition.name : (configured?.label || definition.name) };
+        const fixedLabels = { attendance: 'Absensi', attendance_history: 'Riwayat Absensi' };
+        return { ...definition, name: fixedLabels[key] || (key === 'biometric' ? definition.name : (configured?.label || definition.name)) };
     };
     const items = (keys) => keys.map(configuredItem).filter(Boolean);
     const navigation = [
         { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
-        { name: 'Presensi', icon: CalendarCheck, children: [configuredItem('attendance'), configuredItem('attendance') && configuredItem('attendance_history'), ...items(['schedule', 'business_trips'])].filter(Boolean) },
+        { name: 'Presensi', icon: CalendarCheck, children: [configuredItem('attendance'), configuredItem('attendance_history'), ...items(['schedule', 'business_trips'])].filter(Boolean) },
         { name: 'Pengajuan', icon: Briefcase, children: items(['leave', 'overtime', 'claims', 'adjustments']) },
         { name: 'Informasi & Aktivitas', icon: Bell, children: items(['calendar', 'tasks', 'habits', 'notifications']) },
         { name: 'Keuangan', icon: FileText, children: items(['payroll']) },
