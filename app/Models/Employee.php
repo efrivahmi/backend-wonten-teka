@@ -31,6 +31,7 @@ class Employee extends Model
         'position',
         'join_date',
         'employment_status',
+        'basic_salary',
         'is_active',
         'ptkp_status',
         'bpjs_kesehatan_number_encrypted',
@@ -59,6 +60,7 @@ class Employee extends Model
         return [
             'date_of_birth' => 'date',
             'join_date' => 'date',
+            'basic_salary' => 'decimal:2',
             'is_active' => 'boolean',
             'face_enrolled' => 'boolean',
             'face_enrolled_at' => 'datetime',

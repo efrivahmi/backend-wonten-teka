@@ -176,8 +176,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::post('/payroll/runs', [\App\Http\Controllers\Api\PayrollController::class, 'store']);
         Route::get('/payroll/runs/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
+        Route::post('/payroll/runs/{run}/finalize', [\App\Http\Controllers\Api\PayrollController::class, 'finalize']);
+        Route::post('/payroll/runs/{run}/paid', [\App\Http\Controllers\Api\PayrollController::class, 'markPaid']);
         Route::get('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'show']);
         Route::put('/payroll/config', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'update']);
+        Route::post('/payroll/config/components', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'storeComponent']);
+        Route::put('/payroll/config/components/{component}', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'updateComponent']);
+        Route::delete('/payroll/config/components/{component}', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'destroyComponent']);
+        Route::put('/payroll/config/bpjs-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveBpjsRates']);
+        Route::put('/payroll/config/ter-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveTerRates']);
+        Route::put('/payroll/config/annual-tax-rates', [\App\Http\Controllers\Api\PayrollConfigurationController::class, 'saveAnnualTaxRates']);
         
         // Shifts
         Route::get('/shifts', [\App\Http\Controllers\Api\ShiftTemplateController::class, 'index']);

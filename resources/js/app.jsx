@@ -23,6 +23,7 @@ import EmployeeResources from './pages/employee/Resources';
 import HabitTracker from './pages/employee/HabitTracker';
 import TasksAndHabits from './pages/employee/TasksAndHabits';
 import AdminOperations from './pages/admin/Operations';
+import AdminPayroll from './pages/admin/Payroll';
 import AdminBiometrics from './pages/admin/Biometrics';
 import AdminAnnouncements from './pages/admin/Announcements';
 import AdminTasks from './pages/admin/Tasks';
@@ -137,7 +138,7 @@ const App = () => {
                     <Route path="events/edit" element={<Navigate to="/admin/events" replace />} />
                     <Route path="tasks" element={<AdminTasks />} />
                     <Route path="announcements" element={<AdminAnnouncements />} />
-                    <Route path="payroll" element={<AdminOperations type="payroll" />} />
+                    <Route path="payroll" element={<AdminPayroll />} />
                     <Route path="payroll/detail" element={<Navigate to="/admin/payroll" replace />} />
                     <Route path="payroll-config" element={<PayrollConfigPage />} />
                     <Route path="leave-types" element={<AdminLeaveTypes />} />

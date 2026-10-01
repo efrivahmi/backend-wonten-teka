@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PayrollRun;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Services\PayrollService;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class PayrollController extends Controller
 {
@@ -41,20 +43,19 @@ class PayrollController extends Controller
 
         $validated = $request->validate([
             'period_month' => 'required|integer|min:1|max:12',
-            'period_year' => 'required|integer|min:2020|max:2030',
+            'period_year' => 'required|integer|min:2020|max:2100',
         ]);
 
         $month = $validated['period_month'];
         $year = $validated['period_year'];
 
-        // Check if payroll already run for this period
         $existingRun = PayrollRun::query()
             ->where('period_month', $month)
             ->where('period_year', $year)
             ->first();
 
-        if ($existingRun) {
-            return response()->json(['message' => 'Payroll for this period already exists.'], 422);
+        if ($existingRun && $existingRun->status !== 'draft') {
+            return response()->json(['message' => 'Payroll periode ini sudah difinalisasi.'], 422);
         }
 
         try {
@@ -92,6 +93,11 @@ class PayrollController extends Controller
         $totalEarnings = $run->payslips->sum('total_earnings');
         $totalDeductions = $run->payslips->sum('total_deductions');
         $totalNet = $run->payslips->sum('net_salary');
+        $totalEmployerContributions = $run->payslips->sum(fn ($slip) =>
+            (float) $slip->bpjs_kesehatan_employer + (float) $slip->bpjs_jht_employer
+            + (float) $slip->bpjs_jp_employer + (float) $slip->bpjs_jkk_employer
+            + (float) $slip->bpjs_jkm_employer + (float) $slip->bpjs_jkp_employer
+        );
         
         $summary = [
             'total_employees' => $run->payslips->count(),
@@ -99,6 +105,7 @@ class PayrollController extends Controller
             'total_earnings' => $totalEarnings,
             'total_deductions' => $totalDeductions,
             'total_net_salary' => $totalNet,
+            'total_employer_contributions' => $totalEmployerContributions,
         ];
 
         return response()->json([
@@ -106,5 +113,42 @@ class PayrollController extends Controller
             'summary' => $summary,
             'payslips' => $run->payslips,
         ]);
+    }
+
+    public function finalize(Request $request, PayrollRun $run)
+    {
+        abort_unless($request->user()->hasAnyRole(['super_admin', 'admin']), 403);
+        if ($run->status !== 'draft' || !$run->payslips()->exists()) {
+            return response()->json(['message' => 'Hanya payroll draf yang berisi slip dapat difinalisasi.'], 422);
+        }
+
+        DB::transaction(function () use ($run) {
+            $run->update(['status' => 'finalized', 'finalized_at' => now()]);
+            $period = $run->period_month.'/'.$run->period_year;
+            $run->payslips()->with('employee.user')->get()->each(function ($payslip) use ($period, $run) {
+                $user = $payslip->employee?->user;
+                if (!$user) return;
+                Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'payroll',
+                    'title' => 'Slip gaji tersedia',
+                    'body' => "Slip gaji periode {$period} sudah dapat dilihat.",
+                    'data' => ['payroll_run_id' => $run->id, 'payslip_id' => $payslip->id],
+                    'action_url' => '/employee/payslip',
+                ]);
+            });
+        });
+        return response()->json(['message' => 'Payroll difinalisasi dan slip gaji kini tersedia untuk karyawan.', 'data' => $run->fresh()]);
+    }
+
+    public function markPaid(Request $request, PayrollRun $run)
+    {
+        abort_unless($request->user()->hasAnyRole(['super_admin', 'admin']), 403);
+        if ($run->status !== 'finalized') {
+            return response()->json(['message' => 'Hanya payroll yang sudah difinalisasi yang dapat ditandai telah dibayar.'], 422);
+        }
+
+        $run->update(['status' => 'paid', 'paid_at' => now()]);
+        return response()->json(['message' => 'Payroll ditandai telah dibayar.', 'data' => $run->fresh()]);
     }
 }

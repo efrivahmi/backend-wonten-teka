@@ -17,6 +17,8 @@ const Payslip = () => {
     
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedSlip, setSelectedSlip] = useState(null);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         fetchPayslips();
@@ -30,8 +32,19 @@ const Payslip = () => {
             setPayslips(response.data.data || response.data || []);
         } catch (error) {
             console.error("Error fetching payslips:", error);
+            setErrorMessage(error.response?.data?.message || 'Riwayat slip gaji gagal dimuat.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleView = async (id) => {
+        setErrorMessage('');
+        try {
+            const response = await api.get(`/payslips/${id}`);
+            setSelectedSlip(response.data);
+        } catch (error) {
+            setErrorMessage(error.response?.data?.message || 'Rincian slip gagal dimuat.');
         }
     };
 
@@ -78,6 +91,8 @@ const Payslip = () => {
                 </div>
             </div>
 
+            {errorMessage && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">{errorMessage}</div>}
+
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -104,7 +119,7 @@ const Payslip = () => {
                                             <div className="flex items-center font-bold text-slate-800">
                                                 <Calendar className="h-5 w-5 mr-3 text-slate-400" />
                                                 <div>
-                                                    <p>{formatMonthYear(slip.period_start)}</p>
+                                                <p>{slip.payroll_run?.period_month ? new Date(2000, slip.payroll_run.period_month - 1, 1).toLocaleDateString('id-ID', { month: 'long' }) + ' ' + slip.payroll_run.period_year : formatMonthYear(slip.period_start)}</p>
                                                     <p className="text-xs text-slate-500 font-medium">{slip.period_start} - {slip.period_end}</p>
                                                 </div>
                                             </div>
@@ -114,15 +129,16 @@ const Payslip = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                slip.status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                                                ['finalized', 'paid'].includes(slip.payroll_run?.status) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
                                             }`}>
-                                                {slip.status === 'published' ? 'Tersedia' : 'Draft'}
+                                                {slip.payroll_run?.status === 'paid' ? 'Sudah dibayar' : 'Slip tersedia'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end space-x-2">
                                                 <button 
                                                     className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                    onClick={() => handleView(slip.id)}
                                                     title="Lihat Detail"
                                                 >
                                                     <Eye className="h-5 w-5" />
@@ -155,6 +171,12 @@ const Payslip = () => {
                 
                 <Pagination pagination={pagination} onPageChange={setCurrentPage} />
             </div>
+
+            {selectedSlip && <section className="mt-6 space-y-4 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm md:p-7">
+                <div className="flex items-center justify-between gap-3"><div><h2 className="text-xl font-bold text-slate-900">Rincian slip gaji</h2><p className="text-sm text-slate-500">Periode {selectedSlip.period_start} – {selectedSlip.period_end}</p></div><button onClick={() => setSelectedSlip(null)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold">Tutup</button></div>
+                <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><small className="text-slate-500">Penghasilan bruto</small><b className="mt-1 block">{formatCurrency(selectedSlip.gross_salary)}</b></div><div className="rounded-xl bg-rose-50 p-4"><small className="text-rose-700">Total potongan</small><b className="mt-1 block text-rose-800">{formatCurrency(selectedSlip.total_deductions)}</b></div><div className="rounded-xl bg-emerald-50 p-4"><small className="text-emerald-700">Gaji bersih</small><b className="mt-1 block text-emerald-800">{formatCurrency(selectedSlip.net_salary)}</b></div></div>
+                <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="p-3">Komponen</th><th className="p-3">Jenis</th><th className="p-3 text-right">Jumlah</th></tr></thead><tbody className="divide-y divide-slate-100">{(selectedSlip.components_detail||[]).map((item,index)=><tr key={`${item.name}-${index}`}><td className="p-3">{item.name}</td><td className="p-3 capitalize">{item.type==='earning'?'Penghasilan':'Potongan'}{item.days?` · ${item.days} hari`:''}</td><td className="p-3 text-right font-medium">{formatCurrency(item.amount)}</td></tr>)}{!(selectedSlip.components_detail||[]).length&&<tr><td colSpan="3" className="p-6 text-center text-slate-500">Tidak ada rincian komponen.</td></tr>}</tbody></table></div>
+            </section>}
         </div>
     );
 };

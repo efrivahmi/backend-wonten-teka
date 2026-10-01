@@ -30,7 +30,7 @@ const Employees = () => {
         department: '',
         position: '',
         phone: '',
-        role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent'
+        role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent', basic_salary: ''
     });
     const [saving, setSaving] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -66,7 +66,7 @@ const Employees = () => {
             department: '',
             position: '',
             phone: '',
-            role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent'
+            role: 'employee', gender: '', address: '', join_date: '', employment_status: 'permanent', basic_salary: ''
         });
         setIsModalOpen(true);
         setActiveDropdown(null);
@@ -84,7 +84,7 @@ const Employees = () => {
             phone: emp.phone || '',
             role: emp.user?.roles?.[0]?.name || 'employee',
             gender: emp.gender || '', address: emp.address || '',
-            join_date: emp.join_date?.slice(0, 10) || '', employment_status: emp.employment_status || 'permanent'
+            join_date: emp.join_date?.slice(0, 10) || '', employment_status: emp.employment_status || 'permanent', basic_salary: emp.basic_salary || ''
         });
         setIsModalOpen(true);
         setActiveDropdown(null);
@@ -110,8 +110,8 @@ const Employees = () => {
                 }
                 await api.put(`/admin/employees/${editingEmployee.id}`, payload);
             } else {
-                const { email, password, role } = formData;
-                await api.post('/admin/employees', { email, password, role });
+                const { email, password, role, basic_salary } = formData;
+                await api.post('/admin/employees', { email, password, role, basic_salary: basic_salary || 0 });
             }
             setIsModalOpen(false);
             fetchEmployees();
@@ -362,6 +362,11 @@ const Employees = () => {
                                 <label className="block text-sm font-medium text-slate-700">Alamat
                                     <textarea name="address" value={formData.address} onChange={handleFormChange} rows="2" className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg" />
                                 </label></>}
+
+                                <label className="block text-sm font-medium text-slate-700">Gaji pokok bulanan (Rupiah)
+                                    <input type="number" min="0" step="1000" name="basic_salary" value={formData.basic_salary} onChange={handleFormChange} className="mt-1 w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Contoh: 4500000" />
+                                    <span className="mt-1 block text-xs font-normal text-slate-500">Disimpan sebagai data penggajian privat dan menjadi dasar komponen gaji pokok.</span>
+                                </label>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                                     <div>

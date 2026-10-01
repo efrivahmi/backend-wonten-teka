@@ -233,6 +233,7 @@ class EmployeeController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => 'required|string|min:6',
             'role' => ['nullable', 'string', Rule::in(['employee', 'admin'])],
+            'basic_salary' => 'nullable|numeric|min:0|max:9999999999999.99',
         ]);
 
         try {
@@ -278,6 +279,7 @@ class EmployeeController extends Controller
                 'gender' => null,
                 'address' => null,
                 'join_date' => null,
+                'basic_salary' => $validated['basic_salary'] ?? 0,
                 'is_active' => true,
             ]);
 
@@ -340,6 +342,7 @@ class EmployeeController extends Controller
             'address' => 'nullable|string|max:1000',
             'join_date' => 'nullable|date',
             'employment_status' => 'nullable|string|max:50',
+            'basic_salary' => 'nullable|numeric|min:0|max:9999999999999.99',
             'is_active' => 'nullable|boolean',
             'role' => ['sometimes', 'required', 'string', Rule::in(['employee', 'admin'])],
             'password' => 'nullable|string|min:6',
@@ -363,6 +366,7 @@ class EmployeeController extends Controller
             if (array_key_exists('address', $validated)) $employee->address = $validated['address'];
             if (array_key_exists('join_date', $validated)) $employee->join_date = $validated['join_date'];
             if (array_key_exists('employment_status', $validated)) $employee->employment_status = $validated['employment_status'];
+            if (array_key_exists('basic_salary', $validated)) $employee->basic_salary = $validated['basic_salary'];
             if (isset($validated['is_active'])) $employee->is_active = $validated['is_active'];
 
             $employee->save();

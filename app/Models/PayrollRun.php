@@ -13,7 +13,7 @@ class PayrollRun extends Model
 
     protected $fillable = [
  'period_month', 'period_year', 'status',
-        'run_by', 'finalized_at', 'paid_at', 'notes',
+        'run_by', 'finalized_at', 'paid_at', 'notes', 'period_start', 'period_end', 'scheduled_payment_date', 'configuration_snapshot',
     ];
 
     protected function casts(): array
@@ -21,6 +21,10 @@ class PayrollRun extends Model
         return [
             'finalized_at' => 'datetime',
             'paid_at' => 'datetime',
+            'period_start' => 'date',
+            'period_end' => 'date',
+            'scheduled_payment_date' => 'date',
+            'configuration_snapshot' => 'array',
         ];
     }
 
